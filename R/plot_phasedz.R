@@ -12,17 +12,14 @@
 
 
 plot_phasedz <- function(df1, df2 = NULL) {
-   print(df1)
-   print(df2)
+
    if(!is.null(df2)){
-      print("case A")
-         df1 <- df1 %>% dplyr::mutate(type = "plus")
-         df2 <- df2 %>% dplyr::mutate(type = "minus")
+         df1 <- df1 %>% dplyr::mutate(strand = "plus")
+         df2 <- df2 %>% dplyr::mutate(strand = "minus")
          
          all_dat <- rbind(df1, df2) %>% dplyr::select(-c(phased_num))
-         data_long <- reshape2::melt(all_dat, id = c("type", "phased_dist"))
-         print(head(data_long))
-         p <- ggplot2::ggplot(data_long, ggplot2::aes(x = phased_dist, y = value, color = type)) +  
+         data_long <- reshape2::melt(all_dat, id = c("strand", "phased_dist"))
+         p <- ggplot2::ggplot(data_long, ggplot2::aes(x = phased_dist, y = value, color = strand)) +  
             ggplot2::geom_line(linewidth = 1.25) +
             ggplot2::scale_color_manual(values = c("blue", "red"))+
             ggplot2::scale_y_continuous("Z-score")+
@@ -32,9 +29,7 @@ plot_phasedz <- function(df1, df2 = NULL) {
             ggplot2::theme(plot.margin = ggplot2::unit(c(2, 0, 0, 0), "cm"))
 
    } else {
-      print("case B")
       if(ncol(df1) > 3 & colnames(df1)[1] != "phased_dist1"){
-         print("case B P1")
           p <- ggplot2::ggplot(df1, ggplot2::aes(x = phased_dist))+
                ggplot2::scale_y_continuous("Z-score")+
                ggplot2::scale_x_continuous("3' to 5' Distance", labels = seq(1,50, by = 5), breaks = seq(1,50, by=5)) +
@@ -53,7 +48,6 @@ plot_phasedz <- function(df1, df2 = NULL) {
             ggplot2::theme(text = ggplot2::element_text(size = 12))
    
       } else {
-      print("case B P2")
       p <- ggplot2::ggplot(df1, ggplot2::aes(x = phased_dist))+
          
          ggplot2::scale_y_continuous("Z-score")+
