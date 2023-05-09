@@ -1,4 +1,6 @@
-![R logo.](https://imgur.com/a/fuA7P8S)
+
+![RpackageLogo](https://user-images.githubusercontent.com/63005660/236967995-82baabed-6ebf-45e1-a2d2-7e5ab27451a2.png)
+
 
 
 ## MiSiPi-RNA
