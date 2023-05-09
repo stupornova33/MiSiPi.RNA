@@ -11,6 +11,7 @@
 
 
 filter_mi_dt <- function(chrom, chrom_name){
+   width <- pos <- start <- end <- NULL
   filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
     base::subset(width <= 25 & width >= 18) %>% 
     dplyr::mutate(start = pos, end = pos + width) %>%

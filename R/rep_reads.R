@@ -7,6 +7,7 @@
 
 rep_reads <- function(counts_dt){
 #need to create the reads that represent the counts
+  end <- start <- NULL
   inner_func <- function(i) {
     rep_count <- counts_dt$count[i]
     rname <- rep(counts_dt$rname[i], rep_count)
@@ -27,7 +28,7 @@ rep_reads <- function(counts_dt){
       dplyr::mutate(width = end - start + 1)
     
     #select a subset 
-    final_df <- head(res_df, 10000)
+    final_df <- utils::head(res_df, 10000)
   } else {
     final_df <- counts_dt
   }

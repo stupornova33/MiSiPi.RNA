@@ -5,6 +5,8 @@
 #' @export
 
 plot_text <- function(vienna, sequence){
+  
+   x <- y <- text <- NULL
    v <- as.vector(unlist(strsplit(vienna, "")))
    c <- as.vector(unlist(strsplit(sequence, "")))
    

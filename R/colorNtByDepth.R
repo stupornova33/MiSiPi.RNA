@@ -6,6 +6,7 @@
 
 colorNtByDepth <- function(seq_cov_dat){
 
+   count <- bin <- NULL
    #order table by count for binning 
    ordered_tbl <- seq_cov_dat[order(seq_cov_dat$count),]
    ordered_tbl <- ordered_tbl %>% dplyr::mutate(count = ceiling(count))

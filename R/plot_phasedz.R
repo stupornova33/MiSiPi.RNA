@@ -12,7 +12,7 @@
 
 
 plot_phasedz <- function(df1, df2 = NULL) {
-
+  phased_num <- phased_dist <- value <- strand <- phased_z <- phased26_dist <- phased26_Z <- phased_dist1 <- phased_z1 <- phased_dist2 <- phased_z2 <- NULL 
    if(!is.null(df2)){
          df1 <- df1 %>% dplyr::mutate(strand = "plus")
          df2 <- df2 %>% dplyr::mutate(strand = "minus")

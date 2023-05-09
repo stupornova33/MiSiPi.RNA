@@ -1,17 +1,12 @@
-#' plot miRNA coverage
-#' takes a data frame of coverage over a sequence of nucleotides
-
-#' @param bed_file a tab-delineated file with three columns: chrom, start, stop
-#' @param input_file a BAM file
-#' @param genome_file a fasta file with chromosome sequences
-#' @param plot_output an optional string. Default = TRUE
-#' @param path_to_RNAfold a string
+#' run miRNA function
+#' calls the miRNA function for both strands, creates miRNA logfile
+#' @param vars a list of variables provided by user
 #' @importFrom Rcpp sourceCpp
 #' @return plots
 
 #' @export
 
-run_miRNA_function <- function(bed_file, input_file, genome_file, plot_output = plot_output, path_to_RNAfold){
+run_miRNA_function <- function(vars){
    `%>%` <- magrittr::`%>%`
    
    logfile = "miRNA_logfile.txt"

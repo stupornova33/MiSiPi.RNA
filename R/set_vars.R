@@ -21,9 +21,9 @@ set_vars <- function(bed_file, input_file, genome, min_read_count, plot_output, 
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])
-  bam_header <- NULL
+  bam_header <- V2 <- V3 <- NULL
   
-  test_list <- read.csv(bed_file, sep = "\t", header = FALSE)
+  test_list <- utils::read.csv(bed_file, sep = "\t", header = FALSE)
   
   mut_table <- function(V1){
     result <- which(chr_name == V1)

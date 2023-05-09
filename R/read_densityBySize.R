@@ -5,12 +5,14 @@
 #' @param reg_stop a string
 #' @param input_file a string
 #' @param dir a string
+#' @param logfile a string
 #' @return all_df
 
 #' @export
 
-read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_file, dir){
+read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_file, dir, logfile){
    
+   pos <- width <- rname <- NULL
    filter_bamfile <- function(input_file, size1, size2,  strand){
       which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
       filters <- S4Vectors::FilterRules(list(MinWidth=function(x) (BiocGenerics::width(x$seq) >= size1 & BiocGenerics::width(x$seq) <= size2)))
@@ -48,6 +50,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   
    
    make_bam_pileup <- function(bam, strand){
+      seqname <- pos <- count <- NULL
       which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
       if(strand == "-"){
          bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
@@ -135,6 +138,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
    empty_dat <- data.frame(pos = c(seq(reg_start, reg_stop)))
    
    merge_neg_table <- function(empty_dat, res_dat){
+      count <- NULL
       neg_res <- merge(empty_dat, res_dat, by = "pos", all.x = TRUE) %>% dplyr::mutate(count = count *-1) %>%
          dplyr::mutate(size = "all")
       neg_res["count"][is.na(neg_res["count"])] <- 0

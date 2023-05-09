@@ -11,6 +11,7 @@
 #' @export
 
 get_nuc_10 <- function(forward_dt, reverse_dt) {
+   width <- NULL
    all_dat <- rbind(forward_dt, reverse_dt) %>% dplyr::filter(width >= 24 & width <= 30)
    total <- 0
    accumulate_nucs <- function(datseq) {

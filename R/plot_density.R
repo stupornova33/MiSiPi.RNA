@@ -8,7 +8,7 @@
 
 
 plot_density <- function(all_df, reg_start, reg_stop){
-   
+   position <- pos_26_32 <- neg_26_32 <- pos_23_25 <- neg_23_25 <- pos_20_22 <- neg_20_22 <- pos_18_19 <- neg_18_19 <- NULL
    length <- reg_stop - reg_start
    
    density <- ggplot2::ggplot(all_df, ggplot2::aes(x = position)) + 

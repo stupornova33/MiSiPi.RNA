@@ -13,6 +13,8 @@
 calc_phasing <- function(df1, df2){
 phased <- find_hp_overlaps(df1, df2)
 
+dist <- start_r1 <- widthx <- start_r2 <- widthy <- num.y <- num.x <- Zscore <- num <- NULL
+
 phased <- phased %>% 
   dplyr::filter(dist >= 0) %>% 
   dplyr::mutate(end_r1 = start_r1 + widthx - 1, end_r2 = start_r2 + widthy - 1)

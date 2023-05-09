@@ -14,6 +14,7 @@
 
 get_read_dist <- function(chrom_m, chrom_p) {
    options(scipen = 999)
+   width <- pos <- count.y <- count.x <- NULL
    
    plus_dt <- data.table::setDT(makeBamDF(chrom_p)) %>%
       base::subset(width <= 32 & width >= 18) %>% 

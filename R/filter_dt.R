@@ -11,6 +11,7 @@
 
 
 filter_dt <- function(chrom){
+  width <- first <- pos <- NULL
    filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
       base::subset(width <= 32 & width >= 18) %>% 
       dplyr::filter(first == "T") %>%

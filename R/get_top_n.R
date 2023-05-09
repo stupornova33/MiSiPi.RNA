@@ -12,7 +12,7 @@
 
 
 get_top_n <- function(chrom, chrom_name, n){
-   
+   width <- pos <- start <- end <- first <- count <- NULL
    n <- n/100
    filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
       base::subset(width <= 25 & width >= 18) %>% 
@@ -26,7 +26,7 @@ get_top_n <- function(chrom, chrom_name, n){
    
    counts_dt <- counts_dt %>% dplyr::arrange(count) 
   
-   counts_dt <- counts_dt[counts_dt$count > quantile(counts_dt$count,prob=n),]
+   counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
    
    #need to create the reads that represent the counts
    rep_reads <- function(i) {
@@ -49,7 +49,7 @@ get_top_n <- function(chrom, chrom_name, n){
       dplyr::mutate(width = end - start + 1)
    
    #select a subset 
-   final_df <- head(res_df, 10000)
+   final_df <- utils::head(res_df, 10000)
    } else {
       final_df <- counts_dt
    }

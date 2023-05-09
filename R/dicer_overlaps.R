@@ -9,6 +9,8 @@
 
 dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    # convert helix positions to chromosome positions
+   bin <- j <- X.End <- X.Start <- Y.Start <- Y.End <- paired_pos <- start <- width <- NULL
+  
    helix_df <- helix_df %>% dplyr::mutate(i = i + reg_start, j = j + reg_start)
    ### paired bases are several nucleotides diff. than read starts... pad the ends of the helix
    
@@ -59,7 +61,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
       i_dat <- i_dat %>% dplyr::mutate(paired_pos = final_helix_df$j[i_idx]) %>%
          dplyr::mutate(start = paired_pos, end = start + width, rname = chrom_name) %>%
          #dplyr::select(-c(r1_start, r1_width, r1_end, paired_pos)) %>%
-         na.omit(i_dat)
+         stats::na.omit(i_dat)
     
       j_idx <- match(j_dat$start, j_dat$start)
       
@@ -73,8 +75,8 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
          #because find_overlaps can't handle large vector sizes....
          i_dat <- i_dat[sample(1:nrow(i_dat)),]
          j_dat <- j_dat[sample(1:nrow(j_dat)),]
-         i_dat <- head(i_dat, 2000)
-         j_dat <- head(j_dat, 2000)
+         i_dat <- utils::head(i_dat, 2000)
+         j_dat <- utils::head(j_dat, 2000)
       }
    
       i_j_overlaps <- find_overlaps(i_dat, j_dat)

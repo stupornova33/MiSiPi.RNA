@@ -22,7 +22,7 @@
 new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, input_file, genome_file, min_read_count, si_pal, pi_pal, 
                         plot_output, path_to_RNAfold, bed_file){
   
-   
+  width <- pos <- start <- end <- NULL
   local_ml <- data.table::data.table(
     'locus_length' = numeric(1), 'unique_read_bias' = numeric(1), 'strand_bias' = numeric(1), 'perc_GC' = numeric(1), 
     'highest_size' = numeric(1), 'perc_first_nucT' = numeric(1), 'perc_A10' = numeric(1), 'highest_si_col' = numeric(1),
@@ -106,7 +106,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   
   if(plot_output == 'T'){
     size_dir <- 'run_all/size_plots/'
-    size_plots <- plot_sizes(read_dist, chrom_name, reg_start, reg_stop)
+    size_plots <- plot_sizes(read_dist)
   }
   
   local_ml$perc_first_nucT <- first_nuc_T(forward_dt, reverse_dt)
@@ -235,9 +235,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   
   cat(file = logfile, "Writing results to table\n", append = TRUE)
   if(!file.exists(paste0(tbl_name, "_ml.txt"))){
-    write.table(df, file = paste0(tbl_name, "_ml.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+    utils::write.table(df, file = paste0(tbl_name, "_ml.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
   } else {
-    write.table(df, file = paste0(tbl_name, "_ml.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+    utils::write.table(df, file = paste0(tbl_name, "_ml.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
   }
   
 }

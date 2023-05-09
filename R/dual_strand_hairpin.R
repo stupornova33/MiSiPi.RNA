@@ -21,6 +21,8 @@
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                              min_read_count, genome_file, input_file, logfile, dir, plot_output, path_to_RNAfold, annotate_bed, 
                              gff_file){
+   
+  end <- dist <- num.y <- num.x <- Zscore <- converted <- phased_z <- NULL
   
   neg_results <- function(){
     #MFE <- 0
@@ -206,7 +208,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     phased_counts <- overlaps %>%
       dplyr::group_by(dist) %>%
       dplyr::summarize(num= dplyr::n())
-    phased_counts <- head(phased_counts, 50)
+    phased_counts <- utils::head(phased_counts, 50)
     table <- data.table::data.table(dist=seq(1,50), num=rep(0, 50))
     phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, table, by = "dist", "num"))
     
@@ -359,9 +361,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     
     final_plot <- cowplot::plot_grid(left, right, ncol = 2, align = "vh", axis = "l", rel_widths = c(1, 0.9))
     prefix <- paste0(dir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
-    pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 7, width = 7.5)
+    
+    grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 7, width = 7.5)
     print(final_plot)
-    dev.off()
+    grDevices::dev.off()
   }
 
  # overhangs$zscore <- calc_zscore(overhangs$proper_count)

@@ -1,5 +1,5 @@
 #' takes a gff file 
-#' only output is hairpin plots
+#' outputs a plot
 #' @param gff_path a string path leading to the gff file
 #' @param chrom_name a string
 #' @param reg_start an integer
@@ -12,7 +12,7 @@
 
 
 plot_bed <- function(gff_path, chrom_name, reg_start, reg_stop){
-   gff <- read.table(gff_path, header = FALSE, sep = '\t')
+   gff <- utils::read.table(gff_path, header = FALSE, sep = '\t')
    #x coordinates will be bed coordinates
    #y coordinates will be predefined
    options(scipen = 999)

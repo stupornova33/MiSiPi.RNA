@@ -8,6 +8,7 @@
 #' @export
 
 overhang_z_plot <- function(overhangs){
+   proper_count <- NULL
    pos_shift <- c(-4, -3, -2, -1, 0, 1, 2, 3, 4)
    p <- ggplot2::ggplot(overhangs, ggplot2::aes(x = pos_shift, y = scale(proper_count))) +
       ggplot2::scale_x_continuous("Shift")+

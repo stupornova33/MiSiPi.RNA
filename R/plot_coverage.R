@@ -5,6 +5,7 @@
 
 
 plot_coverage <- function(dt){
+  pos <- count <- NULL
    coverage_hist <- ggplot2::ggplot(dt, ggplot2::aes(pos, count)) +
    ggplot2::geom_col(width = 1) +
    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45))+

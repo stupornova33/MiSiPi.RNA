@@ -6,6 +6,7 @@
 
 plot_sizes <- function(dist){
    options(scipen=999)
+   width <- count <- first <- NULL
    p <- ggplot2::ggplot(dist, ggplot2::aes(x=width, y=count, fill=first))+ 
       ggplot2::geom_bar(stat = "identity") +
       ggplot2::theme_classic()+

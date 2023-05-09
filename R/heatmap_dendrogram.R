@@ -16,12 +16,12 @@ heatmap_dendrogram <- function(bam_file, logfile, chrom_name, reg_start, reg_sto
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])
-  bam_header <- NULL
+  name <- bam_header <- NULL
   
-
   rng_df <- data.frame(chrom_name = c(unlist(vars[1])), start = c(unlist(vars[2])), end = c(unlist(vars[3])))
   
   get_reads <- function(i) {
+    width <- pos <- first <- rname <- name <- n.y <- NULL
     chromM <- getChrMinus(bam_obj, chrom_name = c(rng_df[i,1]), reg_start = c(rng_df[i,2]), reg_stop = c(rng_df[i,3]))
     chromP <- getChrPlus(bam_obj, chrom_name = c(rng_df[i,1]), reg_start = c(rng_df[i,2]), reg_stop = c(rng_df[i,3]))
     

@@ -6,11 +6,10 @@
 
 
 plot_miRNA_struct <- function(f_df){
-   #pal <- colorRampPalette(c("red", "orange", "yellow", "green", "blue", "purple", "black"))
+
+   text <- x <- y <- colorbins <- NULL
    pal_length <- length(unique(f_df$color_bins))
    palt <- viridis::plasma(pal_length)
-   #palt <- rev(palt)
-   
    
    letters <- f_df %>% dplyr::filter(text == 'C' | text == 'U' | text == 'G' | text == 'A' )
    not_letters <- f_df %>% dplyr::filter(text == ' ' | text == '|' | text == '-')
