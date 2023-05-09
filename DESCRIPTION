@@ -1,11 +1,11 @@
-Package: misipi
+Package: MiSiPi.RNA
 Type: Package
-Title: What the Package Does in One 'Title Case' Line
+Title: Characterization of Small RNA Pathways
 Version: 1.0
-Date: 2023-05-06
-Author: Your Name
-Maintainer: Your Name <your@email.com>
-Description: One paragraph description of what the package does as one or more full sentences.
+Date: 2023-05-09
+Author: Taiya Jarva
+Maintainer: Taiya Jarva <t.m.jarva13@gmail.com>
+Description: Creates plots and analyzes small RNA sequencing data.
 License: GPL (>= 2)
-Imports: Rcpp (>= 1.0.10)
+Imports: Rcpp (>= 1.0.10), BiocManager, BiocGenerics, dplyr, Biostrings, GenomicRanges, IRanges, R4RNA, RRNA, Rsamtools, S4Vectors, cowplot, reshape2, stringi, stringr, viridis
 LinkingTo: Rcpp

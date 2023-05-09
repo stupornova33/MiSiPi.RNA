@@ -2,58 +2,58 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 mergePileups <- function(start, end, pileups_pos, pileups_count) {
-    .Call(`_misipi_mergePileups`, start, end, pileups_pos, pileups_count)
+    .Call(`_MiSiPi_RNA_mergePileups`, start, end, pileups_pos, pileups_count)
 }
 
 get_nearby <- function(f_start, f_end, r_start, r_end, max_dist, dfsize) {
-    .Call(`_misipi_get_nearby`, f_start, f_end, r_start, r_end, max_dist, dfsize)
+    .Call(`_MiSiPi_RNA_get_nearby`, f_start, f_end, r_start, r_end, max_dist, dfsize)
 }
 
 getFastas <- function(input_str, start, stop, size) {
-    .Call(`_misipi_getFastas`, input_str, start, stop, size)
+    .Call(`_MiSiPi_RNA_getFastas`, input_str, start, stop, size)
 }
 
 convertU <- function(input_str, size) {
-    .Call(`_misipi_convertU`, input_str, size)
+    .Call(`_MiSiPi_RNA_convertU`, input_str, size)
 }
 
 getPileups <- function(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2) {
-    .Call(`_misipi_getPileups`, dtpos, dtcount, start_r1, end_r1, start_r2, end_r2)
+    .Call(`_MiSiPi_RNA_getPileups`, dtpos, dtcount, start_r1, end_r1, start_r2, end_r2)
 }
 
 group_helix_res <- function(x, y) {
-    .Call(`_misipi_group_helix_res`, x, y)
+    .Call(`_MiSiPi_RNA_group_helix_res`, x, y)
 }
 
 calc_overhangs <- function(r1_start, r1_end, r2_start, r2_width) {
-    .Call(`_misipi_calc_overhangs`, r1_start, r1_end, r2_start, r2_width)
+    .Call(`_MiSiPi_RNA_calc_overhangs`, r1_start, r1_end, r2_start, r2_width)
 }
 
 proper_overlap <- function(widthx, widthy) {
-    .Call(`_misipi_proper_overlap`, widthx, widthy)
+    .Call(`_MiSiPi_RNA_proper_overlap`, widthx, widthy)
 }
 
 overlap_counts <- function(f_start, X_SIZE, r_end, Y_SIZE, overlap) {
-    .Call(`_misipi_overlap_counts`, f_start, X_SIZE, r_end, Y_SIZE, overlap)
+    .Call(`_MiSiPi_RNA_overlap_counts`, f_start, X_SIZE, r_end, Y_SIZE, overlap)
 }
 
 get_si_overlaps <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth) {
-    .Call(`_misipi_get_si_overlaps`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
+    .Call(`_MiSiPi_RNA_get_si_overlaps`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
 }
 
 get_phased_dist <- function(startX, endX, startY, endY, dfsize) {
-    .Call(`_misipi_get_phased_dist`, startX, endX, startY, endY, dfsize)
+    .Call(`_MiSiPi_RNA_get_phased_dist`, startX, endX, startY, endY, dfsize)
 }
 
 make_count_table <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth) {
-    .Call(`_misipi_make_count_table`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
+    .Call(`_MiSiPi_RNA_make_count_table`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
 }
 
 get_pi_overlaps <- function(fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth) {
-    .Call(`_misipi_get_pi_overlaps`, fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth)
+    .Call(`_MiSiPi_RNA_get_pi_overlaps`, fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth)
 }
 
 rcpp_hello_world <- function() {
-    .Call(`_misipi_rcpp_hello_world`)
+    .Call(`_MiSiPi_RNA_rcpp_hello_world`)
 }
 
