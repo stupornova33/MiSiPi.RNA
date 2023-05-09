@@ -24,7 +24,7 @@ modify these variables
 >                 gff_file = "extdata/processed_dmel_annot.txt") #gff is included in misipi extdata
 
 
-##to run all lines of bed file
+## to run all lines of bed file
 
 
 >run_miRNA_function(vars)
