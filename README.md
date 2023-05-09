@@ -7,7 +7,7 @@
 Characterization of small RNA pathways
 
 after installing devtools run 
->devtools::install_github("stupornova33-MiSiPi-RNA")
+>devtools::install_github("stupornova33/MiSiPi-RNA")
 
 
 >library(misipi)
