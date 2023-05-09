@@ -1,3 +1,6 @@
+![R logo.](https://imgur.com/a/fuA7P8S)
+
+
 ## MiSiPi-RNA
 Characterization of small RNA pathways
 
