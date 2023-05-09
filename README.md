@@ -13,6 +13,7 @@ after installing devtools run
 >library(misipi)
 
 >`%>%` <- magrittr::`%>%`
+
 >setwd("desired/working/directory")
 
 modify these variables
