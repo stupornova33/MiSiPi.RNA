@@ -1,7 +1,7 @@
 
 ![RpackageLogo](https://user-images.githubusercontent.com/63005660/236967995-82baabed-6ebf-45e1-a2d2-7e5ab27451a2.png)
 
-For more details about the package, please visit https://www.biorxiv.org/content/10.1101/2023.05.07.539760v1.
+For more details about the package or to cite, please visit https://www.biorxiv.org/content/10.1101/2023.05.07.539760v1.
 
 ## MiSiPi.RNA
 Characterization of small RNA pathways
