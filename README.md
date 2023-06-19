@@ -26,7 +26,8 @@ RNA fold must be installed on your system, but path_to_RNAfold is only the path 
 Pi_pal is the piRNA heatmap plot, Si_pal is the siRNA heatmap plot. 
 Palette options are: "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens". 
 
-### Locus annotation: if annotate_bed = "T", a GFF file must be supplied to the gff_file argument. This will plot annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci. 
+### Locus annotation: 
+If annotate_bed = "T", a GFF file must be supplied to the gff_file argument. This will plot annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci. 
 
 ```
 vars <- set_vars(bed_file = "path/to/bed", input_file = "path/to/bamfile", 
