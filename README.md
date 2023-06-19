@@ -3,15 +3,15 @@
 
 For more details about the package or to cite, please visit https://www.biorxiv.org/content/10.1101/2023.05.07.539760v1.
 
-## MiSiPi.RNA
+## MiSiPi-RNA
 Characterization of small RNA pathways
 
-after installing devtools run 
+after installing devtools and BiocManager run 
 
 ```
-devtools::install_github("stupornova33/MiSiPi.RNA")
+devtools::install_github("stupornova33/MiSiPi-RNA")
 
-library(misipi)
+library(MiSiPi-RNA)
 
 `%>%` <- magrittr::`%>%`
 
