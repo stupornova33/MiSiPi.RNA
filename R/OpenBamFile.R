@@ -19,6 +19,5 @@ OpenBamFile <- function(bamfile, logfile){
    } else {
       return(bam_obj)
    }
-   Rsamtools::close.BamFile(bam_obj)
 }
 
