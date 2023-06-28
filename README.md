@@ -11,7 +11,7 @@ after installing devtools and BiocManager run
 ```
 devtools::install_github("stupornova33/MiSiPi.RNA")
 
-library(MiSiPi-RNA)
+library(MiSiPi.RNA)
 
 `%>%` <- magrittr::`%>%`
 
