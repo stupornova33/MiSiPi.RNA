@@ -2,20 +2,18 @@
 % Please edit documentation in R/run_phased_piRNA_function.R
 \name{run_phased_piRNA}
 \alias{run_phased_piRNA}
-\title{run_phased_piRNA}
+\title{run_phased_piRNA
+calls phased_piRNA function on both strand, creates output dir and logfile}
 \usage{
-run_phased_piRNA(bed_file, input_file, min_read_count)
+run_phased_piRNA(vars)
 }
 \arguments{
-\item{bed_file}{a tab-delineated file with three columns: chrom, start, stop}
-
-\item{input_file}{a BAM file}
-
-\item{min_read_count}{a whole number}
+\item{vars}{a list}
 }
 \value{
 plots
 }
 \description{
 run_phased_piRNA
+calls phased_piRNA function on both strand, creates output dir and logfile
 }

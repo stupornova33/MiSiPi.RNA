@@ -4,16 +4,10 @@
 \alias{plot_sizes}
 \title{plots the size distribution of reads}
 \usage{
-plot_sizes(dist, chrom_name, reg_start, reg_stop)
+plot_sizes(dist)
 }
 \arguments{
 \item{dist}{a data table}
-
-\item{chrom_name}{a string}
-
-\item{reg_start}{a whole number}
-
-\item{reg_stop}{a whole number}
 }
 \value{
 plots

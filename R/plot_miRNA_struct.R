@@ -7,7 +7,7 @@
 
 plot_miRNA_struct <- function(f_df){
 
-   text <- x <- y <- colorbins <- NULL
+   text <- x <- y <- color_bins <- NULL
    pal_length <- length(unique(f_df$color_bins))
    palt <- viridis::plasma(pal_length)
    

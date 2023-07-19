@@ -2,7 +2,7 @@
 #' takes input file
 #' creates bam obj
 #' @param bamfile a BAM file
-#' @param logfile
+#' @param logfile a string
 #' @return bam_obj
 
 
@@ -19,6 +19,4 @@ OpenBamFile <- function(bamfile, logfile){
    } else {
       return(bam_obj)
    }
-   Rsamtools::close.BamFile(bam_obj)
 }
-

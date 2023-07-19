@@ -29,6 +29,10 @@ calc_overhangs <- function(r1_start, r1_end, r2_start, r2_width) {
     .Call(`_MiSiPi_RNA_calc_overhangs`, r1_start, r1_end, r2_start, r2_width)
 }
 
+calc_expand_overhangs <- function(r1_start, r1_end, r2_start, r2_width) {
+    .Call(`_MiSiPi_RNA_calc_expand_overhangs`, r1_start, r1_end, r2_start, r2_width)
+}
+
 proper_overlap <- function(widthx, widthy) {
     .Call(`_MiSiPi_RNA_proper_overlap`, widthx, widthy)
 }
@@ -51,6 +55,10 @@ make_count_table <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwi
 
 get_pi_overlaps <- function(fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth) {
     .Call(`_MiSiPi_RNA_get_pi_overlaps`, fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth)
+}
+
+getLoopPileupsCPP <- function(r1Start, r1Stop, lStart, lStop, r2Start, r2Stop, dt_col_1, dt_col_2, total_count) {
+    .Call(`_MiSiPi_RNA_getLoopPileupsCPP`, r1Start, r1Stop, lStart, lStop, r2Start, r2Stop, dt_col_1, dt_col_2, total_count)
 }
 
 rcpp_hello_world <- function() {

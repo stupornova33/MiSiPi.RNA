@@ -108,6 +108,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// calc_expand_overhangs
+DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_end, std::vector<int> r2_start, std::vector<int> r2_width);
+RcppExport SEXP _MiSiPi_RNA_calc_expand_overhangs(SEXP r1_startSEXP, SEXP r1_endSEXP, SEXP r2_startSEXP, SEXP r2_widthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type r1_start(r1_startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type r1_end(r1_endSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type r2_start(r2_startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type r2_width(r2_widthSEXP);
+    rcpp_result_gen = Rcpp::wrap(calc_expand_overhangs(r1_start, r1_end, r2_start, r2_width));
+    return rcpp_result_gen;
+END_RCPP
+}
 // proper_overlap
 int proper_overlap(int widthx, int widthy);
 RcppExport SEXP _MiSiPi_RNA_proper_overlap(SEXP widthxSEXP, SEXP widthySEXP) {
@@ -198,6 +212,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// getLoopPileupsCPP
+DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop, std::vector<int> lStart, std::vector<int> lStop, std::vector<int> r2Start, std::vector<int> r2Stop, std::vector<int> dt_col_1, std::vector<int> dt_col_2, int total_count);
+RcppExport SEXP _MiSiPi_RNA_getLoopPileupsCPP(SEXP r1StartSEXP, SEXP r1StopSEXP, SEXP lStartSEXP, SEXP lStopSEXP, SEXP r2StartSEXP, SEXP r2StopSEXP, SEXP dt_col_1SEXP, SEXP dt_col_2SEXP, SEXP total_countSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type r1Start(r1StartSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type r1Stop(r1StopSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type lStart(lStartSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type lStop(lStopSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type r2Start(r2StartSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type r2Stop(r2StopSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type dt_col_1(dt_col_1SEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type dt_col_2(dt_col_2SEXP);
+    Rcpp::traits::input_parameter< int >::type total_count(total_countSEXP);
+    rcpp_result_gen = Rcpp::wrap(getLoopPileupsCPP(r1Start, r1Stop, lStart, lStop, r2Start, r2Stop, dt_col_1, dt_col_2, total_count));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_hello_world
 List rcpp_hello_world();
 RcppExport SEXP _MiSiPi_RNA_rcpp_hello_world() {
@@ -217,12 +250,14 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MiSiPi_RNA_getPileups", (DL_FUNC) &_MiSiPi_RNA_getPileups, 6},
     {"_MiSiPi_RNA_group_helix_res", (DL_FUNC) &_MiSiPi_RNA_group_helix_res, 2},
     {"_MiSiPi_RNA_calc_overhangs", (DL_FUNC) &_MiSiPi_RNA_calc_overhangs, 4},
+    {"_MiSiPi_RNA_calc_expand_overhangs", (DL_FUNC) &_MiSiPi_RNA_calc_expand_overhangs, 4},
     {"_MiSiPi_RNA_proper_overlap", (DL_FUNC) &_MiSiPi_RNA_proper_overlap, 2},
     {"_MiSiPi_RNA_overlap_counts", (DL_FUNC) &_MiSiPi_RNA_overlap_counts, 5},
     {"_MiSiPi_RNA_get_si_overlaps", (DL_FUNC) &_MiSiPi_RNA_get_si_overlaps, 6},
     {"_MiSiPi_RNA_get_phased_dist", (DL_FUNC) &_MiSiPi_RNA_get_phased_dist, 5},
     {"_MiSiPi_RNA_make_count_table", (DL_FUNC) &_MiSiPi_RNA_make_count_table, 6},
     {"_MiSiPi_RNA_get_pi_overlaps", (DL_FUNC) &_MiSiPi_RNA_get_pi_overlaps, 6},
+    {"_MiSiPi_RNA_getLoopPileupsCPP", (DL_FUNC) &_MiSiPi_RNA_getLoopPileupsCPP, 9},
     {"_MiSiPi_RNA_rcpp_hello_world", (DL_FUNC) &_MiSiPi_RNA_rcpp_hello_world, 0},
     {NULL, NULL, 0}
 };

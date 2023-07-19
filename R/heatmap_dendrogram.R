@@ -18,7 +18,7 @@ heatmap_dendrogram <- function(bam_file, logfile, chrom_name, reg_start, reg_sto
   chr_length <- unname(bam_header[['targets']])
   name <- bam_header <- NULL
   
-  rng_df <- data.frame(chrom_name = c(unlist(vars[1])), start = c(unlist(vars[2])), end = c(unlist(vars[3])))
+  rng_df <- data.frame(chrom_name = c(unlist(chrom_name)), start = c(unlist(reg_start)), end = c(unlist(reg_stop)))
   
   get_reads <- function(i) {
     width <- pos <- first <- rname <- name <- n.y <- NULL

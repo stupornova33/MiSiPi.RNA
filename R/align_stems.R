@@ -1,6 +1,7 @@
 #' align two strings
-#' @param new_left_vienna a string
-#' @param new_right_vienna a string
+#' @param right_stem_seq string
+#' @param left_stem_seq a string
+#' @param num_loops an integer
 #' @return a list
 #' @export
 

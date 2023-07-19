@@ -8,15 +8,36 @@ plots output
 takes bam object and strand 
 returns max_zscore and plots}
 \usage{
-phased_piRNA_function(bam_obj, strand)
+phased_piRNA_function(
+  strand,
+  chrom_name,
+  reg_start,
+  reg_stop,
+  input_file,
+  logfile,
+  dir,
+  plot_output
+)
 }
 \arguments{
-\item{bam_obj}{an object created by openBamFile}
-
 \item{strand}{a character passed in, either "+" or "-"}
+
+\item{chrom_name}{a string}
+
+\item{reg_start}{a whole number}
+
+\item{reg_stop}{a whole number}
+
+\item{input_file}{a string}
+
+\item{logfile}{a string}
+
+\item{dir}{a string}
+
+\item{plot_output}{a string, 'T' or 'F', default is 'T'}
 }
 \value{
-max_zscore
+max_zscore, plots
 }
 \description{
 phased piRNA function

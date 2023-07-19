@@ -14,6 +14,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
    
    pos <- width <- rname <- NULL
    filter_bamfile <- function(input_file, size1, size2,  strand){
+     seqnames <- NULL
       which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
       filters <- S4Vectors::FilterRules(list(MinWidth=function(x) (BiocGenerics::width(x$seq) >= size1 & BiocGenerics::width(x$seq) <= size2)))
       if(strand == "+"){
@@ -50,7 +51,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   
    
    make_bam_pileup <- function(bam, strand){
-      seqname <- pos <- count <- NULL
+      seqnames <- pos <- count <- NULL
       which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
       if(strand == "-"){
          bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)

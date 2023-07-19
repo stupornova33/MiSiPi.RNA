@@ -5,19 +5,12 @@
 \title{run the hairpin function
 runs hairpin function on both strands
 takes a bed file, bam file, and genome file specified by user
-takes min_read_count specified by user. Default = 1
-only output is hairpin plots}
+takes min_read_count specified by user. Default = 1}
 \usage{
 lhs \%>\% rhs
 }
 \arguments{
-\item{bed_file}{a tab-delineated file with three columns: chrom, start, and stop}
-
-\item{input_file}{a BAM file}
-
-\item{genome}{a fasta file of chromosome sequences}
-
-\item{min_read_count}{a whole number}
+\item{vars}{a list}
 }
 \value{
 plots
@@ -27,5 +20,4 @@ run the hairpin function
 runs hairpin function on both strands
 takes a bed file, bam file, and genome file specified by user
 takes min_read_count specified by user. Default = 1
-only output is hairpin plots
 }

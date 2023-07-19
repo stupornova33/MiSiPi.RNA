@@ -4,12 +4,10 @@
 \alias{run_siRNA_function}
 \title{run_siRNA_function}
 \usage{
-run_siRNA_function(bed_file, input_file)
+run_siRNA_function(vars)
 }
 \arguments{
-\item{bed_file}{a tab-delineated file with three columns: chrom start stop}
-
-\item{input_file}{a BAM file}
+\item{vars}{a list}
 }
 \value{
 si_res

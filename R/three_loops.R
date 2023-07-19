@@ -1,7 +1,7 @@
 #' run in process miRNA if three loops
 #' @param vienna_vec a string
 #' @param orig_loop_pos a string
-#' @param converted
+#' @param converted a string
 #' @return res_list a list
 #' @export
 

@@ -5,44 +5,34 @@
 \title{miRNA function
 processes reads according to phased miRNA algorithm
 plots output
-takes dt and strand 
 returns plots}
 \usage{
 miRNA_function(
-  test_list,
   chrom_name,
   reg_start,
   reg_stop,
-  bam_obj,
-  bam_header,
-  chr_name,
-  chr_length,
   chromosome,
+  length,
   strand,
   min_read_count,
   genome_file,
   input_file,
-  dt
+  logfile,
+  dir,
+  plot_output,
+  path_to_RNAfold
 )
 }
 \arguments{
-\item{test_list}{a bed file}
-
 \item{chrom_name}{a string}
 
 \item{reg_start}{a whole number}
 
 \item{reg_stop}{a whole number}
 
-\item{bam_obj}{a bam object created by openBamFile}
+\item{chromosome}{chrom names extracted from bam file}
 
-\item{bam_header}{header information from bam file}
-
-\item{chr_name}{chrom names extracted from bam file}
-
-\item{chr_length}{length of chromosome of interest}
-
-\item{chromosome}{index of chromosome of interest}
+\item{length}{length of chromosome of interest}
 
 \item{strand}{a character passed in, "+" or "-"}
 
@@ -52,17 +42,20 @@ miRNA_function(
 
 \item{input_file}{a BAM file}
 
-\item{dt}{a data table}
+\item{logfile}{a string}
+
+\item{dir}{a string}
+
+\item{plot_output}{a string, default = TRUE}
+
+\item{path_to_RNAfold}{a string}
 }
 \value{
 plots
-
-max_overhang
 }
 \description{
 miRNA function
 processes reads according to phased miRNA algorithm
 plots output
-takes dt and strand 
 returns plots
 }
