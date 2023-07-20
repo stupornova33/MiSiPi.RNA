@@ -102,6 +102,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    filter_r2_dt <- filter_mi_dt(chrom, chrom_name)
    if(nrow(filter_r2_dt) == 0){
      mfe <- 0
+     z_df <- NA
      overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
      overhangs$zscore <- calc_zscore(overhangs$proper_count)
      return(list(mfe,overhangs))
@@ -112,9 +113,10 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
        filter_r2_dt <- NULL
      if(nrow(r2_dt) == 0){
        mfe <- 0
+       z_df <- NA
        overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
        overhangs$zscore <- calc_zscore(overhangs$proper_count)
-       return(list(mfe,overhangs))
+       return(list(mfe,overhangs,z_df))
      }
    }
 
@@ -149,10 +151,10 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       cat(paste0(dir, logfile), "No overlapping reads found.\n", append = TRUE)
 
       mfe <- 0
-
+      z_df <- NA
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(list(mfe,overhangs))
+      return(list(mfe,overhangs, z_df))
    }
 
    # returns average count pileup for each read
@@ -162,10 +164,10 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    if(nrow(read_pileups) == 0){
       mfe <- 0
-
+      z_df <- NA
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(list(mfe,overhangs))
+      return(list(mfe,overhangs,z_df))
    }
 
    read_pileups <- read_pileups %>%
@@ -185,10 +187,10 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    loop_coord <- loop_coord %>% dplyr::filter((lstop - lstart + 1) > 2)
    if(nrow(loop_coord) == 0){
       mfe <- 0
-
+      z_df <- NA
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(list(mfe,overhangs))
+      return(list(mfe,overhangs, z_df))
    }
 
    #remove results where loop sequence has greater than 5% of total read count
@@ -212,10 +214,10 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
                              loop_coord$r2_start, loop_coord$r2_stop, dt$pos, dt$count, total_count)
    if(is.null(m_tst)){
       mfe <- 0
-
+      z_df <- NA
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(list(mfe,overhangs))
+      return(list(mfe,overhangs,z_df))
    }
 
    #m_tst <- m_tst[!sapply(m_tst, is.null)]
@@ -252,10 +254,10 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    dplyr::filter(width < 140)
    if(nrow(reduced_df) < 1){
       mfe <- 0
-
+      z_df <- NA
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(list(mfe,overhangs))
+      return(list(mfe,overhangs,z_df))
    }
 
    reduced_seqs <- getFastas(geno_seq, reduced_df$start, reduced_df$stop, nrow(reduced_df))
@@ -477,7 +479,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
          print(all_plot)
          grDevices::dev.off()
       }
-      return(c(mfe, data.frame(overhangs)))
+      return(c(mfe, data.frame(overhangs), data.frame(z_df)))
 
    }
 
@@ -485,6 +487,6 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    overhangs <- lapply(1:length(reduced_list), plot_rna_struct)
    mfe <- unlist(overhangs[[1]][[1]])
 
-   return(list(mfe, data.frame(overhangs)))
+   return(list(mfe, data.frame(overhangs), data.frame(z_df)))
 }
 

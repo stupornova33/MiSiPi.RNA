@@ -92,6 +92,7 @@ get_top_n_weighted <- function(dt, chrom_name, n){
     }
   }
 
+  final_df <- final_df %>% dplyr::select(-c(count))
   return(final_df)
 }
 
