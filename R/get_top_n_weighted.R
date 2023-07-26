@@ -33,17 +33,17 @@ get_top_n_weighted <- function(dt, chrom_name, n){
     return(final_df)
   } else {
    #testing #############
-    counts_dt <- dt %>%
-      dplyr::group_by_all() %>% dplyr::summarize(count = dplyr::n())
-
+    #counts_dt <- dt %>%
+   #  dplyr::group_by_all() %>% dplyr::summarize(count = dplyr::n())
+    counts_dt <- dt
      mn <- min(counts_dt$count)
      mx <- max(counts_dt$count)
-     window <- (mx - mn)/10
+     window <- round(mx - mn)/10
 
      if(window == 0){
         binned_tbl <- counts_dt %>% dplyr::mutate(wt_count = count)
         counts_dt <- counts_dt %>% dplyr::arrange(count)
-        final_df <- counts_dt
+        final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
      } else {
         vec <- seq((mn - 1), mx + window, by = window)
         counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
@@ -84,7 +84,7 @@ get_top_n_weighted <- function(dt, chrom_name, n){
         #select a subset
         final_df <- utils::head(res_df, 10000)
       } else {
-        final_df <- counts_dt
+        final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
       }
 
 
@@ -92,7 +92,7 @@ get_top_n_weighted <- function(dt, chrom_name, n){
     }
   }
 
-  final_df <- final_df %>% dplyr::select(-c(count))
+  #final_df <- final_df %>% dplyr::select(-c(count))
   return(final_df)
 }
 

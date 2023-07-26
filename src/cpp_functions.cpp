@@ -724,14 +724,14 @@ DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop,
   r2_start.reserve(v1_length);
   r2_stop.reserve(v1_length);
 
-  for (int i = 0; i < v1_length; i++) {
+  for (unsigned int i = 0; i < v1_length; i++) {
     int cur_l_start = lStart[i];
     int cur_l_stop = lStop[i];
     int count = 0;
 
     // Check to see if dt_col_1 is in range of the loop start and stop
     // If so, add the integer in dt_col_2 to count
-    for (int j = 0; j < dt_length; j++) {
+    for (unsigned int j = 0; j < dt_length; j++) {
       if (dt_col_1[j] >= cur_l_start &&
           dt_col_1[j] <= cur_l_stop) {
         count += dt_col_2[j];
@@ -754,3 +754,4 @@ DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop,
                                    Named("r2_start") = r2_start, Named("r2_stop") = r2_stop);
   return df;
 }
+
