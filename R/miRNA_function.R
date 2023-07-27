@@ -486,7 +486,9 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    overhangs <- lapply(1:length(reduced_list), plot_rna_struct)
    mfe <- unlist(overhangs[[1]][[1]])
+   #z_df <- unlist(overhangs[[1]][[3]])
 
-   return(list(mfe, data.frame(overhangs), data.frame(z_df)))
+   #return(list(mfe, data.frame(overhangs), data.frame(z_df)))
+   return(overhangs)
 }
 

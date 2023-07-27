@@ -289,7 +289,8 @@ DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
          y_end.push_back(y2);
       }
    }
-
+   std::cout << "CPP IS UPDATED" << std::endl;
+   //DataFrame result = DataFrame::create(Named("X Start") = x_start, Named("X End") = x_end, Named("Y Start") = y_start, Named("Y End") = y_end);
    DataFrame result = DataFrame::create(Named("X Start") = x_start, Named("X End") = x_end, Named("Y Start") = y_start, Named("Y End") = y_end);
    return(result);
 }
@@ -723,15 +724,15 @@ DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop,
   l_stop.reserve(v1_length);
   r2_start.reserve(v1_length);
   r2_stop.reserve(v1_length);
-
-  for (int i = 0; i < v1_length; i++) {
+  
+  for (unsigned int i = 0; i < v1_length; i++) {
     int cur_l_start = lStart[i];
     int cur_l_stop = lStop[i];
     int count = 0;
 
     // Check to see if dt_col_1 is in range of the loop start and stop
     // If so, add the integer in dt_col_2 to count
-    for (int j = 0; j < dt_length; j++) {
+    for (unsigned int j = 0; j < dt_length; j++) {
       if (dt_col_1[j] >= cur_l_start &&
           dt_col_1[j] <= cur_l_stop) {
         count += dt_col_2[j];
