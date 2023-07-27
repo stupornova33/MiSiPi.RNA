@@ -152,13 +152,25 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   miRNA_dir <- 'run_all/miRNA_dir/'
   mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
   mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold)
-  mirnaMFE_plus <- mi_res[[1]]
+  mirnaMFE_plus <- mi_res[[1]][[1]]
 
-  mirna_dicerz_plus <- mi_res[[2]]$zscore[5]
+  mirna_dicerz_plus <- mi_res$zscore[5]
+
+  if(mi_res$zscore[1] != "NaN"){
+    plus_overlapz <- mean(mi_res$Z_score[20:23])
+  } else {
+    plus_overlapz <- NA
+  }
 
   mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold)
-  mirnaMFE_minus <- mi_res[[1]]
-  mirna_dicerz_minus <- mi_res[[2]]$zscore[5]
+  mirnaMFE_minus <- mi_res[[1]][[1]]
+  mirna_dicerz_minus <- mi_res$zscore[5]
+
+  if(mi_res$zscore[1] != "NaN"){
+    minus_overlapz <- mean(mi_res$Z_score[20:23])
+  } else {
+    minus_overlapz <- NA
+  }
 
   if(mirna_dicerz_plus == "NaN"){
     mirna_dicerz_plus <- -33
@@ -169,6 +181,15 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   local_ml$mirnaMFE <- min(mirnaMFE_plus, mirnaMFE_minus)
   local_ml$mirna_dicerz <- max(mirna_dicerz_plus, mirna_dicerz_minus)
+
+
+  if(is.na(minus_overlapz) & !is.na(plus_overlapz)){
+    local_ml$overlapz <- plus_overlapz
+  } else if(!is.na(minus_overlapz) & is.na(plus_overlapz)){
+    local_ml$overlapz <- minus_overlapz
+  }  else {
+      local_ml$overlapz <- max(minus_overlapz, plus_overlapz)
+  }
   ################################
   # run piRNA function
   cat(file = logfile, "Begin piRNA function\n", append = TRUE)
@@ -224,7 +245,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   # add results to table
   tbl_name <- strsplit(bed_file, "[.]")[[1]][1]
   df <- as.matrix(local_ml)
-
+  print("writing to table")
   if(ncol(local_ml) < 20){
    write.table(paste0(chrom_name, ":", reg_start, "-", reg_stop), file = "less20.txt", append = TRUE)
   }

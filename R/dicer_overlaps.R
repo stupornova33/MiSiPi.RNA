@@ -32,16 +32,14 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    startdf <- data.frame(i = istartvals, j = jstartvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
    enddf <- data.frame(i = iendvals, j = jendvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
    #check to make sure start and end values are not the same. If they are, remove
-   #this may become a problem?
+
    new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
    new_enddf <- data.frame(matrix(ncol = 4, nrow = 0))
    for(i in 1:nrow(startdf)){
-     print(paste0("start$i : ", startdf$i[i], " startdf$j : ", startdf$j[i]))
      if(startdf$i[i] != startdf$j[i])
        new_startdf <- rbind(new_startdf, startdf[i,])
    }
    for(i in 1:nrow(enddf)){
-     print(paste0("enddf$i : ", enddf$i[i], " enddf$j : ", enddf$j[i]))
      if(enddf$i[i] != enddf$j[i])
        new_enddf <- rbind(new_enddf, enddf[i,])
    }
@@ -49,13 +47,11 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    startdf <- new_startdf
    enddf <- new_enddf
 
-   print(startdf)
-   print(enddf)
 
    tmp_df <- rbind(startdf, helix_df)
-   print("binding helix")
+
    final_helix_df <- rbind(tmp_df, enddf)
-   print("filtering helix j - i > 15")
+
    #remove results where segment of paired bases is less than 15nt
    final_helix_df <- final_helix_df %>% dplyr::filter(j - i > 15)
 
@@ -64,101 +60,57 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
                                  r2_start = 0, r2_width = 0, r2_end = 0)
       return(i_j_overlaps)
    }
-   print('making grouped_helix')
+
    grouped_helix <- group_helix_res(final_helix_df$i, final_helix_df$j)
-   #print(head(grouped_helix))
-   print('making filter_helix')
    filter_helix <- grouped_helix %>% dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
-   #print(head(filter_helix))
-   
-   #Removing width as it isn't needed yet and might conflict with rbind in the for loop
-   #Moving rname to end for symmetry with dicer_dt
+
+
    i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0))
    j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0))
-   
+
    #print('dicer_dt')
    #print(head(dicer_dt))
    dicer_dt <- dicer_dt %>%
      data.frame() %>%
      dplyr::select(c(start, end, rname))
-   
-   
-   print('getting i,j idx')
+
    if(nrow(filter_helix) > 0){
-      for(i in 1:nrow(filter_helix)){
-         
-         # Make a range of position numbers from x.start to x.end for each row
-         # If any of the dicer_dt start or end positions fall in that range, then store the index of which ones those are
-         # Take the dicer_dt rows that have positions that fall in the range, and append them to a table called i_dat
-         # Essentially filter dicer_dt for rows that have start or end positions withing the range of the current iteration of the helix range
-         x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i]) 
-         
-         # Now do the exact same thing for y.start and y.end for each row and store those reads in j_dat
-         #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i]) # Seq doesn't need to be reversed here. if you're just searching for a match in the range, the range direction is irrelevent
-         y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
-         
-         #i_idx <- which(dicer_dt$start %in% x_rng | dicer_dt$end %in% x_rng)
-         #j_idx <- which(dicer_dt$start %in% y_rng | dicer_dt$end %in% y_rng)
-         i_idx <- which(dicer_dt$start %in% x_rng)
-         j_idx <- which(dicer_dt$start %in% y_rng)
-         
-         print("i_idx:")
-         print(i_idx)
+     for(i in 1:nrow(filter_helix)){
 
-         i_dat <- rbind(i_dat, dicer_dt[i_idx,])
-         j_dat <- rbind(j_dat, dicer_dt[j_idx,])
-      }
-      
-      # Now lets calculate the width and add that column.
-      # This will be used to translate the read start and stop positions soon
-      i_dat <- i_dat %>%
-         dplyr::mutate(width = end - start + 1)
-      #j_dat <- j_dat %>%
-      #   dplyr::mutate(width = end - start + 1)
-      
-      
-      # Store the index of the i_dat start positions as they appear in final_helix_df$i
-      # This will be used to translate them to their paired $j position soon
-      i_paired_idx <- which(i_dat$start %in% final_helix_df$i)
-      #i_paired_idx <- which(i_dat$start %in% filter_helix$X.Start)
-      print("i_paired_idx:")
-      print(i_paired_idx)
+       # Make a range of position numbers from x.start to x.end for each row
+       # If any of the dicer_dt start or end positions fall in that range, then store the index of which ones those are
+       # Take the dicer_dt rows that have positions that fall in the range, and append them to a table called i_dat
+       # Essentially filter dicer_dt for rows that have start or end positions withing the range of the current iteration of the helix range
+       x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
 
-      print('setting paired pos')
-      #since we're converting to the paired position, we should take $j for i_dat, n'est pas?
-      #should we be using filter_helix_df instead of final?
-      #i_dat$paired_pos <- final_helix_df$j[i_paired_idx]
-      #i_dat$paired_pos <- filter_helix$Y.Start[i_paired_idx]
-      i_dat$paired_pos <- final_helix_df$j[i_idx]
-      
-      i_dat <- i_dat %>%
-         dplyr::mutate(paired_end = paired_pos + width - 1)
-      i_dat <- i_dat %>%
-         dplyr::select(rname, paired_pos, paired_end)
-      i_dat <- i_dat %>%
-         dplyr::rename(start = paired_pos, end = paired_end)
-      
-      j_dat <- j_dat %>%
-         dplyr::relocate(rname)
-      
-      #get reads that start or end at a paired position
-      #i_dat <- i_dat[,c("paired_pos", "end", "rname")]
-      #i_dat$width <- (i_dat$end - i_dat$paired_pos + 1)
-      #i_dat <- i_dat[,c("paired_pos", "width", "rname")]
-      #i_dat$end <- (i_dat$paired_pos + i_dat$width - 1) # Why tho???
+       # Now do the exact same thing for y.start and y.end for each row and store those reads in j_dat
+       #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i]) # Seq doesn't need to be reversed here. if you're just searching for a match in the range, the range direction is irrelevent
+       y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
 
-      #i_dat <- i_dat %>% dplyr::rename("start" = paired_pos)
+       i_idx <- which(dicer_dt$start %in% x_rng)
+       j_idx <- which(dicer_dt$start %in% y_rng)
 
-      #j_dat$paired_pos <- final_helix_df$j[j_idx]
+       i_dat <- rbind(i_dat, dicer_dt[i_idx,])
+       j_dat <- rbind(j_dat, dicer_dt[j_idx,])
+     }
 
+     # Now lets calculate the width and add that column.
+     # This will be used to translate the read start and stop positions soon
+     i_dat <- i_dat %>%
+       dplyr::mutate(width = end - start + 1)
 
-      #j_dat <- j_dat[c("paired_pos", "end", "rname")]
-      #j_dat$width <- (j_dat$end - j_dat$paired_pos + 1)
-      #j_dat <- j_dat[,c("paired_pos", "width", "rname")]
-      #j_dat$end <- (j_dat$paired_pos + j_dat$width - 1)
+     #since we're converting to the paired position, we should take $j for i_dat
+     i_dat$paired_pos <- final_helix_df$j[i_idx]
 
+     i_dat <- i_dat %>%
+       dplyr::mutate(paired_end = paired_pos + width - 1)
+     i_dat <- i_dat %>%
+       dplyr::select(rname, paired_pos, paired_end)
+     i_dat <- i_dat %>%
+       dplyr::rename(start = paired_pos, end = paired_end)
 
-      #j_dat <- j_dat %>% dplyr::rename("start" = paired_pos)
+     j_dat <- j_dat %>%
+       dplyr::relocate(rname)
 
       if(nrow(i_dat) > 2000 | nrow(j_dat) > 2000){
          #shuffle order of dts and randomly select sample
@@ -168,13 +120,9 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
          i_dat <- utils::head(i_dat, 2000)
          j_dat <- utils::head(j_dat, 2000)
       }
-      print('omitting NA')
       i_dat <- i_dat %>% stats::na.omit(i_dat)
       j_dat <- j_dat %>% stats::na.omit(j_dat)
-      print('finding overlaps')
-      print("Print this statement")
-      print(head(i_dat))
-      print(head(j_dat))
+
       if(!nrow(i_dat) == 0 && !nrow(j_dat) == 0){
         i_j_overlaps <- find_overlaps(i_dat, j_dat)
       } else {
