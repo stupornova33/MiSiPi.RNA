@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 src/*.o
+src/RcppExports.cpp
+R/RcppExports.R
