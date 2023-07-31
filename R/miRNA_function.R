@@ -58,10 +58,14 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    read_dist <- get_read_dist(chrom_p, chrom_m)
 
+   # Moved this code block up so that the getChr functions don't have to be called again
+   if(strand == "-"){
+      chrom <- chrom_m
+   } else {
+      chrom <- chrom_p
+   }
    chrom_m <- NULL
    chrom_p <- NULL
-   #plus_dt <- NULL
-   #minus_dt <- NULL
 
    if(strand == "-"){
       bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
@@ -69,20 +73,20 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what=c('rname', 'pos', 'qwidth'), which=which)
    } else{
       bam_scan <- Rsamtools::ScanBamParam(what=c('rname', 'pos', 'strand','qwidth'), which=which)
-
    }
-
 
    pileups <- get_read_pileups(reg_start, reg_stop, bam_scan, input_file)
 
+   # I think this was already done in the get_read_pileups function
+   # consider removing
    dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
 
    struct_dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
+
    empty_table <- data.frame(pos = c(seq(reg_start, reg_stop)), count = c(0))
 
    dt_table <- merge(empty_table, struct_dt, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
    dt_table[is.na(dt_table)] = 0
-
 
    if(nrow(dt) == 0){
       mfe <- 0
@@ -94,13 +98,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    ########################################################## main logic ################################################################
    ## make the read data tables
-   if(strand == "-"){
-      chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-   } else {
-      chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-   }
-
    filter_r2_dt <- filter_mi_dt(chrom, chrom_name)
+
    if(nrow(filter_r2_dt) == 0){
      mfe <- 0
      z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
@@ -109,9 +108,9 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
      return(c(mfe,data.frame(overhangs, z_df)))
 
    } else {
-       r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
-       r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
-       filter_r2_dt <- NULL
+      r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
+      r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
+      filter_r2_dt <- NULL
      if(nrow(r2_dt) == 0){
        mfe <- 0
        z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
@@ -120,8 +119,6 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
        return(c(mfe,data.frame(overhangs,z_df)))
      }
    }
-
-
 
    chrom <- NULL
 
@@ -158,8 +155,13 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       return(c(mfe,data.frame(overhangs, z_df)))
    }
 
+   # Keep only distinct rows in overlaps, but mutate in a column to keep track of the number of duplicates that were present
+   overlaps_group <- overlaps %>%
+      dplyr::group_by_all() %>%
+      dplyr::count()
+
    # returns average count pileup for each read
-   read_pileups <- getPileups(dt$pos, dt$count, overlaps$start_r1, overlaps$end_r1, overlaps$start_r2, overlaps$end_r2)# %>%
+   read_pileups <- getPileupsMap(dt$pos, dt$count, overlaps_group$start_r1, overlaps_group$end_r1, overlaps_group$start_r2, overlaps_group$end_r2, overlaps_group$n)# %>%
       #dplyr::filter(r1_count_avg >= 1 & r2_count_avg >= 1)
    overlaps <- NULL
 
@@ -199,6 +201,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    m_tst <- getLoopPileupsCPP(loop_coord$r1_start, loop_coord$r1_stop, loop_coord$lstart, loop_coord$lstop,
                              loop_coord$r2_start, loop_coord$r2_stop, dt$pos, dt$count, total_count)
+
    if(is.null(m_tst)){
       mfe <- 0
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
@@ -238,7 +241,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    #use IRanges accessor functions to get values
    reduced_df <- data.frame("start" = IRanges::start(reduce_ir), "stop"= IRanges::start(reduce_ir) + IRanges::width(reduce_ir) - 1, "width" = IRanges::width(reduce_ir)) %>%
-   dplyr::filter(width < 140)
+      dplyr::filter(width < 140)
    if(nrow(reduced_df) < 1){
       mfe <- 0
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
@@ -248,7 +251,6 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    }
 
    reduced_seqs <- getFastas(geno_seq, reduced_df$start, reduced_df$stop, nrow(reduced_df))
-
    converted <- list(convertU(reduced_seqs$Seq, nrow(reduced_seqs)))
 
    converted <- data.frame('V1' = unname(unlist(converted)))
@@ -286,7 +288,6 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    print('making fold_list')
    ################################################################################################################
-
    fold_list <- mapply(fold_short_rna, reduced_df$start, reduced_df$stop, reduced_df$converted, path_to_RNAfold)
 
    make_reduced_list <- function(x){
@@ -301,7 +302,6 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    }
 
    reduced_list <- lapply(1:length(fold_list), make_reduced_list)
-
 
    plot_rna_struct <- function(x){
       pos <- count <- count.x <- NULL
@@ -471,12 +471,9 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    }
 
-
    overhangs <- lapply(1:length(reduced_list), plot_rna_struct)
    mfe <- unlist(overhangs[[1]][[1]])
-   #z_df <- unlist(overhangs[[1]][[3]])
 
-   #return(list(mfe, data.frame(overhangs), data.frame(z_df)))
    return(overhangs)
 }
 

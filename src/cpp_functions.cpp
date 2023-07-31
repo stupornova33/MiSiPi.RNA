@@ -193,46 +193,139 @@ DataFrame getPileups(std::vector<int> dtpos, std::vector<int> dtcount, std::vect
       int r1_running_total = 0;
       int r2_running_total = 0;
 
-      for(int j = start_r1[i]; j <= end_r1[i]; j++){
+      
+      // Assumes start_r1 and start_r2 are of same length
+      // Need to confirm
+      for(int j = start_r1[i], k = start_r2[i]; j <= end_r1[i]; j++, k++){
          //create iterator for r1
          std::vector<int>::iterator it_r1;
-         it_r1 = std::find(dtpos.begin(), dtpos.end(), j);
-         if (it_r1 == dtpos.end()) {
-            continue;
-         }
-         int index_r1 = it_r1 - dtpos.begin();
-         r1_running_total += dtcount[index_r1];
-      }
-      if (r1_running_total == 0) {
-         continue;
-      }
-
-      for(int k = start_r2[i]; k <= end_r2[i]; k++){
-         //create iterator for r2
          std::vector<int>::iterator it_r2;
+         it_r1 = std::find(dtpos.begin(), dtpos.end(), j);
          it_r2 = std::find(dtpos.begin(), dtpos.end(), k);
-         if (it_r2 == dtpos.end()) {
-            continue;
+         // Might need to change this to check before incrementing total instead of continuing here
+         int index_r1, index_r2;
+         if (it_r1 != dtpos.end()) {
+            index_r1 = it_r1 - dtpos.begin();
+            r1_running_total += dtcount[index_r1];
          }
-         int index_r2 = it_r2 - dtpos.begin();
-         r2_running_total += dtcount[index_r2];
+         if (it_r2 != dtpos.end()) {
+            index_r2 = it_r2 - dtpos.begin();
+            r2_running_total += dtcount[index_r2];
+         }
       }
-      if (r2_running_total == 0) {
-         continue;
+      
+      int r1_count_average, r2_count_average;
+      if (r1_running_total != 0) {
+         r1_count_average = r1_running_total / read_r1_length;
+         res_start_r1.emplace_back(r1_start);
+         res_end_r1.emplace_back(r1_end);
+         res_r1_avg.emplace_back(r1_count_average);
       }
-
-
-      int r1_count_average = r1_running_total / read_r1_length;
-      int r2_count_average = r2_running_total / read_r2_length;
-
-      res_start_r1.emplace_back(r1_start);
-      res_end_r1.emplace_back(r1_end);
-      res_r1_avg.emplace_back(r1_count_average);
-      res_start_r2.emplace_back(r2_start);
-      res_end_r2.emplace_back(r2_end);
-      res_r2_avg.emplace_back(r2_count_average);
+      if (r2_running_total != 0) {
+         r2_count_average = r2_running_total / read_r2_length;
+         res_start_r2.emplace_back(r2_start);
+         res_end_r2.emplace_back(r2_end);
+         res_r2_avg.emplace_back(r2_count_average);
+      }
    }
 
+   DataFrame df = DataFrame::create(Named("r1_start") = res_start_r1, Named("r1_end") = res_end_r1, Named("r1_count_avg") = res_r1_avg,
+                                    Named("r2_start") = res_start_r2, Named("r2_end") = res_end_r2, Named("r2_count_avg") = res_r2_avg);
+   return df;
+}
+
+//[[Rcpp::export]]
+std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
+   // Assumes vectors of same length
+   // Only call from getPileupsMap which should only be called with data.frame input
+   std::cout << "!!Assertion upcoming!!" << std::endl;
+   std::cout << "Checking if dtpos.size() and dtcount.size() are equal..." << std::endl;
+   assert(k.size() == v.size());
+
+   std::map<int, int> m;
+   std::transform(k.begin(), k.end(), v.begin(), std::inserter(m, m.end()),
+                  [](int a, int b) {
+                     return std::make_pair(a, b); 
+                  });
+   return m;
+}
+
+//[[Rcpp::export]]
+DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
+                     std::vector<int> start_r2, std::vector<int> end_r2, std::vector<int> count){
+   //calculates the average pileup for a read using counts at each nucleotide position
+   //takes position from read pileups df, count at that position, start pos of candidate read, end pos of candidate read
+   
+   int memory_reserve = start_r1.size();
+   
+   std::map<int, int> dt = vectorsToMap(dtpos, dtcount);
+   
+   std::vector<int> res_start_r1;
+   res_start_r1.reserve(memory_reserve);
+   std::vector<int> res_end_r1;
+   res_end_r1.reserve(memory_reserve);
+   std::vector<int> res_start_r2;
+   res_start_r2.reserve(memory_reserve);
+   std::vector<int> res_end_r2;
+   res_end_r2.reserve(memory_reserve);
+   std::vector<int> res_r1_avg;
+   res_r1_avg.reserve(memory_reserve);
+   std::vector<int> res_r2_avg;
+   res_r2_avg.reserve(memory_reserve);
+   
+   //pileups is a vector of all positions and counts
+   int r1_length = end_r1.size();
+   //iterate through the vector of end positions
+   for (int i = 0; i < r1_length; i++) {
+      int r1_start = start_r1[i];
+      int r1_end = end_r1[i];
+      int r2_start = start_r2[i];
+      int r2_end = end_r2[i];
+      int duplicate_count = count[i];
+
+      //set read length to be read end - read start
+      //set start to be read_start_vec at pos i
+      int read_r1_length = r1_end - r1_start + 1;
+      int read_r2_length = r2_end - r2_start + 1;
+      
+      int r1_running_total = 0;
+      int r2_running_total = 0;
+      
+      std::map<int, int>::iterator it;
+      
+      for (int j = r1_start; j < r1_end; j++) {
+         it = dt.find(j);
+         if (it != dt.end()) {
+            r1_running_total += it->second;
+         }
+      }
+      for (int k = r2_start; k < r2_end; k++) {
+         it = dt.find(k);
+         if (it != dt.end()) {
+            r2_running_total += it->second;
+         }
+      }
+      
+      int r1_count_average, r2_count_average;
+      if (r1_running_total != 0) {
+         // This was added in to reduce the number of iterations which was approaching 1 billion
+         // Used dplyr to group all the duplicate overlap reads and mutate in a count column to keep track of the number of duplicates
+         // That way we only have to iterate through each read range once and multiply the results by the number of duplicates
+         r1_running_total *= duplicate_count;
+         r1_count_average = r1_running_total / read_r1_length;
+         res_start_r1.emplace_back(r1_start);
+         res_end_r1.emplace_back(r1_end);
+         res_r1_avg.emplace_back(r1_count_average);
+      }
+      if (r2_running_total != 0) {
+         r2_running_total *= duplicate_count;
+         r2_count_average = r2_running_total / read_r2_length;
+         res_start_r2.emplace_back(r2_start);
+         res_end_r2.emplace_back(r2_end);
+         res_r2_avg.emplace_back(r2_count_average);
+      }
+   }
+   
    DataFrame df = DataFrame::create(Named("r1_start") = res_start_r1, Named("r1_end") = res_end_r1, Named("r1_count_avg") = res_r1_avg,
                                     Named("r2_start") = res_start_r2, Named("r2_end") = res_end_r2, Named("r2_count_avg") = res_r2_avg);
    return df;
