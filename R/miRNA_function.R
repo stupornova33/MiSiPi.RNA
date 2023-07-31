@@ -31,7 +31,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(mfe,overhangs))
+      #return(c(mfe,overhangs))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    bam_obj <- OpenBamFile(input_file, logfile)
@@ -93,7 +94,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(mfe,overhangs, z_df))
+      #return(c(mfe,overhangs, z_df))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    ########################################################## main logic ################################################################
@@ -105,7 +107,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
      z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
      overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
      overhangs$zscore <- calc_zscore(overhangs$proper_count)
-     return(c(mfe,data.frame(overhangs, z_df)))
+     #return(c(mfe,data.frame(overhangs, z_df)))
+     return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
 
    } else {
       r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
@@ -116,7 +119,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
        z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
        overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
        overhangs$zscore <- calc_zscore(overhangs$proper_count)
-       return(c(mfe,data.frame(overhangs,z_df)))
+       #return(c(mfe,data.frame(overhangs,z_df)))
+       return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
      }
    }
 
@@ -128,7 +132,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(mfe,data.frame(overhangs,z_df)))
+      #return(c(mfe,data.frame(overhangs,z_df)))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    #returns overlaps
@@ -152,7 +157,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(mfe,data.frame(overhangs, z_df)))
+      #return(c(mfe,data.frame(overhangs, z_df)))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    # Keep only distinct rows in overlaps, but mutate in a column to keep track of the number of duplicates that were present
@@ -170,7 +176,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(data.frame(mfe,overhangs,z_df)))
+      #return(c(data.frame(mfe,overhangs,z_df)))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    read_pileups <- read_pileups %>%
@@ -193,7 +200,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(data.frame(mfe,overhangs, z_df)))
+      #return(c(data.frame(mfe,overhangs, z_df)))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    #remove results where loop sequence has greater than 5% of total read count
@@ -207,7 +215,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(data.frame(mfe,overhangs,z_df)))
+      #return(c(data.frame(mfe,overhangs,z_df)))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    #m_tst <- m_tst[!sapply(m_tst, is.null)]
@@ -247,7 +256,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
       overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      return(c(mfe,data.frame(overhangs,z_df)))
+      #return(c(mfe,data.frame(overhangs,z_df)))
+      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
    }
 
    reduced_seqs <- getFastas(geno_seq, reduced_df$start, reduced_df$stop, nrow(reduced_df))
@@ -303,6 +313,12 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    reduced_list <- lapply(1:length(fold_list), make_reduced_list)
 
+
+
+
+
+
+
    plot_rna_struct <- function(x){
       pos <- count <- count.x <- NULL
       prefix <- paste0(dir, chrom_name, "-", reduced_list[[x]]$start, "-", reduced_list[[x]]$stop)
@@ -335,11 +351,12 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       overhang_output$locus <- paste0(chrom_name, "_", reduced_list[[x]]$start, "_", reduced_list[[x]]$stop)
       overhang_output <- overhang_output[, c(10, 1:9)]
 
+      dice_file <- paste0(dir, "miRNA_dicerz.txt")
       suppressWarnings(
-         if(!file.exists("miRNA_dicerz.txt")){
-            utils::write.table(overhang_output, file = paste0(dir, "miRNA_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+         if(!file.exists(dice_file)){
+            utils::write.table(overhang_output, file = dice_file, sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
          } else {
-            utils::write.table(overhang_output, file = paste0(dir, "miRNA_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+            utils::write.table(overhang_output, file = dice_file, quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
          }
       )
 
@@ -467,13 +484,10 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
          print(all_plot)
          grDevices::dev.off()
       }
-      return(c(mfe, data.frame(overhangs), data.frame(z_df)))
-
+      return(list("mfe" = mfe, "overhangs" = c(overhangs,z_df)))
    }
 
-   overhangs <- lapply(1:length(reduced_list), plot_rna_struct)
-   mfe <- unlist(overhangs[[1]][[1]])
+   results <- lapply(1:length(reduced_list), plot_rna_struct)
 
-   return(overhangs)
+   return(results)
 }
-
