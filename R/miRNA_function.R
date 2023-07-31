@@ -21,7 +21,6 @@
 
 miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
                            strand, min_read_count, genome_file, input_file, logfile, dir, plot_output, path_to_RNAfold){
-   tictoc::tic("Total")
    print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
     cat(file = paste0(dir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
    pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
@@ -54,17 +53,11 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
 
    #for the read size distribution plot
-   tictoc::tic("getChrMinus")
    chrom_m <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   tictoc::tic("getChrPlus")
    chrom_p <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   
-   tictoc::tic("get_read_dist")
+
    read_dist <- get_read_dist(chrom_p, chrom_m)
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   
+
    # Moved this code block up so that the getChr functions don't have to be called again
    if(strand == "-"){
       chrom <- chrom_m
@@ -82,16 +75,14 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       bam_scan <- Rsamtools::ScanBamParam(what=c('rname', 'pos', 'strand','qwidth'), which=which)
    }
 
-   tictoc::tic("get_read_pileups")
    pileups <- get_read_pileups(reg_start, reg_stop, bam_scan, input_file)
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   
+
    # I think this was already done in the get_read_pileups function
    # consider removing
    dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
-   
+
    struct_dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
-   
+
    empty_table <- data.frame(pos = c(seq(reg_start, reg_stop)), count = c(0))
 
    dt_table <- merge(empty_table, struct_dt, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
@@ -108,7 +99,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    ########################################################## main logic ################################################################
    ## make the read data tables
    filter_r2_dt <- filter_mi_dt(chrom, chrom_name)
-   
+
    if(nrow(filter_r2_dt) == 0){
      mfe <- 0
      z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
@@ -141,18 +132,14 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    }
 
    #returns overlaps
-   tictoc::tic("find_overlaps()")
    overlaps <- find_overlaps(r1_dt, r2_dt) %>%
       dplyr::mutate(r1_end = r1_end - 59) %>%
       dplyr::mutate(r1_width = r1_end - r1_start + 1)
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   
+
    #need to filter to remove self matches, get dist between end of R1 and start of R2
    size <- nrow(overlaps)
-   tictoc::tic("get_nearby()")
    overlaps <- get_nearby(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_end, 60, size)
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   
+
    overlaps <- overlaps %>%
       dplyr::filter(dist > 2) %>%
       #dplyr::mutate(end_r1 = start_r1 + widthx - 1, end_r2 = start_r2 + widthy - 1) %>%
@@ -169,18 +156,14 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    }
 
    # Keep only distinct rows in overlaps, but mutate in a column to keep track of the number of duplicates that were present
-   tictoc::tic("Overlaps group_by_all()")
    overlaps_group <- overlaps %>%
       dplyr::group_by_all() %>%
       dplyr::count()
-   tictoc::toc(log = TRU, quiet = FALSE)
-   
+
    # returns average count pileup for each read
-   tictoc::tic("getPileupsMap()")
    read_pileups <- getPileupsMap(dt$pos, dt$count, overlaps_group$start_r1, overlaps_group$end_r1, overlaps_group$start_r2, overlaps_group$end_r2, overlaps_group$n)# %>%
       #dplyr::filter(r1_count_avg >= 1 & r2_count_avg >= 1)
    overlaps <- NULL
-   tictoc::toc(log = TRUE, quiet = FALSE)
 
    if(nrow(read_pileups) == 0){
       mfe <- 0
@@ -234,7 +217,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    loop_seqs <- getFastas(geno_seq, df$lstart, df$lstop, nrow(df))
    r1_seqs <- getFastas(geno_seq, df$r1_start, df$r1_stop, nrow(df))
    r2_seqs <- getFastas(geno_seq, df$r2_start, df$r2_stop, nrow(df))
-   
+
    final_coord <- data.frame(start = r1_seqs$start, stop = r2_seqs$stop, r1_seq = r1_seqs$Seq, loop_seq = loop_seqs$Seq, r2_seq = r2_seqs$Seq) %>%
       dplyr::mutate(whole_seq = stringr::str_c(r1_seq, loop_seq, r2_seq)) %>%
       dplyr::select(c(start, stop, whole_seq)) %>%
@@ -269,7 +252,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    reduced_seqs <- getFastas(geno_seq, reduced_df$start, reduced_df$stop, nrow(reduced_df))
    converted <- list(convertU(reduced_seqs$Seq, nrow(reduced_seqs)))
-   
+
    converted <- data.frame('V1' = unname(unlist(converted)))
    reduced_df$converted <- converted$V1
 
@@ -302,13 +285,11 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    # Define the outer loop vector to iterate over
    seq_pileup <- lapply(1:nrow(reduced_df), apply_outer)
-   
+
    print('making fold_list')
    ################################################################################################################
-   tictoc::tic("fold_short_rna")
    fold_list <- mapply(fold_short_rna, reduced_df$start, reduced_df$stop, reduced_df$converted, path_to_RNAfold)
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   
+
    make_reduced_list <- function(x){
       start <- fold_list[[x]][[2]]
       stop <- fold_list[[x]][[3]]
@@ -490,16 +471,9 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    }
 
-   tictoc::tic("plot_rna_struct()")
    overhangs <- lapply(1:length(reduced_list), plot_rna_struct)
-   tictoc::toc(log = TRUE, quiet = FALSE)
    mfe <- unlist(overhangs[[1]][[1]])
- 
-   # End of tictoc::tic("Total")
-   tictoc::toc(log = TRUE, quiet = FALSE)
-   log.txt <- tictoc::tic.log(format = TRUE)
-   log2 <- "benchmarks.txt"
-   cat(file = paste0(dir,log2), unlist(log.txt), append = TRUE)
+
    return(overhangs)
 }
 
