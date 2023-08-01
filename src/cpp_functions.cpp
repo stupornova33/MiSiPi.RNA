@@ -1,6 +1,18 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
+
+//' mergePileups
+//'
+//' This function takes in vectors of start and end positions and pileups positions and their counts
+//' It returns a dataframe with only the positions from start and the related counts as found in pileups_count
+//'
+//' @param start A vector of ints
+//' @param end A vector of ints
+//' @param pileups_pos A vector of ints
+//' @param pileups_count A vector of ints
+//' @return A data.frame consisting of positions and the counts associated with those positions
+//' @export
 //[[Rcpp::export]]
 DataFrame mergePileups(std::vector<int> start, std::vector<int> end, std::vector<int> pileups_pos, std::vector<int> pileups_count){
    int startSize = start.size();
@@ -41,6 +53,20 @@ DataFrame mergePileups(std::vector<int> start, std::vector<int> end, std::vector
    return df;
 }
 
+//' get_nearby
+//'
+//' This function takes in vectors of start and end positions from 2 sets of reads
+//' It also takes in an integer that sets the maximum distance apart the reads should be and an integer that tracks the size of the input vectors
+//' It returns a data.frame of reads that are nearby - determined by max_dist - but not overlapping
+//'
+//' @param f_start A vector of ints
+//' @param f_end A vector of ints
+//' @param r_start A vector of ints
+//' @param r_end A vector of ints
+//' @param max_dist An integer
+//' @param dfsize An integer
+//' @return A data.frame of nearby reads
+//' @export
 //[[Rcpp::export]]
 DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r_start, IntegerVector r_end, int max_dist, int dfsize){
 // Calculate the distance between overlapping read pairs
@@ -107,7 +133,18 @@ DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r
 
 }
 
-
+//' getFastas
+//'
+//' This function takes in a fasta sequence as a string, an int vector of start positions, an int vector of stop positions,
+//' and an int to track the size of the input vectors.
+//' It returns a data.frame containing each input start and stop positions along with the fasta sequence associated with those positions
+//'
+//' @param input_str A vector of ints
+//' @param start A vector of ints
+//' @param stop A vector of ints
+//' @param size An integer
+//' @return A data.frame consisting of start and stop positions along with their fasta sequence
+//' @export
 //[[Rcpp::export]]
 DataFrame getFastas(std::string input_str, IntegerVector start, IntegerVector stop, int size){
    int memory_reserve = size;
@@ -130,6 +167,16 @@ DataFrame getFastas(std::string input_str, IntegerVector start, IntegerVector st
 }
 
 
+//' convertU
+//'
+//' This function takes in input_str, a vector of strings of nucleotides and converts all 'T's found to 'U's
+//' It also takes in an integer called size to track the size of the number of strings in the vector
+//' It returns the the vector of converted strings
+//'
+//' @param input_str A vector of strings
+//' @param size An integer
+//' @return A vector of strings containing the converted sequences
+//' @export
 //[[Rcpp::export]]
 std::vector<std::string> convertU(std::vector<std::string> input_str, int size){
    std::vector<std::string> converted;
@@ -152,8 +199,20 @@ std::vector<std::string> convertU(std::vector<std::string> input_str, int size){
 }
 
 
-//[[Rcpp::export]]
 
+//' getPileups
+//'
+//' This function takes in a fasta sequence as a string, an int vector of start positions, an int vector of stop positions,
+//' and an int to track the size of the input vectors.
+//' It returns a data.frame containing each input start and stop positions along with the fasta sequence associated with those positions
+//'
+//' @param input_str A vector of ints
+//' @param start A vector of ints
+//' @param stop A vector of ints
+//' @param size An integer
+//' @return A data.frame consisting of start and stop positions along with their fasta sequence
+//' @export
+//[[Rcpp::export]]
 DataFrame getPileups(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
                      std::vector<int> start_r2, std::vector<int> end_r2){
 //calculates the average pileup for a read using counts at each nucleotide position
@@ -234,6 +293,18 @@ DataFrame getPileups(std::vector<int> dtpos, std::vector<int> dtcount, std::vect
    return df;
 }
 
+
+//' vectorsToMap
+//'
+//' This function takes takes in references to vectors of keys and values
+//' These keys and values are turned into pairs in a std::map and returned
+//' This function assumes the vectors are of the same size.
+//' This is only intended to be called from getPileupsMap
+//'
+//' @param k A referenced vector of integers representing keys
+//' @param v A referenced vector of integers representing values
+//' @return A std::map of int pairs
+//' @export
 //[[Rcpp::export]]
 std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
    // Assumes vectors of same length
@@ -250,6 +321,22 @@ std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
    return m;
 }
 
+
+//' getPileupsMap
+//'
+//' This function takes in 2 vectors of calculated pileups and their positions.
+//' It also takes in vectors representing start and end positions of read group 1 and 2 with a vector tracking their duplicates
+//' It converts the pileups vectors into a std::map and calculates the average pileups in a particular read range and returns it in a data.frame
+//'
+//' @param dtpos A vector of ints representing positions
+//' @param dtcount A vector of ints representing the pileups at each dtpos position
+//' @param start_r1 A vector of start positions from read group 1
+//' @param end_r1 A vector of end positions from read group 2
+//' @param start_r2 A vector of start positions from read group 2
+//' @param end_r2 A vector of end positions from read group 2
+//' @param count A vector of ints representing the number of duplicates each start_r1, end_r1, start_r2, end_r2 had prior to grouping 
+//' @return A data.frame consisting of the average pileups in read 1 range and in read 2 range
+//' @export
 //[[Rcpp::export]]
 DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
                      std::vector<int> start_r2, std::vector<int> end_r2, std::vector<int> count){
@@ -331,6 +418,16 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
    return df;
 }
 
+//' group_helix_res
+//'
+//' This function takes in two vectors of paired positions. It iterates through each and tests to see if a the
+//' positions have changed by more than 4 nt in order to track potential hairpin loops.
+//' It returns a data.frame consisting of x start and stop positions along with their respective y start and stop positions
+//'
+//' @param x A vector of ints
+//' @param y A vector of ints
+//' @return A data.frame consisting of start and stop positions for both x and y
+//' @export
 //[[Rcpp::export]]
 DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
    int X_SIZE = x.size();
@@ -382,13 +479,22 @@ DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
          y_end.push_back(y2);
       }
    }
-   std::cout << "CPP IS UPDATED" << std::endl;
-   //DataFrame result = DataFrame::create(Named("X Start") = x_start, Named("X End") = x_end, Named("Y Start") = y_start, Named("Y End") = y_end);
    DataFrame result = DataFrame::create(Named("X Start") = x_start, Named("X End") = x_end, Named("Y Start") = y_start, Named("Y End") = y_end);
    return(result);
 }
 
 
+//' calc_overhangs
+//'
+//' This function takes in vectors of start and stop positions for read groups 1 and 2
+//' It then shifts the positions and checks to see which sets have proper and improper overhangs
+//' 
+//' @param r1_start A vector of ints
+//' @param r1_end A vector of ints
+//' @param r2_start A vector of ints
+//' @param r2_end A vector of ints
+//' @return A data.frame representing the number of proper and improper overhangs calculated at each shift position
+//' @export
 //[[Rcpp::export]]
 DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
                          std::vector<int> r2_start, std::vector<int> r2_width){
@@ -421,6 +527,18 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
    return(overhangs);
 }
 
+//' calc_expand_overhangs
+//'
+//' This function takes in vectors of start and stop positions for read groups 1 and 2
+//' It then shifts the positions and checks to see which sets have proper and improper overhangs
+//' Over a larger distance of shifts compared to calc_overhangs
+//' 
+//' @param r1_start A vector of ints
+//' @param r1_end A vector of ints
+//' @param r2_start A vector of ints
+//' @param r2_end A vector of ints
+//' @return A data.frame representing the number of proper and improper overhangs calculated at each shift position
+//' @export
 //[[Rcpp::export]]
 DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
                          std::vector<int> r2_start, std::vector<int> r2_width){
@@ -453,8 +571,14 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
   return(overhangs);
 }
 
-
-
+//' proper_overlap
+//'
+//' This function takes in two integers representing widths and returns a proper overlap
+//' 
+//' @param widthx An Integer
+//' @param widthy An Integer
+//' @return proper_overlap An integer representing what the proper overlap should be for these positions
+//' @export
 //[[Rcpp::export]]
 int proper_overlap(int widthx, int widthy) {
    // widthx = 15 widthy = 15
@@ -474,7 +598,19 @@ int proper_overlap(int widthx, int widthy) {
    return proper_overlap;
 }
 
-
+//' overlap_counts
+//'
+//' This function takes in vectors of start positions from read group 1 and end positions from read group 2
+//' It also takes in an overlap amount integer
+//' The function counts the number of overlaps occurring and returns them as an integer
+//' 
+//' @param f_start A vector of ints
+//' @param X_SIZE An Integer
+//' @param r_end A vector of ints
+//' @param Y_SIZE An Integer
+//' @param overlap An Integer
+//' @return count An Integer representing the number of overlaps present
+//' @export
 //[[Rcpp::export]]
 int overlap_counts(std::vector<int> f_start, int X_SIZE,
                    std::vector<int> r_end, int Y_SIZE,
@@ -500,8 +636,19 @@ int overlap_counts(std::vector<int> f_start, int X_SIZE,
 
 }
 
-
-
+//' get_si_overlaps
+//'
+//' This function takes in vectors of start and stop positions for read groups 1 and 2
+//' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
+//' 
+//' @param fdt_start A vector of ints
+//' @param fdt_end A vector of ints
+//' @param fwidth An integer
+//' @param rdt_start A vector of ints
+//' @param rdt_end A vector of ints
+//' @param rwidth An integer
+//' @return result A matrix representing the overlaps present at each width of reads from 15-32
+//' @export
 //[[Rcpp::export]]
 NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
@@ -590,7 +737,19 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
    return(result);
 }
 
-
+//' get_phased_dist
+//'
+//' This function takes in vectors of start and stop positions for read groups 1 and 2
+//' It calculates the distance between the end of one group and start of another and returns
+//' The results in a data.frame
+//' 
+//' @param startX A vector of ints
+//' @param endX A vector of ints
+//' @param startY A vector of ints
+//' @param endY A vector of ints
+//' @param dfsize An integer
+//' @return df A data.frame containing the start positions of both reads, their widths, and the distance
+//' @export
 //[[Rcpp::export]]
 DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
                           IntegerVector startY, IntegerVector endY, int dfsize){
@@ -639,15 +798,21 @@ DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
 
 }
 
-
-
-
+//' make_count_table
+//' 
+//' This functions calculates the counts of each overlap to be used for z score
+//' 
+//' @param fdt_start A vector of ints
+//' @param fdt_end A vector of ints
+//' @param fwidth An integer
+//' @param rdt_start A vector of ints
+//' @param rdt_end A vector of ints
+//' @param rwidth An integer
+//' @return df A data.frame containing the counts of each overlap to be used for a z score
+//' @export
 //[[Rcpp::export]]
-
 DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                            std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
-//function to calculate counts of each overlap to be used for Z score
-//calls the Rcpp function overlap_counts
    int res_size = 27;
 
    std::vector<int> overlap_res(res_size);
@@ -686,9 +851,18 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
    return(df);
 }
 
-
-
-
+//' get_pi_overlaps
+//'
+//' This function calculates the overlaps present at each width of reads from 15-32
+//' 
+//' @param fdt_start A vector of ints
+//' @param fdt_end A vector of ints
+//' @param fwidth An integer
+//' @param rdt_start A vector of ints
+//' @param rdt_end A vector of ints
+//' @param rwidth An integer
+//' @return result A matrix representing the overlaps present at each width of reads from 15-32
+//' @export
 //[[Rcpp::export]]
 NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth){
@@ -777,7 +951,22 @@ NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
    return(result);
 }
 
-
+//' getLoopPileupsCPP
+//'
+//' This function returns a data.frame containing the start and stop positions of read 1, read 2, and a loop
+//' If the number of pileups in a loop divided by the total number of pileups is less that 0.05
+//' 
+//' @param r1Start A vector of ints
+//' @param r1Stop A vector of ints
+//' @param lStart A vector of ints
+//' @param lStop A vector of ints
+//' @param r2Start A vector of ints
+//' @param r2Stop A vector of ints
+//' @param dt_col_1 A vector of ints
+//' @param dt_col_2 A vector of ints
+//' @param int total_count An integer
+//' @return df A data.frame
+//' @export
 //[[Rcpp::export]]
 DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop,
                             std::vector<int> lStart, std::vector<int> lStop,
