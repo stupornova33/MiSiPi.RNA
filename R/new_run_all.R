@@ -152,22 +152,27 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   miRNA_dir <- 'run_all/miRNA_dir/'
   mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
   mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold)
-  mirnaMFE_plus <- mi_res[[1]][[1]]
 
-  mirna_dicerz_plus <- mi_res$zscore[5]
+  #Look at first result
+  mi_res <- mi_res[[1]]
+  mirnaMFE_plus <- mi_res$mfe
 
-  if(mi_res$zscore[1] != "NaN"){
-    plus_overlapz <- mean(mi_res$Z_score[20:23])
+  mirna_dicerz_plus <- mi_res$overhangs$zscore[5]
+
+  if(mi_res$overhangs$zscore[1] != "NaN"){
+    plus_overlapz <- mean(mi_res$overhangs$Z_score[20:23])
   } else {
     plus_overlapz <- NA
   }
 
   mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold)
-  mirnaMFE_minus <- mi_res[[1]][[1]]
-  mirna_dicerz_minus <- mi_res$zscore[5]
 
-  if(mi_res$zscore[1] != "NaN"){
-    minus_overlapz <- mean(mi_res$Z_score[20:23])
+  mi_res <- mi_res[[1]]
+  mirnaMFE_minus <- mi_res$mfe
+  mirna_dicerz_minus <- mi_res$overhangs$zscore[5]
+
+  if(mi_res$overhangs$zscore[1] != "NaN"){
+    minus_overlapz <- mean(mi_res$overhangs$Z_score[20:23])
   } else {
     minus_overlapz <- NA
   }
