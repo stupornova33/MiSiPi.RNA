@@ -3,7 +3,7 @@ Title: Characterization of Small RNA Pathways
 Version: 1.0.9
 Authors@R: c(
     person("Taiya", "Jarva", email = "t.m.jarva13@gmail.com", role = c("aut", "cre")),
-    person("Chris", "Baugh", email = "chris.baugh@gmail.com", role = "ctb")
+    person("Chris", "Baugh", email = "chris.baugh@gmail.com", role = "ctb"))
 Description: Creates plots and analyzes small RNA sequencing data.
 URL: https://github.com/stupornova33/MiSiPi.RNA
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
@@ -12,4 +12,7 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports: 
-    magrittr
+    magrittr,
+    Rcpp
+LinkingTo: 
+    Rcpp
