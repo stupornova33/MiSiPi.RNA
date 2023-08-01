@@ -74,6 +74,8 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
      data.frame() %>%
      dplyr::select(c(start, end, rname))
 
+   global_i_idx <- numeric()
+   
    if(nrow(filter_helix) > 0){
      for(i in 1:nrow(filter_helix)){
 
@@ -88,6 +90,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
        y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
 
        i_idx <- which(dicer_dt$start %in% x_rng)
+       global_i_idx <- append(global_i_idx, i_idx)
        j_idx <- which(dicer_dt$start %in% y_rng)
 
        i_dat <- rbind(i_dat, dicer_dt[i_idx,])
@@ -100,7 +103,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
        dplyr::mutate(width = end - start + 1)
 
      #since we're converting to the paired position, we should take $j for i_dat
-     i_dat$paired_pos <- final_helix_df$j[i_idx]
+     i_dat$paired_pos <- final_helix_df$j[global_i_idx]
 
      i_dat <- i_dat %>%
        dplyr::mutate(paired_end = paired_pos + width - 1)
