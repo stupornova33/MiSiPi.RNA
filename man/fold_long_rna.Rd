@@ -2,7 +2,7 @@
 % Please edit documentation in R/fold_long_rna.R
 \name{fold_long_rna}
 \alias{fold_long_rna}
-\title{function to run RNAfold 
+\title{function to run RNAfold
 processes output of RNA fold to get MFE and vien struct
 returns list of values for each region}
 \usage{
@@ -23,7 +23,7 @@ fold_long_rna(chrom_name, start, stop, converted, path_to_RNAfold)
 list
 }
 \description{
-function to run RNAfold 
+function to run RNAfold
 processes output of RNA fold to get MFE and vien struct
 returns list of values for each region
 }

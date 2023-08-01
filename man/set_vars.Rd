@@ -2,7 +2,7 @@
 % Please edit documentation in R/set_vars.R
 \name{set_vars}
 \alias{set_vars}
-\title{takes a gff file 
+\title{takes a gff file
 only output is hairpin plots}
 \usage{
 set_vars(
@@ -43,6 +43,6 @@ set_vars(
 a list
 }
 \description{
-takes a gff file 
+takes a gff file
 only output is hairpin plots
 }

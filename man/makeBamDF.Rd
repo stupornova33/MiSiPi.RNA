@@ -2,7 +2,7 @@
 % Please edit documentation in R/makeBamDF.R
 \name{makeBamDF}
 \alias{makeBamDF}
-\title{function to convert chrom obj into a data frame 
+\title{function to convert chrom obj into a data frame
 extracts rname, pos, width, seq, and the first letter of the sequence
 finds max row, column, and count of highest cell}
 \usage{
@@ -15,7 +15,7 @@ makeBamDF(chrom_obj)
 bam_df
 }
 \description{
-function to convert chrom obj into a data frame 
+function to convert chrom obj into a data frame
 extracts rname, pos, width, seq, and the first letter of the sequence
 finds max row, column, and count of highest cell
 }

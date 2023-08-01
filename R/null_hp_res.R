@@ -1,5 +1,6 @@
+#' This function creates default null results to return in the event that no meaningful results could be created
+#'
 #' @return list
-
 #' @export
 
 null_hp_res <- function(){

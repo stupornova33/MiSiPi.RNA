@@ -12,7 +12,7 @@
 #' @param pi_pal a string
 #' @param plot_output a string, "T" or "F"
 #' @param path_to_RNAfold a string
-#' @param annotate_bed
+#' @param annotate_bed a string, "T" or "F"
 #' @param bed_file a string
 #' @return results
 
