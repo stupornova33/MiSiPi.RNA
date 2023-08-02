@@ -5,7 +5,7 @@
 \title{phased piRNA function
 processes reads according to phased piRNA algorith
 plots output
-takes bam object and strand 
+takes bam object and strand
 returns max_zscore and plots}
 \usage{
 phased_piRNA_function(
@@ -43,6 +43,6 @@ max_zscore, plots
 phased piRNA function
 processes reads according to phased piRNA algorith
 plots output
-takes bam object and strand 
+takes bam object and strand
 returns max_zscore and plots
 }

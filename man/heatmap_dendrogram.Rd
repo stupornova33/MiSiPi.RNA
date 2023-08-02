@@ -2,7 +2,7 @@
 % Please edit documentation in R/heatmap_dendrogram.R
 \name{heatmap_dendrogram}
 \alias{heatmap_dendrogram}
-\title{extracts read data and plots counts by read size 
+\title{extracts read data and plots counts by read size
 for multiple loci in a bed file}
 \usage{
 heatmap_dendrogram(bam_file, logfile, chrom_name, reg_start, reg_stop)
@@ -22,6 +22,6 @@ heatmap_dendrogram(bam_file, logfile, chrom_name, reg_start, reg_stop)
 a heatmap plot
 }
 \description{
-extracts read data and plots counts by read size 
+extracts read data and plots counts by read size
 for multiple loci in a bed file
 }

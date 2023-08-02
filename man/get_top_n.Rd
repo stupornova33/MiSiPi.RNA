@@ -2,26 +2,24 @@
 % Please edit documentation in R/get_top_n.R
 \name{get_top_n}
 \alias{get_top_n}
-\title{function to filter data table for short hairpin function
-makes chrom obj into bam df and filters reads between 18-25 nt
+\title{function takes a data table of reads
 summarizes count of grouped reads
-returns top 10% of reads}
+returns an unweighted top n\% of reads}
 \usage{
-get_top_n(chrom, chrom_name, n)
+get_top_n(filter_dt, chrom_name, n)
 }
 \arguments{
-\item{chrom}{a chrom object}
-
 \item{chrom_name}{a string}
 
 \item{n}{a decimal}
+
+\item{chrom}{a chrom object}
 }
 \value{
 filter_dt
 }
 \description{
-function to filter data table for short hairpin function
-makes chrom obj into bam df and filters reads between 18-25 nt
+function takes a data table of reads
 summarizes count of grouped reads
-returns top 10% of reads
+returns an unweighted top n\% of reads
 }

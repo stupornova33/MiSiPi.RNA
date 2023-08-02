@@ -1,14 +1,12 @@
+#' function takes a data table of reads
+#' summarizes count of grouped reads
+#' returns an unweighted top n% of reads
+#' 
 #' @param chrom a chrom object
 #' @param chrom_name a string
 #' @param n a decimal
 #' @return filter_dt
-
 #' @export
-
-# function to filter data table for short hairpin function
-# makes chrom obj into bam df and filters reads between 18-25 nt
-# summarizes count of grouped reads
-# returns top 10% of reads
 
 get_top_n <- function(filter_dt, chrom_name, n){
    width <- pos <- start <- end <- first <- count <- NULL
@@ -44,12 +42,9 @@ get_top_n <- function(filter_dt, chrom_name, n){
 ###################################################################################################################################
    #need to create the reads that represent the counts
 
-
    if(nrow(counts_dt) > 0){
-
-
-   #select a subset
-   final_df <- utils::head(res_df, 8000)
+      #select a subset
+      final_df <- utils::head(res_df, 8000)
    } else {
       final_df <- counts_dt
    }

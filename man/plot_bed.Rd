@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_bed.R
 \name{plot_bed}
 \alias{plot_bed}
-\title{takes a gff file 
+\title{takes a gff file
 outputs a plot}
 \usage{
 plot_bed(gff_path, chrom_name, reg_start, reg_stop)
@@ -20,6 +20,6 @@ plot_bed(gff_path, chrom_name, reg_start, reg_stop)
 plot
 }
 \description{
-takes a gff file 
+takes a gff file
 outputs a plot
 }

@@ -1,14 +1,13 @@
-#' @param chrom a chrom object
+#' function takes a data table of reads
+#' summarizes count of grouped reads
+#' returns a weighted top n% of reads
+#'
+#' @param dt a data table of reads
 #' @param chrom_name a string
-#' @param n a decimal
+#' @param n a decimal representing percent of reads to return
 #' @return filter_dt
-
 #' @export
 
-# function to filter data table for short hairpin function
-# makes chrom obj into bam df and filters reads between 18-25 nt
-# summarizes count of grouped reads
-# returns top 10% of reads
 
 get_top_n_weighted <- function(dt, chrom_name, n){
   width <- pos <- start <- end <- first <- count <- NULL
