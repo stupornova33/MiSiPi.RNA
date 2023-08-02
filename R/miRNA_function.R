@@ -27,12 +27,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
 
    if(reg_stop - reg_start > 3000){
       cat(file = paste0(dir, logfile), "length of region is greater than 3000. \n", append = TRUE)
-      mfe <- 0
-      z_df <- data.frame(overlap = seq(4,30), count = rep(0, times = 27))
-      overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-      overhangs$zscore <- calc_zscore(overhangs$proper_count)
-      #return(c(mfe,overhangs))
-      return(list(list("mfe" = mfe, "overhangs" = c(overhangs,z_df))))
+      return(null_mi_res())
    }
 
    bam_obj <- OpenBamFile(input_file, logfile)
