@@ -130,16 +130,25 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   local_ml$num_si_dicer_reads <- si_res[[2]]$proper_count[5]/total_read_count
   local_ml$perc_paired <- max(unlist(unname(si_res[[3]][[1]][4])), unlist(unname(si_res[[3]][[2]][4])))
 
-  write.table(local_ml$perc_paired, "perc_paired.txt", quote = FALSE, append = TRUE)
+  perc_paired_file <- paste0(si_dir, "perc_paired.txt")
+  col_status <- ifelse(exists_not_empty(perc_paired_file), FALSE, TRUE)
+  write.table(local_ml$perc_paired, perc_paired_file, quote = FALSE, append = TRUE, col.names = col_status)
+  
   #### get hairpin-specific results
 
   local_ml$MFE <- min(unlist(unname(si_res[[3]][[1]][1])), unlist(unname(si_res[[3]][[2]][1])))
 
   local_ml$hp_dicerz <- max(unlist(unname(si_res[[3]][[1]][2])), unlist(unname(si_res[[3]][[2]][2])))
   local_ml$hp_phasedz <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
+  
+  hp_dicerz_file <- paste0(si_dir, "hp_dicerz.txt")
+  col_status <- ifelse(exists_not_empty(hp_dicerz_file), FALSE, TRUE)
+  write.table(local_ml$hp_dicerz, hp_dicerz_file, quote = FALSE, append = TRUE, col.names = col_status)
 
-  write.table(local_ml$hp_dicerz, "hp_dicerz.txt", quote = FALSE, append = TRUE)
-  write.table(local_ml$hp_phasedz, "hp_phasedz.txt", quote = FALSE, append = TRUE)
+  hp_phasedz_file <- paste0(si_dir, "hp_phasedz.txt")
+  col_status <- ifelse(exists_not_empty(hp_phasedz_file), FALSE, TRUE)
+  write.table(local_ml$hp_phasedz, hp_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
+  
   print(paste0('hp_dicerz: ', local_ml$hp_dicerz))
   print(paste0('hp_phasedz: ', local_ml$hp_phasedz))
 
@@ -212,7 +221,10 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     local_ml$max_pi_count <- max_pi_heat$highest_pi_count/total_read_count
 
     local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
-    write.table(local_ml$max_piz_overlap, "max_piz_overlap.txt", quote = FALSE, append = TRUE)
+    
+    piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
+    col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
+    write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
 
   } else {
 
@@ -245,7 +257,10 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   local_ml$phasedz <- max(phasedz_plus, phasedz_minus)
   local_ml$phased26z <- max(phasedz26_plus, phasedz26_minus)
-  write.table(local_ml$phasedz, "pi_phasedz.txt", quote = FALSE, append = TRUE)
+  
+  pi_phasedz_file <- paste0(phased_dir, "pi_phasedz.txt")
+  col_status <- ifelse(exists_not_empty(pi_phasedz_file), FALSE, TRUE)
+  write.table(local_ml$phasedz, pi_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
   ####################################################################
   # add results to table
   tbl_name <- strsplit(bed_file, "[.]")[[1]][1]
@@ -255,10 +270,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
    write.table(paste0(chrom_name, ":", reg_start, "-", reg_stop), file = "less20.txt", append = TRUE)
   }
   cat(file = logfile, "Writing results to table\n", append = TRUE)
-  if(!file.exists(paste0(tbl_name, "_ml.txt"))){
-    utils::write.table(df, file = paste0(tbl_name, "_ml.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
-  } else {
-    utils::write.table(df, file = paste0(tbl_name, "_ml.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-  }
-
+  
+  ml_file <- paste0(tbl_name, "_ml.txt")
+  col_status <- ifelse(exists_not_empty(ml_file), FALSE, TRUE)
+  utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 }
