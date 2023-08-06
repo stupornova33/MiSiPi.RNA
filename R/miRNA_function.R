@@ -90,11 +90,14 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    ########################################################## main logic ################################################################
    ## make the read data tables
    filter_r2_dt <- filter_mi_dt(chrom, chrom_name)
+   dt <- filter_r2_dt %>%
+     dplyr::group_by_all() %>%
+     dplyr::reframe(count = dplyr::n())
 
    if(nrow(filter_r2_dt) == 0){
       return(null_mi_res())
    } else {
-      r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
+      r2_dt <- get_top_n_weighted(dt, chrom_name, 10)
       r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
       filter_r2_dt <- NULL
       if(nrow(r2_dt) == 0){
