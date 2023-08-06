@@ -6,10 +6,12 @@
 takes input file
 creates bam obj}
 \usage{
-OpenBamFile(input_file)
+OpenBamFile(bamfile, logfile)
 }
 \arguments{
-\item{input_file}{a BAM file}
+\item{bamfile}{a BAM file}
+
+\item{logfile}{a string}
 }
 \value{
 bam_obj

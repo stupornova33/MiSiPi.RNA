@@ -10,7 +10,7 @@ returns highest_pi_row, highest_pi_col, second_pi_row, second_pi_col, highest_pi
 get_max_pi_heat(pi_res)
 }
 \arguments{
-\item{si_res}{a data table}
+\item{pi_res}{a data table}
 }
 \value{
 max_pi_df

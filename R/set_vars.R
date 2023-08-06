@@ -1,6 +1,6 @@
 #' takes a gff file 
 #' only output is hairpin plots
-#' @param bed_file 
+#' @param bed_file a string
 #' @param input_file a string
 #' @param genome a string
 #' @param min_read_count an integer

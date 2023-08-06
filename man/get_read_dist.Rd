@@ -7,12 +7,12 @@ takes forward and reverse data frames
 summarizes read size by count
 returns table of size distribution}
 \usage{
-get_read_dist(forward_dt, reverse_dt)
+get_read_dist(chrom_m, chrom_p)
 }
 \arguments{
-\item{forward_dt}{a data table containing read data}
+\item{chrom_m}{a minus strand object}
 
-\item{reverse_dt}{a data table containing read data}
+\item{chrom_p}{a plus strand object}
 }
 \value{
 dizeDist

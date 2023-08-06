@@ -2,22 +2,18 @@
 % Please edit documentation in R/run_miRNA_function.R
 \name{run_miRNA_function}
 \alias{run_miRNA_function}
-\title{plot miRNA coverage
-takes a data frame of coverage over a sequence of nucleotides}
+\title{run miRNA function
+calls the miRNA function for both strands, creates miRNA logfile}
 \usage{
-run_miRNA_function(bed_file, input_file, genome_file)
+run_miRNA_function(vars)
 }
 \arguments{
-\item{bed_file}{a tab-delineated file with three columns: chrom, start, stop}
-
-\item{input_file}{a BAM file}
-
-\item{genome_file}{a fasta file with chromosome sequences}
+\item{vars}{a list of variables provided by user}
 }
 \value{
 plots
 }
 \description{
-plot miRNA coverage
-takes a data frame of coverage over a sequence of nucleotides
+run miRNA function
+calls the miRNA function for both strands, creates miRNA logfile
 }

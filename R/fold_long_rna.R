@@ -1,7 +1,7 @@
 #' function to run RNAfold 
 #' processes output of RNA fold to get MFE and vien struct
 #' returns list of values for each region
-#' @param chrom_name
+#' @param chrom_name a string
 #' @param start a whole number
 #' @param stop a whole number
 #' @param converted a vector containing a sequence

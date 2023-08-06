@@ -7,7 +7,7 @@ takes two data tables of reads with start and stop positions
 converts to gr objects and finds overlaps
 returns overlap table}
 \usage{
-find_overlaps(r1_dt, r2_dt)
+find_overlaps(r1_dt, r2_dt = NULL)
 }
 \arguments{
 \item{r1_dt}{a data frame which contains a read_name, start, and stop}

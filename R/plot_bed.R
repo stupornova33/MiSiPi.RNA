@@ -102,6 +102,7 @@ plot_bed <- function(gff_path, chrom_name, reg_start, reg_stop){
       plot_env$coordinates <- apply(bed, 1, calculate_coordinates)
       
       append_plots <- function(i) {
+        xvals <- yvals <- midx <- midy <- ids <- NULL
          current_plot <- get_g()
          coordinates <- get_coordinates()
          new_plot <- current_plot +

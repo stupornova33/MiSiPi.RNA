@@ -1,5 +1,5 @@
 #' function to convert vienna to helix
-#' @param fold_list
+#' @param fold_list a list
 #' @return list
 
 #' @export

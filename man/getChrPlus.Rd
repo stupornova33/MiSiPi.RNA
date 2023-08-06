@@ -10,7 +10,9 @@ getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
 \arguments{
 \item{bam_obj}{a bam object created by openBamFile}
 
-\item{strand}{a character passed in, "+", or "-"}
+\item{reg_start}{an integer}
+
+\item{reg_stop}{an integer}
 }
 \value{
 max_overhang

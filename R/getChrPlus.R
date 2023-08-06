@@ -2,7 +2,8 @@
 #' takes bam obj, chrom name, reg_start, and reg_stop
 #'  
 #' @param bam_obj a bam object created by openBamFile
-#' @param strand a character passed in, "+", or "-"
+#' @param reg_start an integer 
+#' @param reg_stop an integer
 #' @return max_overhang
 
 

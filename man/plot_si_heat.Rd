@@ -8,17 +8,25 @@ outputs plots}
 \usage{
 plot_si_heat(
   results,
+  chrom_name,
+  reg_start,
+  reg_stop,
+  dir,
   pal = c("RdYlBl", "yelOrRed", "MagYel", "Greens", "BlYel")
 )
 }
 \arguments{
-\item{bed_file}{a tab-delineated file containing three columns: chrom name, start, and stop}
+\item{results}{a data table}
 
-\item{input_file}{a BAM file}
+\item{chrom_name}{a string}
 
-\item{genome}{a fasta file containing chromosome sequences}
+\item{reg_start}{a whole number}
 
-\item{min_read_count}{a whole number}
+\item{reg_stop}{a whole number}
+
+\item{dir}{a string}
+
+\item{pal}{a string}
 }
 \value{
 plots

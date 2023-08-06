@@ -3,15 +3,53 @@
 \name{siRNA_function}
 \alias{siRNA_function}
 \title{siRNA function
-process forward and reverse dt and plot si heatmap
-takes forward and reverse dt}
+process forward and reverse dt and plot si heatmap}
 \usage{
-siRNA_function(forward_dt, reverse_dt)
+siRNA_function(
+  chrom_name,
+  reg_start,
+  reg_stop,
+  length,
+  min_read_count,
+  genome_file,
+  input_file,
+  logfile,
+  dir,
+  pal,
+  plot_output,
+  path_to_RNAfold,
+  annotate_bed,
+  gff_file
+)
 }
 \arguments{
-\item{forward_dt}{a data table containing read data}
+\item{chrom_name}{a string}
 
-\item{reverse_dt}{a data table containing read data}
+\item{reg_start}{a whole number}
+
+\item{reg_stop}{a whole number}
+
+\item{length}{an integer}
+
+\item{min_read_count}{an integer}
+
+\item{genome_file}{a string}
+
+\item{input_file}{a string}
+
+\item{logfile}{a string}
+
+\item{dir}{a string}
+
+\item{pal}{a string}
+
+\item{plot_output}{a string, 'T' or 'F'. Default is 'T'}
+
+\item{path_to_RNAfold}{a string}
+
+\item{annotate_bed}{a string, "T" or "F"}
+
+\item{gff_file}{a string}
 }
 \value{
 results
@@ -19,5 +57,4 @@ results
 \description{
 siRNA function
 process forward and reverse dt and plot si heatmap
-takes forward and reverse dt
 }

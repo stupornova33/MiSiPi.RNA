@@ -6,12 +6,33 @@
 processes forward and reverse reads according to piRNA algorithm
 outputs plots, heat results, and zdf}
 \usage{
-piRNA_function(forward_dt, reverse_dt)
+piRNA_function(
+  chrom_name,
+  reg_start,
+  reg_stop,
+  input_file,
+  logfile,
+  dir,
+  pal,
+  plot_output
+)
 }
 \arguments{
-\item{forward_dt}{a data table containing read data}
+\item{chrom_name}{a string}
 
-\item{reverse_dt}{a data table containing read data}
+\item{reg_start}{a whole number}
+
+\item{reg_stop}{a whole number}
+
+\item{input_file}{a string}
+
+\item{logfile}{a string}
+
+\item{dir}{a string}
+
+\item{pal}{a string}
+
+\item{plot_output}{a string, 'T' or 'F', default = 'T}
 }
 \value{
 plots, heat results, and zdf

@@ -2,22 +2,16 @@
 % Please edit documentation in R/run_piRNA_function.R
 \name{run_piRNA_function}
 \alias{run_piRNA_function}
-\title{run_piRNA_function
-takes test_list and input_file
-returns pi_res and plots}
+\title{runs piRNA_function and creates dir and logfile for outputs}
 \usage{
-run_piRNA_function(bed_file, input_file)
+run_piRNA_function(vars)
 }
 \arguments{
-\item{bed_file}{a tab-delineated file with three columns. Chrom, start, stop}
-
-\item{input_file}{a BAM file}
+\item{vars}{a list}
 }
 \value{
 pi_res, plots
 }
 \description{
-run_piRNA_function
-takes test_list and input_file
-returns pi_res and plots
+runs piRNA_function and creates dir and logfile for outputs
 }

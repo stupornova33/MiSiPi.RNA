@@ -2,7 +2,7 @@
 #' takes a data frame
 #' returns zscore
 #' 
-#' @param allCounts
+#' @param allCounts a data frame
 #' @return z_score
 
 #' @export
