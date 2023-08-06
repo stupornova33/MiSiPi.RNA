@@ -13,8 +13,6 @@ devtools::install_github("stupornova33/MiSiPi.RNA")
 
 library(MiSiPi.RNA)
 
-`%>%` <- magrittr::`%>%`
-
 setwd("desired/working/directory")
 ```
 
