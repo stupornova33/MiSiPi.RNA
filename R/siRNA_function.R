@@ -38,16 +38,19 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
    cat(file = paste0(dir, logfile), "Making Forward DT\n", append = TRUE)
    forward_dt <- data.table::setDT(makeBamDF(chromP)) %>%
      subset(width <= 32 & width >= 15) %>%
-      dplyr::mutate(start = pos, end = pos + width - 1) %>% dplyr::distinct() %>%
+      dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
-     dplyr::summarize(count = dplyr::n())
+      dplyr::group_by_all() %>%
+      dplyr::reframe(count = dplyr::n())
+
 
    cat(file = paste0(dir, logfile), "Making Reverse DT\n", append = TRUE)
    reverse_dt <- data.table::setDT(makeBamDF(chromM)) %>%
        subset(width <= 32 & width >= 15) %>%
-       dplyr::mutate(start = pos, end = pos + width - 1) %>% dplyr::distinct() %>%
+       dplyr::mutate(start = pos, end = pos + width - 1) %>%
        dplyr::select(-c(pos)) %>%
-     dplyr::summarize(count = dplyr::n())
+       dplyr::group_by_all() %>%
+       dplyr::summarize(count = dplyr::n())
 
    #chromP <- NULL
    #chromM <- NULL

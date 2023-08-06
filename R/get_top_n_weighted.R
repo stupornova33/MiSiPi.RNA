@@ -27,7 +27,7 @@ get_top_n_weighted <- function(dt, chrom_name, n){
 
 
 
-  if(nrow(dt) < 2 ){
+  if(nrow(dt) < 1 ){
     final_df <- data.frame(matrix(ncol = 3, nrow = 0))
     return(final_df)
   } else {
