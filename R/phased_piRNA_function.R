@@ -34,24 +34,9 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
    prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
    
    #for the read size dist plot
-   chrom_m <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-   chrom_p <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-   plus_dt <- data.table::setDT(makeBamDF(chrom_p)) %>%
-      base::subset(width <= 32 & width >= 18) %>% 
-      dplyr::mutate(start = pos, end = pos + width - 1) %>%
-      dplyr::select(-c(pos, first, seq))
-   minus_dt <- data.table::setDT(makeBamDF(chrom_m)) %>%
-      base::subset(width <= 32 & width >= 18) %>% 
-      dplyr::mutate(start = pos, end = pos + width - 1) %>%
-      dplyr::select(-c(pos, first, seq))
-   
-   read_dist <- get_read_dist(chrom_m, chrom_p)
-   chrom_m <- NULL
-   chrom_p <- NULL
-   plus_dt <- NULL
-   minus_dt <- NULL
-   
-   
+
+   read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+
    if(strand == "+"){
       chrom <- data.table::setDT(getChrPlus(bam_obj, chrom_name, reg_start, reg_stop))
       
