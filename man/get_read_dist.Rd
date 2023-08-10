@@ -7,7 +7,7 @@ takes forward and reverse data frames
 summarizes read size by count
 returns table of size distribution}
 \usage{
-get_read_dist(chrom_m, chrom_p)
+get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 }
 \arguments{
 \item{chrom_m}{a minus strand object}
