@@ -41,7 +41,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
       dplyr::group_by_all() %>%
-      dplyr::reframe(count = dplyr::n())
+      dplyr::summarize(count = dplyr::n())
 
 
    cat(file = paste0(dir, logfile), "Making Reverse DT\n", append = TRUE)
