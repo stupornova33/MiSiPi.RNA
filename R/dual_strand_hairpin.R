@@ -95,7 +95,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #  dplyr::group_by_all() %>%
   #  dplyr::reframe(count = dplyr::n())
 
-  r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
+  dt <- filter_r2_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::reframe(count = dplyr::n())
+
+  r2_dt <- get_top_n_weighted(dt, chrom_name, 10)
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
