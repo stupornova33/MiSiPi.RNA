@@ -60,12 +60,14 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     subset(width <= 32 & width >= 15) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos))
+  chromP <- NULL
 
   reverse_dt <- data.table::setDT(makeBamDF(chromM)) %>%
     subset(width <= 32 & width >= 15) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos))
-
+  chromM <- NULL
+  
   if(nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) return()
 
   total_read_count <- nrow(forward_dt) + nrow(reverse_dt)
@@ -74,8 +76,6 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   local_ml$unique_read_bias <- unique_read_count/total_read_count
 
-  #chromP <- NULL
-  #chromM <- NULL
   ###############################
   # get extra metrics for ML
 
@@ -91,7 +91,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   }
 
   local_ml$perc_GC <- get_GC_content(forward_dt, reverse_dt)
-  read_dist <- get_read_dist(chromP, chromM)
+  read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
   max_size <- highest_sizes(read_dist)
 

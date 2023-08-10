@@ -51,7 +51,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    chrom_m <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
    chrom_p <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
 
-   read_dist <- get_read_dist(chrom_p, chrom_m)
+   read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
    # Moved this code block up so that the getChr functions don't have to be called again
    if(strand == "-"){
