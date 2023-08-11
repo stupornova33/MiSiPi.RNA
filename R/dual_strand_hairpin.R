@@ -87,7 +87,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos, first, seq))
+    dplyr::select(-c(pos, first, seq)) %>%
+    dplyr::group_by_all() %>%
+    dplyr::summarize(count = dplyr::n())
+
+  #dt <- filter_r2_dt %>%
+  #  dplyr::group_by_all() %>%
+  #  dplyr::reframe(count = dplyr::n())
 
   dt <- filter_r2_dt %>%
     dplyr::group_by_all() %>%

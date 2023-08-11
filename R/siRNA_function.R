@@ -41,7 +41,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
       dplyr::group_by_all() %>%
-      dplyr::reframe(count = dplyr::n())
+      dplyr::summarize(count = dplyr::n())
 
 
    cat(file = paste0(dir, logfile), "Making Reverse DT\n", append = TRUE)
@@ -155,7 +155,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
 
       heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, dir, pal = pal)
       cat(file = paste0(dir, logfile), "get_read_dist\n", append = TRUE)
-      dist <- get_read_dist(chromM, chromP)
+      dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
       #forward_dt <- NULL
       #reverse_dt <- NULL
       cat(file = paste0(dir, logfile), "plot_sizes\n", append = TRUE)
