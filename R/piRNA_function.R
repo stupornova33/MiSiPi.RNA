@@ -23,7 +23,7 @@ piRNA_function <- function(chrom_name, reg_start, reg_stop, input_file, logfile,
   chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
   cat(file = paste0(dir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
-  cat(file = paste0(dir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)  
+  cat(file = paste0(dir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
   forward_dt <- data.table::setDT(makeBamDF(chromP)) %>%
     subset(width <= 32 & width >= 15) %>%
@@ -36,7 +36,7 @@ piRNA_function <- function(chrom_name, reg_start, reg_stop, input_file, logfile,
     dplyr::select(-c(pos))
 
   chromP <- chromM <- NULL
-  
+
   #### if no forward reads are appropriate length delete df and print error message
   if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0){
     cat(file = paste0(dir, logfile), paste0("Zero forward reads of correct length detected", "\n"), append = TRUE)
@@ -44,14 +44,14 @@ piRNA_function <- function(chrom_name, reg_start, reg_stop, input_file, logfile,
     heat_results <- NA
     return(list(heat_results, z_df))
   }
-  
+
   z_res <- make_count_table(forward_dt$start, forward_dt$end, forward_dt$width,
                             reverse_dt$start, reverse_dt$end, reverse_dt$width)
 
 
   heat_results <- get_pi_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
                                   reverse_dt$end, reverse_dt$start, reverse_dt$width)
-  
+
   forward_dt <- reverse_dt <- NULL
 
   row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
@@ -74,16 +74,16 @@ piRNA_function <- function(chrom_name, reg_start, reg_stop, input_file, logfile,
   #write.table(z_df, file = paste0(chrom_name, "_", reg_start, "-", reg_stop, "_zscore.txt"), row.names = FALSE, quote = FALSE
 
   if(sum(heat_results != 0) && plot_output == 'T'){
-    
+
     read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-    
+
     ##calculate read density by size
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, input_file, dir)
-    
+
     z <- plot_overlapz(z_df)
     dist_plot <- plot_sizes(read_dist)
     read_dist <- NULL
-    
+
     heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, dir, pal = pal)
 
     density_plot <- plot_density(data, reg_start, reg_stop)
@@ -97,8 +97,6 @@ piRNA_function <- function(chrom_name, reg_start, reg_stop, input_file, logfile,
     grDevices::pdf(file = paste0(dir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 5, width = 7)
     print(all_plot)
     grDevices::dev.off()
-  } else {
-    print("sum_results == 0")
   }
 
   return(list(heat_results, z_df))
