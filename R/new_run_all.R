@@ -24,13 +24,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
                         plot_output, path_to_RNAfold, annotate_bed, bed_file){
 
   width <- pos <- start <- end <- NULL
-  local_ml <- data.table::data.table(locus_length = numeric(1), unique_read_bias = numeric(1),strand_bias = numeric(1),
+  local_ml <- data.table::data.table(locus = numeric(1), locus_length = numeric(1), unique_read_bias = numeric(1),strand_bias = numeric(1),
   perc_GC = numeric(1), highest_size = numeric(1), perc_first_nucT = numeric(1), perc_A10 = numeric(1),
-  highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),MFE = numeric(1), hp_dicerz = numeric(1), hp_phasedz = numeric(1),
+  highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),si_dicerz = numeric(1), MFE = numeric(1), hp_dicerz = numeric(1), hp_phasedz = numeric(1),
   mirnaMFE = numeric(1), mirna_dicerz = numeric(1), highest_pi_col = numeric(1), max_pi_count = numeric(1),
   max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), perc_paired = numeric(1), overlapz = numeric(1))
 
-
+  local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
   local_ml$locus_length <- reg_stop - reg_start
   prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
@@ -67,7 +67,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos))
   chromM <- NULL
-  
+
   if(nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) return()
 
   total_read_count <- nrow(forward_dt) + nrow(reverse_dt)
@@ -126,21 +126,21 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   max_si_heat <- get_max_si_heat(si_res)
 
   local_ml$highest_si_col <- max_si_heat$highest_si_col
-
+  local_ml$si_dicerz <- si_res$si_dicer$Z_score[9]
   local_ml$num_si_dicer_reads <- si_res[[2]]$proper_count[5]/total_read_count
   local_ml$perc_paired <- max(unlist(unname(si_res[[3]][[1]][4])), unlist(unname(si_res[[3]][[2]][4])))
 
   perc_paired_file <- paste0(si_dir, "perc_paired.txt")
   col_status <- ifelse(exists_not_empty(perc_paired_file), FALSE, TRUE)
   write.table(local_ml$perc_paired, perc_paired_file, quote = FALSE, append = TRUE, col.names = col_status)
-  
+
   #### get hairpin-specific results
 
   local_ml$MFE <- min(unlist(unname(si_res[[3]][[1]][1])), unlist(unname(si_res[[3]][[2]][1])))
 
   local_ml$hp_dicerz <- max(unlist(unname(si_res[[3]][[1]][2])), unlist(unname(si_res[[3]][[2]][2])))
   local_ml$hp_phasedz <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
-  
+
   hp_dicerz_file <- paste0(si_dir, "hp_dicerz.txt")
   col_status <- ifelse(exists_not_empty(hp_dicerz_file), FALSE, TRUE)
   write.table(local_ml$hp_dicerz, hp_dicerz_file, quote = FALSE, append = TRUE, col.names = col_status)
@@ -148,7 +148,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   hp_phasedz_file <- paste0(si_dir, "hp_phasedz.txt")
   col_status <- ifelse(exists_not_empty(hp_phasedz_file), FALSE, TRUE)
   write.table(local_ml$hp_phasedz, hp_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
-  
+
   print(paste0('hp_dicerz: ', local_ml$hp_dicerz))
   print(paste0('hp_phasedz: ', local_ml$hp_phasedz))
 
@@ -213,7 +213,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   pi_log <- file.create(paste0(piRNA_dir, 'pi_logfile.txt'))
   pi_res <- piRNA_function(chrom_name, reg_start, reg_stop, input_file, pi_log, piRNA_dir, pi_pal, plot_output = "F")
 
-  if(!sum(pi_res[[1]]) == 0){
+  if(!is.na(pi_res[[1]][1])){
+    if(!sum(pi_res[[1]] == 0)){
     max_pi_heat <- get_max_pi_heat(pi_res)
 
     local_ml$highest_pi_col <- max_pi_heat$highest_pi_col
@@ -221,11 +222,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     local_ml$max_pi_count <- max_pi_heat$highest_pi_count/total_read_count
 
     local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
-    
+
     piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
     col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
     write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
-
+    }
   } else {
 
     local_ml$highest_pi_col <- NA
@@ -257,20 +258,22 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   local_ml$phasedz <- max(phasedz_plus, phasedz_minus)
   local_ml$phased26z <- max(phasedz26_plus, phasedz26_minus)
-  
+
   pi_phasedz_file <- paste0(phased_dir, "pi_phasedz.txt")
   col_status <- ifelse(exists_not_empty(pi_phasedz_file), FALSE, TRUE)
   write.table(local_ml$phasedz, pi_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
   ####################################################################
   # add results to table
-  tbl_name <- strsplit(bed_file, "[.]")[[1]][1]
+  tbl_pref <- strsplit(bed_file, "[.]")[[1]][1]
+  input_pref <- strsplit(input_file, "[/]")[[1]][4]
+  input_pref2 <- strsplit(input_pref, "[.]")[[1]][1]
+
+  tbl_name <- paste0(tbl_pref, "_", input_pref2)
   df <- as.matrix(local_ml)
   print("writing to table")
-  if(ncol(local_ml) < 20){
-   write.table(paste0(chrom_name, ":", reg_start, "-", reg_stop), file = "less20.txt", append = TRUE)
-  }
+
   cat(file = logfile, "Writing results to table\n", append = TRUE)
-  
+
   ml_file <- paste0(tbl_name, "_ml.txt")
   col_status <- ifelse(exists_not_empty(ml_file), FALSE, TRUE)
   utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
