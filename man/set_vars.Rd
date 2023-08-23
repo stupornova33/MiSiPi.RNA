@@ -15,6 +15,7 @@ set_vars(
   pi_pal,
   si_pal,
   annotate_bed,
+  weight_reads,
   gff_file = NULL
 )
 }
@@ -36,6 +37,8 @@ set_vars(
 \item{si_pal}{a string}
 
 \item{annotate_bed}{a string, "T" or "F"}
+
+\item{weight_reads}{a string, "T" or "F"}
 
 \item{gff_file}{a string}
 }

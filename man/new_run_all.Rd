@@ -19,6 +19,7 @@ new_run_all(
   plot_output,
   path_to_RNAfold,
   annotate_bed,
+  weight_reads,
   bed_file
 )
 }
@@ -48,6 +49,8 @@ new_run_all(
 \item{path_to_RNAfold}{a string}
 
 \item{annotate_bed}{a string, "T" or "F"}
+
+\item{weight_reads}{a string, "T", or "F"}
 
 \item{bed_file}{a string}
 }
