@@ -14,7 +14,7 @@
 #' @param path_to_RNAfold a string
 #' @param annotate_bed a string, "T" or "F"
 #' @param weight_reads a string, "T", or "F"
-#' @param bed_file a string
+#' @param gff_file a string
 #' @return results
 
 #' @export
@@ -22,7 +22,7 @@
 
 
 new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, input_file, genome_file, min_read_count, si_pal, pi_pal,
-                        plot_output, path_to_RNAfold, annotate_bed, weight_reads, bed_file){
+                        plot_output, path_to_RNAfold, annotate_bed, weight_reads, gff_file){
 
   width <- pos <- start <- end <- NULL
   local_ml <- data.table::data.table(locus = numeric(1), locus_length = numeric(1), unique_read_bias = numeric(1),strand_bias = numeric(1),

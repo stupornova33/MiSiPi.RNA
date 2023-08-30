@@ -21,7 +21,7 @@ plot_density <- function(all_df, reg_start, reg_stop){
       ggplot2::geom_area(ggplot2::aes(y=pos_18_19), fill = "yellow") +
       ggplot2::geom_area(ggplot2::aes(y=neg_18_19), fill = "yellow") +
       ggplot2::scale_y_continuous(expand = ggplot2::expansion(mult = c(0,1))) +
-      ggplot2::scale_x_continuous(breaks = seq(reg_start, reg_stop, by = round(length/10)), expand = ggplot2::expansion(mult = c(0,0.06))) +
+      ggplot2::scale_x_continuous(breaks = seq((reg_start - 10), (reg_stop + 10), by = round(length/10)), expand = ggplot2::expansion(mult = c(0,0.06))) +
       ggplot2::ggtitle("Read Density")+
       ggplot2::theme_void() +
       ggplot2::theme(axis.text.x= ggplot2::element_text(size = 10, angle = 60),

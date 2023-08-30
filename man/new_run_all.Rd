@@ -20,7 +20,7 @@ new_run_all(
   path_to_RNAfold,
   annotate_bed,
   weight_reads,
-  bed_file
+  gff_file
 )
 }
 \arguments{
@@ -52,7 +52,7 @@ new_run_all(
 
 \item{weight_reads}{a string, "T", or "F"}
 
-\item{bed_file}{a string}
+\item{gff_file}{a string}
 }
 \value{
 results

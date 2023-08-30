@@ -43,7 +43,7 @@ set_vars <- function(bed_file, input_file, genome, min_read_count, plot_output, 
   reg_stop <- test_list$V3
   length <- test_list$length
   chromosome <- unlist(unname(test_list$chromosome))
-  var_list <- list(chom_name = chrom_name,
+  var_list <- list(chrom_name = chrom_name,
                    reg_start = reg_start,
                    reg_stop = reg_stop,
                    length = length,
