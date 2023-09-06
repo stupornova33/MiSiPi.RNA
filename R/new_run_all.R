@@ -224,8 +224,6 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     local_ml$max_pi_count <- max_pi_heat$highest_pi_count/total_read_count
 
     local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
-
-    print(paste0("highest_pi_col: ", local_ml$highest_pi_col, " max_pi_count: ", local_ml$max_pi_count, " max_pi_z_overlap: ", local_ml$max_piz_overlap))
     piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
     col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
     write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
