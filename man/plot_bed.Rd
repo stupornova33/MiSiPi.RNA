@@ -5,10 +5,10 @@
 \title{takes a gff file
 outputs a plot}
 \usage{
-plot_bed(gff_path, chrom_name, reg_start, reg_stop)
+plot_bed(gff_file, chrom_name, reg_start, reg_stop)
 }
 \arguments{
-\item{gff_path}{a string path leading to the gff file}
+\item{gff_file}{a string path leading to the gff file}
 
 \item{chrom_name}{a string}
 

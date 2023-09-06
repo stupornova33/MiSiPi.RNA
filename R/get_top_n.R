@@ -1,7 +1,7 @@
 #' function takes a data table of reads
 #' summarizes count of grouped reads
 #' returns an unweighted top n% of reads
-#' 
+#'
 #' @param chrom a chrom object
 #' @param chrom_name a string
 #' @param n a decimal
@@ -22,22 +22,22 @@ get_top_n <- function(filter_dt, chrom_name, n){
       return(current_df)
    }
 
-   res <- lapply(seq(nrow(filter_dt)), rep_reads)
-   res_df <- dplyr::bind_rows(res)
-
-   #shuffle order randomly
-   res_df <- res_df[sample(1:nrow(res_df)), ] %>%
-     dplyr::mutate(width = end - start + 1)
-
-   res_df$rname <- chrom_name
-   counts_dt <- res_df %>%
-      dplyr::group_by_all() %>% dplyr::summarize(count = dplyr::n())
-
-   counts_dt <- counts_dt %>% dplyr::arrange(count)
+   counts_dt <- filter_dt %>% dplyr::arrange(count)
 
 
    counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
 
+   res <- lapply(seq(nrow(filter_dt)), rep_reads)
+   res_df <- dplyr::bind_rows(res)
+
+   #res_df$rname <- chrom_name
+   #shuffle order randomly
+   res_df <- res_df[sample(1:nrow(res_df)), ] %>%
+     dplyr::mutate(width = end - start + 1)
+
+
+   #counts_dt <- res_df %>%
+  #    dplyr::group_by_all() %>% dplyr::summarize(count = dplyr::n())
 
 ###################################################################################################################################
    #need to create the reads that represent the counts

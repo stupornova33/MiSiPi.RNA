@@ -19,6 +19,7 @@ siRNA_function(
   plot_output,
   path_to_RNAfold,
   annotate_bed,
+  weight_reads,
   gff_file
 )
 }
@@ -48,6 +49,8 @@ siRNA_function(
 \item{path_to_RNAfold}{a string}
 
 \item{annotate_bed}{a string, "T" or "F"}
+
+\item{weight_reads}{a string, "T" or "F"}
 
 \item{gff_file}{a string}
 }

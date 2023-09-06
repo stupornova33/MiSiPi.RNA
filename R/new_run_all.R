@@ -6,6 +6,7 @@
 #' @param chromosome an integer representing the chromosome number
 #' @param length an integer
 #' @param input_file a string
+#' @param bed_file a string
 #' @param genome_file a string
 #' @param min_read_count an integer
 #' @param si_pal a string
@@ -13,15 +14,16 @@
 #' @param plot_output a string, "T" or "F"
 #' @param path_to_RNAfold a string
 #' @param annotate_bed a string, "T" or "F"
-#' @param bed_file a string
+#' @param weight_reads a string, "T", or "F"
+#' @param gff_file a string
 #' @return results
 
 #' @export
 
 
 
-new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, input_file, genome_file, min_read_count, si_pal, pi_pal,
-                        plot_output, path_to_RNAfold, annotate_bed, bed_file){
+new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, input_file, bed_file, genome_file, min_read_count, si_pal, pi_pal,
+                        plot_output, path_to_RNAfold, annotate_bed, weight_reads, gff_file){
 
   width <- pos <- start <- end <- NULL
   local_ml <- data.table::data.table(locus = numeric(1), locus_length = numeric(1), unique_read_bias = numeric(1),strand_bias = numeric(1),
@@ -121,7 +123,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
 
   si_res <- siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, input_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
-                           annotate_bed, gff_file)
+                           annotate_bed, weight_reads, gff_file)
 
   max_si_heat <- get_max_si_heat(si_res)
 
@@ -160,7 +162,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   if(!dir.exists('run_all/miRNA_dir/')) dir.create('run_all/miRNA_dir/')
   miRNA_dir <- 'run_all/miRNA_dir/'
   mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
-  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold)
+  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
 
   #Look at first result
   mi_res <- mi_res[[1]]
@@ -174,7 +176,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     plus_overlapz <- NA
   }
 
-  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold)
+  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
 
   mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -214,7 +216,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   pi_res <- piRNA_function(chrom_name, reg_start, reg_stop, input_file, pi_log, piRNA_dir, pi_pal, plot_output = "F")
 
   if(!is.na(pi_res[[1]][1])){
-    if(!sum(pi_res[[1]] == 0)){
+    if(sum(pi_res[[1]] != 0)){
     max_pi_heat <- get_max_pi_heat(pi_res)
 
     local_ml$highest_pi_col <- max_pi_heat$highest_pi_col
@@ -222,7 +224,6 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     local_ml$max_pi_count <- max_pi_heat$highest_pi_count/total_read_count
 
     local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
-
     piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
     col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
     write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
