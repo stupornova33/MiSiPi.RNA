@@ -6,6 +6,7 @@
 #' @param chromosome an integer representing the chromosome number
 #' @param length an integer
 #' @param input_file a string
+#' @param bed_file a string
 #' @param genome_file a string
 #' @param min_read_count an integer
 #' @param si_pal a string
@@ -21,7 +22,7 @@
 
 
 
-new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, input_file, genome_file, min_read_count, si_pal, pi_pal,
+new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, input_file, bed_file, genome_file, min_read_count, si_pal, pi_pal,
                         plot_output, path_to_RNAfold, annotate_bed, weight_reads, gff_file){
 
   width <- pos <- start <- end <- NULL

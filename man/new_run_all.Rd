@@ -12,6 +12,7 @@ new_run_all(
   chromosome,
   length,
   input_file,
+  bed_file,
   genome_file,
   min_read_count,
   si_pal,
@@ -35,6 +36,8 @@ new_run_all(
 \item{length}{an integer}
 
 \item{input_file}{a string}
+
+\item{bed_file}{a string}
 
 \item{genome_file}{a string}
 
