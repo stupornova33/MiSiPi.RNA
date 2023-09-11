@@ -27,10 +27,10 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   width <- pos <- start <- end <- NULL
   local_ml <- data.table::data.table(locus = numeric(1), locus_length = numeric(1), unique_read_bias = numeric(1),strand_bias = numeric(1),
-  perc_GC = numeric(1), highest_size = numeric(1), perc_first_nucT = numeric(1), perc_A10 = numeric(1),
+  perc_GC = numeric(1), ave_size = numeric(1), perc_first_nucT = numeric(1), perc_A10 = numeric(1),
   highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),si_dicerz = numeric(1), MFE = numeric(1), hp_dicerz = numeric(1), hp_phasedz = numeric(1),
-  mirnaMFE = numeric(1), mirna_dicerz = numeric(1), highest_pi_col = numeric(1), max_pi_count = numeric(1),
-  max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), perc_paired = numeric(1), overlapz = numeric(1))
+  mirnaMFE = numeric(1), mirna_dicerz = numeric(1), pingpong_col = numeric(1), max_pi_count = numeric(1),
+  max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1))
 
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
@@ -95,9 +95,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   local_ml$perc_GC <- get_GC_content(forward_dt, reverse_dt)
   read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
-  max_size <- highest_sizes(read_dist)
+  ave_size <- highest_sizes(read_dist)
 
-  local_ml$highest_size <- max_size
+  local_ml$ave_size <- ave_size
 
   cat(file = logfile, "Creating size plots\n", append = TRUE)
 
@@ -130,11 +130,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   local_ml$highest_si_col <- max_si_heat$highest_si_col
   local_ml$si_dicerz <- si_res$si_dicer$Z_score[9]
   local_ml$num_si_dicer_reads <- si_res[[2]]$proper_count[5]/total_read_count
-  local_ml$perc_paired <- max(unlist(unname(si_res[[3]][[1]][4])), unlist(unname(si_res[[3]][[2]][4])))
+  local_ml$hp_perc_paired <- max(unlist(unname(si_res[[3]][[1]][4])), unlist(unname(si_res[[3]][[2]][4])))
 
   perc_paired_file <- paste0(si_dir, "perc_paired.txt")
   col_status <- ifelse(exists_not_empty(perc_paired_file), FALSE, TRUE)
-  write.table(local_ml$perc_paired, perc_paired_file, quote = FALSE, append = TRUE, col.names = col_status)
+  write.table(local_ml$hp_perc_paired, perc_paired_file, quote = FALSE, append = TRUE, col.names = col_status)
 
   #### get hairpin-specific results
 
@@ -168,6 +168,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   mi_res <- mi_res[[1]]
   mirnaMFE_plus <- mi_res$mfe
 
+  pp_plus <- mi_res$perc_paired
   mirna_dicerz_plus <- mi_res$overhangs$zscore[5]
 
   if(mi_res$overhangs$zscore[1] != "NaN"){
@@ -180,6 +181,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
+  pp_minus <- mi_res$perc_paired
   mirna_dicerz_minus <- mi_res$overhangs$zscore[5]
 
   if(mi_res$overhangs$zscore[1] != "NaN"){
@@ -195,6 +197,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     mirna_dicerz_minus <- -33
   }
 
+  local_ml$mi_perc_paired <- max(pp_plus, pp_minus)
   local_ml$mirnaMFE <- min(mirnaMFE_plus, mirnaMFE_minus)
   local_ml$mirna_dicerz <- max(mirna_dicerz_plus, mirna_dicerz_minus)
 
@@ -219,7 +222,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     if(sum(pi_res[[1]] != 0)){
     max_pi_heat <- get_max_pi_heat(pi_res)
 
-    local_ml$highest_pi_col <- max_pi_heat$highest_pi_col
+    local_ml$pingpong_col <- max_pi_heat$highest_pi_col
 
     local_ml$max_pi_count <- max_pi_heat$highest_pi_count/total_read_count
 
