@@ -38,7 +38,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
 
    cat(file = paste0(dir, logfile), "Making Forward DT\n", append = TRUE)
    forward_dt <- data.table::setDT(makeBamDF(chromP)) %>%
-     subset(width <= 32 & width >= 15) %>%
+     subset(width <= 25 & width >= 20) %>%
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
       dplyr::group_by_all() %>%
@@ -47,7 +47,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
 
    cat(file = paste0(dir, logfile), "Making Reverse DT\n", append = TRUE)
    reverse_dt <- data.table::setDT(makeBamDF(chromM)) %>%
-       subset(width <= 32 & width >= 15) %>%
+       subset(width <= 25 & width >= 20) %>%
        dplyr::mutate(start = pos, end = pos + width - 1) %>%
        dplyr::select(-c(pos)) %>%
        dplyr::group_by_all() %>%
@@ -62,11 +62,11 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
       cat(file = paste0(dir, logfile), "Calc overhangs\n", append = TRUE)
 
       if(weight_reads == "T"){
-        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 10)
-        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 10)
+        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 98)
+        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 98)
       } else {
-        forward_dt <- get_top_n(forward_dt, chrom_name, 10)
-        reverse_dt <- get_top_n(reverse_dt, chrom_name, 10)
+        forward_dt <- get_top_n(forward_dt, chrom_name, 98)
+        reverse_dt <- get_top_n(reverse_dt, chrom_name, 98)
       }
       #check to see if subsetted dfs are empty
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){

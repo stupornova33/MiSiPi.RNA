@@ -11,7 +11,7 @@
 
 get_top_n_weighted <- function(dt, chrom_name, n){
   width <- pos <- start <- end <- first <- count <- NULL
-  n <- n/100
+  #n <- n/100
   dt$rname <- chrom_name
 
   rep_reads <- function(i) {
@@ -42,7 +42,7 @@ get_top_n_weighted <- function(dt, chrom_name, n){
         final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
      } else {
         #vec <- seq((mn - 1), mx + window, by = window)
-        counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
+        #counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
         #binned_tbl <- counts_dt %>% dplyr::mutate(bin = cut(count, breaks = c(vec)))
         counts_dt <- counts_dt %>% dplyr::mutate(prop = count/mx)
         counts_dt <- counts_dt %>% dplyr::mutate(weighted_count = prop*count)
