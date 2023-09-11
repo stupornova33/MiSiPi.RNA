@@ -13,12 +13,13 @@
 #' @param plot_output a string, 'T' or 'F'. Default is 'T'
 #' @param path_to_RNAfold a string
 #' @param annotate_bed a string, "T" or "F"
+#' @param weight_reads a string, "T" or "F"
 #' @param gff_file a string
 #' @return results
 
 #' @export
 siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, input_file, logfile, dir,
-                           pal, plot_output, path_to_RNAfold, annotate_bed, gff_file){
+                           pal, plot_output, path_to_RNAfold, annotate_bed, weight_reads, gff_file){
    print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
    prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
    width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
@@ -59,9 +60,14 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
    if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       print("f_dt and r_dt are not empty")
       cat(file = paste0(dir, logfile), "Calc overhangs\n", append = TRUE)
-      forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 10)
-      reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 10)
 
+      if(weight_reads == "T"){
+        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 10)
+        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 10)
+      } else {
+        forward_dt <- get_top_n(forward_dt, chrom_name, 10)
+        reverse_dt <- get_top_n(reverse_dt, chrom_name, 10)
+      }
       #check to see if subsetted dfs are empty
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       ### added, testing
@@ -148,7 +154,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
    )
 
    dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, input_file, logfile, dir, plot_output,
-                              path_to_RNAfold, annotate_bed, gff_file)
+                              path_to_RNAfold, annotate_bed, weight_reads, gff_file)
    ### hairpins
    if(plot_output == "T"){
       cat(file = paste0(dir, logfile), "plot_si_heat\n", append = TRUE)

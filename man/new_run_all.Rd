@@ -12,6 +12,7 @@ new_run_all(
   chromosome,
   length,
   input_file,
+  bed_file,
   genome_file,
   min_read_count,
   si_pal,
@@ -19,7 +20,8 @@ new_run_all(
   plot_output,
   path_to_RNAfold,
   annotate_bed,
-  bed_file
+  weight_reads,
+  gff_file
 )
 }
 \arguments{
@@ -35,6 +37,8 @@ new_run_all(
 
 \item{input_file}{a string}
 
+\item{bed_file}{a string}
+
 \item{genome_file}{a string}
 
 \item{min_read_count}{an integer}
@@ -49,7 +53,9 @@ new_run_all(
 
 \item{annotate_bed}{a string, "T" or "F"}
 
-\item{bed_file}{a string}
+\item{weight_reads}{a string, "T", or "F"}
+
+\item{gff_file}{a string}
 }
 \value{
 results

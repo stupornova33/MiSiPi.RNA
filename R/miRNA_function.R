@@ -15,12 +15,13 @@
 #' @param dir a string
 #' @param plot_output a string, default = TRUE
 #' @param path_to_RNAfold a string
+#' @param weight_reads a string, "T" or "F"
 
 #' @return plots
 #' @export
 
 miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
-                           strand, min_read_count, genome_file, input_file, logfile, dir, plot_output, path_to_RNAfold){
+                           strand, min_read_count, genome_file, input_file, logfile, dir, plot_output, path_to_RNAfold, weight_reads){
    print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
     cat(file = paste0(dir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
    pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
@@ -90,14 +91,16 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    ########################################################## main logic ################################################################
    ## make the read data tables
    filter_r2_dt <- filter_mi_dt(chrom, chrom_name)
-   dt <- filter_r2_dt %>%
-     dplyr::group_by_all() %>%
-     dplyr::reframe(count = dplyr::n())
+   new_dt <- filter_r2_dt
 
    if(nrow(filter_r2_dt) == 0){
       return(null_mi_res())
    } else {
-      r2_dt <- get_top_n_weighted(dt, chrom_name, 10)
+      if(weight_reads == "T"){
+        r2_dt <- get_top_n_weighted(new_dt, chrom_name, 10)
+      } else {
+        r2_dt <- get_top_n(new_dt, chrom_name, 10)
+      }
       r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
       filter_r2_dt <- NULL
       if(nrow(r2_dt) == 0){

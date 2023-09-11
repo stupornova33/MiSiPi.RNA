@@ -13,7 +13,7 @@ using namespace Rcpp;
 //' @param pileups_count A vector of ints
 //' @return A data.frame consisting of positions and the counts associated with those positions
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame mergePileups(std::vector<int> start, std::vector<int> end, std::vector<int> pileups_pos, std::vector<int> pileups_count){
    int startSize = start.size();
    int pileupsSize = pileups_pos.size();
@@ -67,7 +67,7 @@ DataFrame mergePileups(std::vector<int> start, std::vector<int> end, std::vector
 //' @param dfsize An integer
 //' @return A data.frame of nearby reads
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r_start, IntegerVector r_end, int max_dist, int dfsize){
 // Calculate the distance between overlapping read pairs
 
@@ -145,7 +145,7 @@ DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r
 //' @param size An integer
 //' @return A data.frame consisting of start and stop positions along with their fasta sequence
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame getFastas(std::string input_str, IntegerVector start, IntegerVector stop, int size){
    int memory_reserve = size;
    std::vector<std::string> fastas;
@@ -177,7 +177,7 @@ DataFrame getFastas(std::string input_str, IntegerVector start, IntegerVector st
 //' @param size An integer
 //' @return A vector of strings containing the converted sequences
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 std::vector<std::string> convertU(std::vector<std::string> input_str, int size){
    std::vector<std::string> converted;
    converted.reserve(size);
@@ -212,7 +212,7 @@ std::vector<std::string> convertU(std::vector<std::string> input_str, int size){
 //' @param size An integer
 //' @return A data.frame consisting of start and stop positions along with their fasta sequence
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame getPileups(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
                      std::vector<int> start_r2, std::vector<int> end_r2){
 //calculates the average pileup for a read using counts at each nucleotide position
@@ -305,7 +305,7 @@ DataFrame getPileups(std::vector<int> dtpos, std::vector<int> dtcount, std::vect
 //' @param v A referenced vector of integers representing values
 //' @return A std::map of int pairs
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
    // Assumes vectors of same length
    // Only call from getPileupsMap which should only be called with data.frame input
@@ -337,7 +337,7 @@ std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
 //' @param count A vector of ints representing the number of duplicates each start_r1, end_r1, start_r2, end_r2 had prior to grouping 
 //' @return A data.frame consisting of the average pileups in read 1 range and in read 2 range
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
                      std::vector<int> start_r2, std::vector<int> end_r2, std::vector<int> count){
    //calculates the average pileup for a read using counts at each nucleotide position
@@ -428,7 +428,7 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
 //' @param y A vector of ints
 //' @return A data.frame consisting of start and stop positions for both x and y
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
    int X_SIZE = x.size();
    int Y_SIZE = y.size();
@@ -495,7 +495,7 @@ DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
 //' @param r2_end A vector of ints
 //' @return A data.frame representing the number of proper and improper overhangs calculated at each shift position
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
                          std::vector<int> r2_start, std::vector<int> r2_width){
    std::vector<int> shift_vec = {-4,-3,-2,-1,0,1,2,3,4};
@@ -539,7 +539,7 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
 //' @param r2_end A vector of ints
 //' @return A data.frame representing the number of proper and improper overhangs calculated at each shift position
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
                          std::vector<int> r2_start, std::vector<int> r2_width){
   std::vector<int> shift_vec = {-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8};
@@ -579,7 +579,7 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
 //' @param widthy An Integer
 //' @return proper_overlap An integer representing what the proper overlap should be for these positions
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 int proper_overlap(int widthx, int widthy) {
    // widthx = 15 widthy = 15
    // widthx - 2 = 13 so p_overlap = 15
@@ -611,7 +611,7 @@ int proper_overlap(int widthx, int widthy) {
 //' @param overlap An Integer
 //' @return count An Integer representing the number of overlaps present
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 int overlap_counts(std::vector<int> f_start, int X_SIZE,
                    std::vector<int> r_end, int Y_SIZE,
                    int overlap) {
@@ -649,7 +649,7 @@ int overlap_counts(std::vector<int> f_start, int X_SIZE,
 //' @param rwidth An integer
 //' @return result A matrix representing the overlaps present at each width of reads from 15-32
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
 
@@ -750,7 +750,7 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 //' @param dfsize An integer
 //' @return df A data.frame containing the start positions of both reads, their widths, and the distance
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
                           IntegerVector startY, IntegerVector endY, int dfsize){
    // Create an initial memory block size for the vectors
@@ -810,7 +810,7 @@ DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
 //' @param rwidth An integer
 //' @return df A data.frame containing the counts of each overlap to be used for a z score
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                            std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
    int res_size = 27;
@@ -863,7 +863,7 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
 //' @param rwidth An integer
 //' @return result A matrix representing the overlaps present at each width of reads from 15-32
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth){
 
@@ -967,7 +967,7 @@ NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 //' @param int total_count An integer
 //' @return df A data.frame
 //' @export
-//[[Rcpp::export]]
+// [[Rcpp::export]]
 DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop,
                             std::vector<int> lStart, std::vector<int> lStop,
                             std::vector<int> r2Start, std::vector<int> r2Stop,

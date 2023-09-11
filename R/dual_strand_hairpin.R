@@ -13,6 +13,7 @@
 #' @param plot_output a string, 'T' or 'F', default = 'T
 #' @param path_to_RNAfold a string
 #' @param annotate_bed a string, "T" or "F"
+#' @param weight_reads a string, "T" or "F"
 #' @param gff_file a string
 #' @return max_overhang
 
@@ -20,7 +21,7 @@
 
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                              min_read_count, genome_file, input_file, logfile, dir, plot_output, path_to_RNAfold, annotate_bed,
-                             gff_file){
+                             weight_reads, gff_file){
 
   end <- dist <- num.y <- num.x <- Zscore <- converted <- phased_z <- NULL
 
@@ -98,8 +99,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   dt <- filter_r2_dt #%>%
     #dplyr::group_by_all() #%>%
     #dplyr::reframe(count = dplyr::n())
-
-  r2_dt <- get_top_n_weighted(dt, chrom_name, 10)
+  if(weight_reads == "T"){
+    r2_dt <- get_top_n_weighted(dt, chrom_name, 10)
+  } else {
+    r2_dt <- get_top_n(dt, chrom_name, 10)
+  }
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
@@ -202,7 +206,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
+  if(weight_reads == "T"){
+    r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
+  } else {
+    r2_dt <- get_top_n(filter_r2_dt, chrom_name, 10)
+  }
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){

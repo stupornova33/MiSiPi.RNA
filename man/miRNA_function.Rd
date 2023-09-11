@@ -20,7 +20,8 @@ miRNA_function(
   logfile,
   dir,
   plot_output,
-  path_to_RNAfold
+  path_to_RNAfold,
+  weight_reads
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ miRNA_function(
 \item{plot_output}{a string, default = TRUE}
 
 \item{path_to_RNAfold}{a string}
+
+\item{weight_reads}{a string, "T" or "F"}
 }
 \value{
 plots
