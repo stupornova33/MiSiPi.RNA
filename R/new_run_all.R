@@ -30,7 +30,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   perc_GC = numeric(1), ave_size = numeric(1), perc_first_nucT = numeric(1), perc_A10 = numeric(1),
   highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),si_dicerz = numeric(1), MFE = numeric(1), hp_dicerz = numeric(1), hp_phasedz = numeric(1),
   mirnaMFE = numeric(1), mirna_dicerz = numeric(1), pingpong_col = numeric(1), max_pi_count = numeric(1),
-  max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1))
+  max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1),
+  shap_p = numeric(1), auc = numeric(1), max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1))
+
 
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
@@ -69,6 +71,28 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos))
   chromM <- NULL
+
+  sizes <- data.frame(width = c(forward_dt$width, reverse_dt$width))
+
+  set.seed(1234)
+  sample <- sizes[sample(1:nrow(sizes)),]
+  sample <- head(sample, 5000)
+  local_ml$shap_p <- unlist(unname(shapiro.test(sample)))[2]
+  all_data <- rbind(forward_dt, reverse_dt)
+
+  d <- density.default(all_data$width)
+  m<-mean(all_data$width)
+  std<-sqrt(var(all_data$width))
+  hist(all_data$width, density=20, breaks=20, prob=TRUE,
+       xlab="x-variable", ylim=c(0, 2),
+       main="normal curve over histogram")
+  curve <- curve(dnorm(x, mean=m, sd=std),
+        col="darkblue", lwd=2, add=TRUE, yaxt="n")
+
+  local_ml$auc <- sum(diff(curve$x) * (head(curve$y,-1)+tail(curve$y,-1)))/2
+
+
+
 
   if(nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) return()
 
