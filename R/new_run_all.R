@@ -31,7 +31,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),si_dicerz = numeric(1), MFE = numeric(1), hp_dicerz = numeric(1), hp_phasedz = numeric(1),
   mirnaMFE = numeric(1), mirna_dicerz = numeric(1), pingpong_col = numeric(1), max_pi_count = numeric(1),
   max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1),
-  shap_p = numeric(1), auc = numeric(1))
+  shap_p = numeric(1), auc = numeric(1), max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1))
+
 
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
