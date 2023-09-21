@@ -72,6 +72,24 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       ### added, testing
       overlaps <- find_overlaps(forward_dt, reverse_dt)
+
+      uniq_overlaps <- dplyr::distinct(overlaps)
+
+      mygranges <- GenomicRanges::GRanges(
+        seqnames = c(chrom_name),
+        ranges = IRanges::IRanges(start=c(1), end=c(length)))
+
+      geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
+      geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+      #paired_seqs <- uniq_overlaps %>%
+      #  dplyr::mutate(r1_seq = paste0(chrom_name, ":", reg_start, "-", reg_stop, " ", substr(geno_seq, uniq_overlaps$r1_start, uniq_overlaps$r1_end)), r2_seq = paste0(chrom_name, ":", reg_start, "-", reg_stop, " " , substr(geno_seq, uniq_overlaps$r2_start, uniq_overlaps$r2_end)))
+
+
+      #paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seqs, ",", r2_seqs)) %>% tidyr::separate_rows(col1, sep = ",")
+      #fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
+
+      #write.table(unlist(fastas), "siRNA_pairs.fa", sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
       #dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
       dicer_overhangs <- calc_expand_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
       dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
