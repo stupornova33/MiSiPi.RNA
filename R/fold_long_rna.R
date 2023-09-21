@@ -19,7 +19,7 @@ fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold){
    if(syscheck == "Windows") {
      fold <- system2(command = path_to_RNAfold, args = "converted.fasta", stdout= TRUE, wait = TRUE, invisible = TRUE)
    } else if(syscheck == "Linux"){
-     fold <- system(command = path_to_RNAfold, input = converted)
+     fold <- system(command = path_to_RNAfold, input = converted, intern = TRUE)
    } else {
      print("Operating system is not Windows or Linux. Halt.")
      return()
