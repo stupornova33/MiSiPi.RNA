@@ -78,7 +78,7 @@ plot_bed <- function(gff_file, chrom_name, reg_start, reg_stop){
             ymax <- 4
             perc_length <- (stop - start)*0.15
             xvals <- c(start, start, stop, stop + perc_length, stop)
-            ids <- c(rep(bed[2], times = length(xvals)))
+            ids <- c(rep(bed[6], times = length(xvals)))
             yvals <- c(ymin, ymax, ymax, ymin + 0.5, ymin)
             #midx <- start + 14
             midx <- ((stop - start)/2) + start
@@ -90,7 +90,7 @@ plot_bed <- function(gff_file, chrom_name, reg_start, reg_stop){
             perc_length <- (stop - start)*0.05
             xvals <- c(start, start - perc_length, start, stop, stop)
             yvals <- c(ymin, ymin + 0.5, ymax, ymax, ymin)
-            ids <- c(rep(bed[2], times = length(xvals)))
+            ids <- c(rep(bed[6], times = length(xvals)))
             midx <- ((stop - start)/2) + start
             #midx <- start + 14
             midy <- ymin + 0.5
