@@ -280,7 +280,9 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       mfe <- reduced_list[[x]]$mfe
       print(prefix)
       helix_df <- data.frame(reduced_list[[x]]$helix)
+
       perc_paired <- (length(reduced_list[[x]]$helix$i)*2)/(reduced_list[[x]]$stop - reduced_list[[x]]$start)
+
       #dicer_dt <- rep_reads(filter2_dt)
       #since the reads are replicated in the get_top_n function, no need for that now
       dicer_overlaps <- dicer_overlaps(r2_dt, reduced_list[[x]]$helix, chrom_name, reduced_list[[x]]$start)
