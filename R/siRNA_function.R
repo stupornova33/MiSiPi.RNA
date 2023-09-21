@@ -38,7 +38,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
 
    cat(file = paste0(dir, logfile), "Making Forward DT\n", append = TRUE)
    forward_dt <- data.table::setDT(makeBamDF(chromP)) %>%
-     subset(width <= 32 & width >= 15) %>%
+     subset(width <= 25 & width >= 20) %>%
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
       dplyr::group_by_all() %>%
@@ -47,7 +47,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
 
    cat(file = paste0(dir, logfile), "Making Reverse DT\n", append = TRUE)
    reverse_dt <- data.table::setDT(makeBamDF(chromM)) %>%
-       subset(width <= 32 & width >= 15) %>%
+       subset(width <= 25 & width >= 20) %>%
        dplyr::mutate(start = pos, end = pos + width - 1) %>%
        dplyr::select(-c(pos)) %>%
        dplyr::group_by_all() %>%
@@ -62,16 +62,34 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
       cat(file = paste0(dir, logfile), "Calc overhangs\n", append = TRUE)
 
       if(weight_reads == "T"){
-        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 10)
-        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 10)
+        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 98)
+        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 98)
       } else {
-        forward_dt <- get_top_n(forward_dt, chrom_name, 10)
-        reverse_dt <- get_top_n(reverse_dt, chrom_name, 10)
+        forward_dt <- get_top_n(forward_dt, chrom_name, 98)
+        reverse_dt <- get_top_n(reverse_dt, chrom_name, 98)
       }
       #check to see if subsetted dfs are empty
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       ### added, testing
       overlaps <- find_overlaps(forward_dt, reverse_dt)
+
+      uniq_overlaps <- dplyr::distinct(overlaps)
+
+      mygranges <- GenomicRanges::GRanges(
+        seqnames = c(chrom_name),
+        ranges = IRanges::IRanges(start=c(1), end=c(length)))
+
+      geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
+      geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+      #paired_seqs <- uniq_overlaps %>%
+      #  dplyr::mutate(r1_seq = paste0(chrom_name, ":", reg_start, "-", reg_stop, " ", substr(geno_seq, uniq_overlaps$r1_start, uniq_overlaps$r1_end)), r2_seq = paste0(chrom_name, ":", reg_start, "-", reg_stop, " " , substr(geno_seq, uniq_overlaps$r2_start, uniq_overlaps$r2_end)))
+
+
+      #paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seqs, ",", r2_seqs)) %>% tidyr::separate_rows(col1, sep = ",")
+      #fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
+
+      #write.table(unlist(fastas), "siRNA_pairs.fa", sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
       #dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
       dicer_overhangs <- calc_expand_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
       dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)

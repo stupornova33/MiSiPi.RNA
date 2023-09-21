@@ -91,17 +91,19 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    ########################################################## main logic ################################################################
    ## make the read data tables
    filter_r2_dt <- filter_mi_dt(chrom, chrom_name)
-   new_dt <- filter_r2_dt
+   #new_dt <- filter_r2_dt
 
    if(nrow(filter_r2_dt) == 0){
       return(null_mi_res())
    } else {
       if(weight_reads == "T"){
-        r2_dt <- get_top_n_weighted(new_dt, chrom_name, 10)
+        r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
+        r1_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
       } else {
-        r2_dt <- get_top_n(new_dt, chrom_name, 10)
+        r2_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
+        r1_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
       }
-      r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
+      r1_dt <- r1_dt %>% dplyr::mutate(end = end + 59)
       filter_r2_dt <- NULL
       if(nrow(r2_dt) == 0){
         return(null_mi_res())
@@ -279,6 +281,8 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       print(prefix)
       helix_df <- data.frame(reduced_list[[x]]$helix)
 
+      perc_paired <- (length(reduced_list[[x]]$helix$i)*2)/(reduced_list[[x]]$stop - reduced_list[[x]]$start)
+
       #dicer_dt <- rep_reads(filter2_dt)
       #since the reads are replicated in the get_top_n function, no need for that now
       dicer_overlaps <- dicer_overlaps(r2_dt, reduced_list[[x]]$helix, chrom_name, reduced_list[[x]]$start)
@@ -437,7 +441,7 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
          print(all_plot)
          grDevices::dev.off()
       }
-      return(list("mfe" = mfe, "overhangs" = c(overhangs,z_df)))
+      return(list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs,z_df)))
    }
 
    results <- lapply(1:length(reduced_list), plot_rna_struct)

@@ -86,7 +86,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     }
 
   filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
-    base::subset(width <= 32 & width >= 18) %>%
+    base::subset(width <= 25 & width >= 20) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos, first, seq)) %>%
     dplyr::group_by_all() %>%
@@ -100,9 +100,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     #dplyr::group_by_all() #%>%
     #dplyr::reframe(count = dplyr::n())
   if(weight_reads == "T"){
-    r2_dt <- get_top_n_weighted(dt, chrom_name, 10)
+    r2_dt <- get_top_n_weighted(dt, chrom_name, 98)
   } else {
-    r2_dt <- get_top_n(dt, chrom_name, 10)
+    r2_dt <- get_top_n(dt, chrom_name, 98)
   }
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
@@ -152,7 +152,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold)
     MFE <- fold_list$MFE
-    perc_paired <- length(fold_list$helix$i)/(reg_stop - reg_start)
+    perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
 
     all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
@@ -200,16 +200,16 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
   filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
-    base::subset(width <= 32 & width >= 18) %>%
+    base::subset(width <= 25 & width >= 20) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos, first, seq))  %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
   if(weight_reads == "T"){
-    r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 10)
+    r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 98)
   } else {
-    r2_dt <- get_top_n(filter_r2_dt, chrom_name, 10)
+    r2_dt <- get_top_n(filter_r2_dt, chrom_name, 98)
   }
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
@@ -273,7 +273,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     } else { #else if fold bool is false and r2_dt > 0
         fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold)
         MFE <- fold_list$MFE
-        perc_paired <- length(fold_list$helix$i)/(reg_stop - reg_start)
+        perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
         all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
       if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs

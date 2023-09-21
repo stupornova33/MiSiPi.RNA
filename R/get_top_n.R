@@ -10,7 +10,7 @@
 
 get_top_n <- function(filter_dt, chrom_name, n){
    width <- pos <- start <- end <- first <- count <- NULL
-   n <- n/100
+   #n <- n/100
    rep_reads <- function(i) {
       rep_count <- filter_dt$count[i]
       rname <- rep(filter_dt$rname[i], rep_count)
@@ -25,7 +25,7 @@ get_top_n <- function(filter_dt, chrom_name, n){
    counts_dt <- filter_dt %>% dplyr::arrange(count)
 
 
-   counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
+   #counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
 
    res <- lapply(seq(nrow(filter_dt)), rep_reads)
    res_df <- dplyr::bind_rows(res)
