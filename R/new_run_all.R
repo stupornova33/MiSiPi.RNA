@@ -77,7 +77,14 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   set.seed(1234)
   sample <- sizes[sample(1:nrow(sizes)),]
   sample <- head(sample, 5000)
-  local_ml$shap_p <- unlist(unname(shapiro.test(sample)))[2]
+
+
+  if(length(sample > 3)){
+    local_ml$shap_p <- unlist(unname(shapiro.test(sample)))[2]
+  } else {
+    local_ml$shap_p <- 2
+  }
+
   all_data <- rbind(forward_dt, reverse_dt)
 
   d <- density.default(all_data$width)
