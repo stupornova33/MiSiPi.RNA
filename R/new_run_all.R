@@ -79,7 +79,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   sample <- head(sample, 5000)
 
 
-  if(length(sample > 3)){
+  if(sample > 3){
     local_ml$shap_p <- unlist(unname(shapiro.test(sample)))[2]
   } else {
     local_ml$shap_p <- 2

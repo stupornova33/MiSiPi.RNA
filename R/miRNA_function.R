@@ -1,4 +1,4 @@
-#' miRNA function
+#' miRNA_function
 #' processes reads according to phased miRNA algorithm
 #' plots output
 #' returns plots

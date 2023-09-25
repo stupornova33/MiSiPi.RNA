@@ -2,7 +2,7 @@
 % Please edit documentation in R/miRNA_function.R
 \name{miRNA_function}
 \alias{miRNA_function}
-\title{miRNA function
+\title{miRNA_function
 processes reads according to phased miRNA algorithm
 plots output
 returns plots}
@@ -57,7 +57,7 @@ miRNA_function(
 plots
 }
 \description{
-miRNA function
+miRNA_function
 processes reads according to phased miRNA algorithm
 plots output
 returns plots
