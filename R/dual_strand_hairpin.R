@@ -100,9 +100,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     #dplyr::group_by_all() #%>%
     #dplyr::reframe(count = dplyr::n())
   if(weight_reads == "T"){
-    r2_dt <- get_top_n_weighted(dt, chrom_name, 98)
+    r2_dt <- get_top_n_weighted(dt, chrom_name, 100)
   } else {
-    r2_dt <- get_top_n(dt, chrom_name, 98)
+    r2_dt <- get_top_n(dt, chrom_name, 100)
   }
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
@@ -359,7 +359,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     density_plot <- plot_density(data, reg_start, reg_stop)
     arc_plot <- plot_helix("helix.txt")
 
-    phased_zscore <- plot_phasedz(plus_hp_phased_tbl, minus_hp_phased_tbl)
+    phased_zscore <- plot_hp_phasedz(plus_hp_phased_tbl, minus_hp_phased_tbl)
 
     ## plot bed annotations (optional)
     if(annotate_bed == "T"){

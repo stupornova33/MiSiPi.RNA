@@ -26,6 +26,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
                         plot_output, path_to_RNAfold, annotate_bed, weight_reads, gff_file){
 
   width <- pos <- start <- end <- NULL
+
   local_ml <- data.table::data.table(locus = numeric(1), locus_length = numeric(1), unique_read_bias = numeric(1),strand_bias = numeric(1),
   perc_GC = numeric(1), ave_size = numeric(1), perc_first_nucT = numeric(1), perc_A10 = numeric(1),
   highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),si_dicerz = numeric(1), MFE = numeric(1), hp_dicerz = numeric(1), hp_phasedz = numeric(1),
@@ -33,10 +34,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1),
   shap_p = numeric(1), auc = numeric(1), max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1))
 
-
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
   local_ml$locus_length <- reg_stop - reg_start
+
+  print(local_ml$locus_length)
   prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
   ###############################
   # process bam input files
@@ -77,9 +79,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   set.seed(1234)
   sample <- sizes[sample(1:nrow(sizes)),]
   sample <- head(sample, 5000)
+  print(head(sample))
 
-
-  if(sample > 3){
+  if(length(sample) > 3 & !(length(unique(sample) == 1))){
     local_ml$shap_p <- unlist(unname(shapiro.test(sample)))[2]
   } else {
     local_ml$shap_p <- 2
@@ -87,18 +89,38 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   all_data <- rbind(forward_dt, reverse_dt)
 
-  d <- density.default(all_data$width)
-  m<-mean(all_data$width)
-  std<-sqrt(var(all_data$width))
-  hist(all_data$width, density=20, breaks=20, prob=TRUE,
-       xlab="x-variable", ylim=c(0, 2),
-       main="normal curve over histogram")
-  curve <- curve(dnorm(x, mean=m, sd=std),
-        col="darkblue", lwd=2, add=TRUE, yaxt="n")
 
-  local_ml$auc <- sum(diff(curve$x) * (head(curve$y,-1)+tail(curve$y,-1)))/2
+#d <- density.default(all_data$width)
+print("about to do the histogram")
+if(nrow(all_data) > 1){
+  m <- mean(all_data$width)
+  std <- sqrt(var(all_data$width))
+
+  if(!std == 0){
+    bin_width <- KernSmooth::dpih(all_data$width, scalest = "stdev")
+
+    nbins <- seq(min(all_data$width) - bin_width,
+           max(all_data$width) + bin_width,
+           by = bin_width)
+
+    hist(all_data$width, density=20, breaks = 5, prob=TRUE,
+     xlab="x-variable", ylim=c(0, 2),
+    main="normal curve over histogram")
+
+    curve <- curve(dnorm(x, mean=m, sd=std),
+      col="darkblue", lwd=2, add=TRUE, yaxt="n")
+
+    local_ml$auc <- sum(diff(curve$x) * (head(curve$y,-1)+tail(curve$y,-1)))/2
+  } else {
+      local_ml$auc <- 0
+  }
+
+} else {
+   local_ml$auc <- -1
+}
 
 
+  print("got past the histogram")
 
 
   if(nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) return()
@@ -311,5 +333,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
 
   ml_file <- paste0(tbl_name, "_ml.txt")
   col_status <- ifelse(exists_not_empty(ml_file), FALSE, TRUE)
+  print(paste0("col_status: ", col_status))
   utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
+
+  print("file has been written.")
 }

@@ -20,6 +20,7 @@ plot_sizes <- function(dist){
       ggplot2::geom_bar(stat = "identity") +
       ggplot2::theme_classic()+
       ggplot2::ggtitle("Read Size Distribution")+
+      ggplot2::theme(plot.title = ggplot2::element_text(size=18))+
       ggplot2::scale_x_continuous(breaks = seq(18,32,2))+
       ggplot2::scale_fill_manual(values = man_pal)+
       ggplot2::theme(axis.text.x = ggplot2::element_text(size=13, angle=45), axis.text.y = ggplot2::element_text(size=13))+

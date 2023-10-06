@@ -16,6 +16,7 @@ phased_piRNA_function(
   input_file,
   logfile,
   dir,
+  pal,
   plot_output
 )
 }
@@ -33,6 +34,8 @@ phased_piRNA_function(
 \item{logfile}{a string}
 
 \item{dir}{a string}
+
+\item{pal}{a string}
 
 \item{plot_output}{a string, 'T' or 'F', default is 'T'}
 }

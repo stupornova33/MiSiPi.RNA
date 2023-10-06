@@ -62,11 +62,11 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
       cat(file = paste0(dir, logfile), "Calc overhangs\n", append = TRUE)
 
       if(weight_reads == "T"){
-        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 98)
-        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 98)
+        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 100)
+        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 100)
       } else {
-        forward_dt <- get_top_n(forward_dt, chrom_name, 98)
-        reverse_dt <- get_top_n(reverse_dt, chrom_name, 98)
+        forward_dt <- get_top_n(forward_dt, chrom_name, 100)
+        reverse_dt <- get_top_n(reverse_dt, chrom_name, 100)
       }
       #check to see if subsetted dfs are empty
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
