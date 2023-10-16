@@ -5,7 +5,7 @@
 #' @export
 
 
-misi_pi <- function(vars){
+run_piRNA_function <- function(vars){
 
    dir <- 'piRNA_outputs/'
    if(!dir.exists(dir) == TRUE) dir.create(dir)

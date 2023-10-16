@@ -46,6 +46,13 @@ get_top_n_weighted <- function(dt, chrom_name, n){
         #binned_tbl <- counts_dt %>% dplyr::mutate(bin = cut(count, breaks = c(vec)))
         counts_dt <- counts_dt %>% dplyr::mutate(prop = count/mx)
         counts_dt <- counts_dt %>% dplyr::mutate(weighted_count = prop*count)
+
+        for(i in 1:nrow(counts_dt)){
+          if(counts_dt$weighted_count[i] < 1){
+            counts_dt$weighted_count[i] <- 1
+          }
+        }
+
         #binned_tbl$bin <- gsub("[()]", "", binned_tbl$bin)
         #binned_tbl$bin <- gsub("[[]", "", binned_tbl$bin)
         #binned_tbl$bin <- gsub("[]]", "", binned_tbl$bin)

@@ -334,7 +334,7 @@ std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
 //' @param end_r1 A vector of end positions from read group 2
 //' @param start_r2 A vector of start positions from read group 2
 //' @param end_r2 A vector of end positions from read group 2
-//' @param count A vector of ints representing the number of duplicates each start_r1, end_r1, start_r2, end_r2 had prior to grouping 
+//' @param count A vector of ints representing the number of duplicates each start_r1, end_r1, start_r2, end_r2 had prior to grouping
 //' @return A data.frame consisting of the average pileups in read 1 range and in read 2 range
 //' @export
 // [[Rcpp::export]]
@@ -488,7 +488,7 @@ DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
 //'
 //' This function takes in vectors of start and stop positions for read groups 1 and 2
 //' It then shifts the positions and checks to see which sets have proper and improper overhangs
-//' 
+//'
 //' @param r1_start A vector of ints
 //' @param r1_end A vector of ints
 //' @param r2_start A vector of ints
@@ -532,7 +532,7 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
 //' This function takes in vectors of start and stop positions for read groups 1 and 2
 //' It then shifts the positions and checks to see which sets have proper and improper overhangs
 //' Over a larger distance of shifts compared to calc_overhangs
-//' 
+//'
 //' @param r1_start A vector of ints
 //' @param r1_end A vector of ints
 //' @param r2_start A vector of ints
@@ -574,7 +574,7 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
 //' proper_overlap
 //'
 //' This function takes in two integers representing widths and returns a proper overlap
-//' 
+//'
 //' @param widthx An Integer
 //' @param widthy An Integer
 //' @return proper_overlap An integer representing what the proper overlap should be for these positions
@@ -603,7 +603,7 @@ int proper_overlap(int widthx, int widthy) {
 //' This function takes in vectors of start positions from read group 1 and end positions from read group 2
 //' It also takes in an overlap amount integer
 //' The function counts the number of overlaps occurring and returns them as an integer
-//' 
+//'
 //' @param f_start A vector of ints
 //' @param X_SIZE An Integer
 //' @param r_end A vector of ints
@@ -640,7 +640,7 @@ int overlap_counts(std::vector<int> f_start, int X_SIZE,
 //'
 //' This function takes in vectors of start and stop positions for read groups 1 and 2
 //' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
-//' 
+//'
 //' @param fdt_start A vector of ints
 //' @param fdt_end A vector of ints
 //' @param fwidth An integer
@@ -683,8 +683,8 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
                   rend_res.push_back(rdt_end[l]);
                }
             }
-
-            current_count = overlap_counts(fstart_res, fstart_res.size(), rstart_res, rstart_res.size(), p_overlap);
+              current_count = overlap_counts(fstart_res, fstart_res.size(), rend_res, rend_res.size(), p_overlap);
+            //current_count = overlap_counts(fstart_res, fstart_res.size(), rstart_res, rstart_res.size(), p_overlap);
          } else {
             std::vector<int> fstart_res1;
             std::vector<int> fend_res1;
@@ -709,7 +709,10 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
                   rend_res1.push_back(rdt_end[l]);
                }
             }
-            int c1 = overlap_counts(fstart_res1, fstart_res1.size(), rstart_res1, rstart_res1.size(), p_overlap);
+
+
+            int c1 = overlap_counts(fstart_res1, fstart_res1.size(), rend_res1, rend_res1.size(), p_overlap);
+            //int c1 = overlap_counts(fstart_res1, fstart_res1.size(), rstart_res1, rstart_res1.size(), p_overlap);
 
             for(int k = 0; k < f_size; k++){
                //get reads of size i
@@ -724,7 +727,8 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
                   rend_res2.push_back(rdt_end[l]);
                }
             }
-            int c2 = overlap_counts(fstart_res2, fstart_res2.size(), rstart_res2, rstart_res2.size(), p_overlap);
+            int c2 = overlap_counts(fstart_res2, fstart_res2.size(), rend_res2, rend_res2.size(), p_overlap);
+            //int c2 = overlap_counts(fstart_res2, fstart_res2.size(), rstart_res2, rstart_res2.size(), p_overlap);
 
             current_count = c1 + c2;
 
@@ -742,7 +746,7 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 //' This function takes in vectors of start and stop positions for read groups 1 and 2
 //' It calculates the distance between the end of one group and start of another and returns
 //' The results in a data.frame
-//' 
+//'
 //' @param startX A vector of ints
 //' @param endX A vector of ints
 //' @param startY A vector of ints
@@ -799,9 +803,9 @@ DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
 }
 
 //' make_count_table
-//' 
+//'
 //' This functions calculates the counts of each overlap to be used for z score
-//' 
+//'
 //' @param fdt_start A vector of ints
 //' @param fdt_end A vector of ints
 //' @param fwidth An integer
@@ -854,7 +858,7 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
 //' get_pi_overlaps
 //'
 //' This function calculates the overlaps present at each width of reads from 15-32
-//' 
+//'
 //' @param fdt_start A vector of ints
 //' @param fdt_end A vector of ints
 //' @param fwidth An integer
@@ -955,7 +959,7 @@ NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 //'
 //' This function returns a data.frame containing the start and stop positions of read 1, read 2, and a loop
 //' If the number of pileups in a loop divided by the total number of pileups is less that 0.05
-//' 
+//'
 //' @param r1Start A vector of ints
 //' @param r1Stop A vector of ints
 //' @param lStart A vector of ints

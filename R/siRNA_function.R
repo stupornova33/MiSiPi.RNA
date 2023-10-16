@@ -73,7 +73,7 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
       ### added, testing
       overlaps <- find_overlaps(forward_dt, reverse_dt)
 
-      uniq_overlaps <- dplyr::distinct(overlaps)
+      #uniq_overlaps <- dplyr::distinct(overlaps)
 
       mygranges <- GenomicRanges::GRanges(
         seqnames = c(chrom_name),
@@ -81,14 +81,19 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
 
       geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
       geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
-      #paired_seqs <- uniq_overlaps %>%
-      #  dplyr::mutate(r1_seq = paste0(chrom_name, ":", reg_start, "-", reg_stop, " ", substr(geno_seq, uniq_overlaps$r1_start, uniq_overlaps$r1_end)), r2_seq = paste0(chrom_name, ":", reg_start, "-", reg_stop, " " , substr(geno_seq, uniq_overlaps$r2_start, uniq_overlaps$r2_end)))
+      proper_overlaps <- overlaps %>% dplyr::filter(r2_start - r1_start == 2 | r2_end - r1_end == 2)
 
+      if(nrow(proper_overlaps >0)){
+        paired_seqs <- proper_overlaps %>%
+         dplyr::mutate(r1_seq = paste0(">",chrom_name, ":", proper_overlaps$r1_start, "-", proper_overlaps$r1_end, " ", substr(geno_seq, proper_overlaps$r1_start, proper_overlaps$r1_end)), r2_seq = paste0(">",chrom_name, ":", proper_overlaps$r2_start, "-", proper_overlaps$r2_end, " " , substr(geno_seq, proper_overlaps$r2_start, proper_overlaps$r2_end)))
 
-      #paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seqs, ",", r2_seqs)) %>% tidyr::separate_rows(col1, sep = ",")
-      #fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
+        paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
+        fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
 
-      #write.table(unlist(fastas), "siRNA_pairs.fa", sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+        write.table(unlist(fastas), paste0(dir, "siRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+      } else {
+        cat(file = paste0(dir, logfile), "No proper siRNA pairs were found.\n", append = TRUE)
+      }
 
       #dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
       dicer_overhangs <- calc_expand_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
@@ -216,3 +221,4 @@ siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_cou
 
      return(list(heat = results, si_dicer = dicer_overhangs, dsh))
 }
+

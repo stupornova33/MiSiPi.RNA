@@ -27,7 +27,7 @@ plot_density <- function(all_df, reg_start, reg_stop){
       ggplot2::theme(axis.text.x= ggplot2::element_text(size = 10, angle = 60),
             axis.ticks.x= ggplot2::element_line(),
             axis.line.x = ggplot2::element_line(),
-            plot.title = ggplot2::element_text(size=14, hjust = 0.5))+
+            plot.title = ggplot2::element_text(size=13, hjust = 0.5))+
       ggplot2::scale_fill_discrete(breaks = c("26-32", "23-25", "20-22", "18-19"))
    return(density)
 

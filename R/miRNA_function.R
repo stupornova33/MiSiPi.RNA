@@ -118,7 +118,9 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
    }
 
    #returns overlaps
-   overlaps <- find_overlaps(r1_dt, r2_dt) %>%
+   overlaps_tmp <- find_overlaps(r1_dt, r2_dt)
+
+   overlaps <- overlaps_tmp %>%
       dplyr::mutate(r1_end = r1_end - 59) %>%
       dplyr::mutate(r1_width = r1_end - r1_start + 1)
 
@@ -130,6 +132,25 @@ miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
       dplyr::filter(dist > 2) %>%
       #dplyr::mutate(end_r1 = start_r1 + widthx - 1, end_r2 = start_r2 + widthy - 1) %>%
       dplyr::select(-c(dist))
+
+   if(!nrow(overlaps_tmp) == 0){
+   mygranges <- GenomicRanges::GRanges(
+     seqnames = c(chrom_name),
+     ranges = IRanges::IRanges(start=c(1), end=c(length)))
+
+   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
+   geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+   proper_overlaps <- overlaps_tmp %>% dplyr::filter(r2_start - r1_start == 2 | r2_end - r1_end == 2)
+   paired_seqs <- proper_overlaps %>%
+     dplyr::mutate(r1_seq = paste0(">",chrom_name, ":", proper_overlaps$r1_start, "-", proper_overlaps$r1_end, " ", substr(geno_seq, proper_overlaps$r1_start, proper_overlaps$r1_end)), r2_seq = paste0(">",chrom_name, ":", proper_overlaps$r2_start, "-", proper_overlaps$r2_end, " " , substr(geno_seq, proper_overlaps$r2_start, proper_overlaps$r2_end)))
+
+
+
+   paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
+   fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
+
+   write.table(unlist(fastas), paste0(dir, "miRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+   }
 
    if(nrow(overlaps) == 0){
       cat(paste0(dir, logfile), "No overlapping reads found.\n", append = TRUE)

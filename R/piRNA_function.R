@@ -47,6 +47,33 @@ piRNA_function <- function(chrom_name, reg_start, reg_stop, input_file, logfile,
     return(list(heat_results, z_df))
   }
 
+
+
+
+  if(!nrow(forward_dt == 0) && (!nrow(reverse_dt) == 0)){
+    overlaps <- find_overlaps(forward_dt, reverse_dt)
+    size <- nrow(overlaps)
+
+    mygranges <- GenomicRanges::GRanges(
+    seqnames = c(chrom_name),
+    ranges = IRanges::IRanges(start=c(1), end=c(length)))
+
+    geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
+    geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+    proper_overlaps <- overlaps %>% dplyr::filter(r1_end - r2_start == 10)
+    paired_seqs <- proper_overlaps %>%
+      dplyr::mutate(r1_seq = paste0(">",chrom_name, ":", proper_overlaps$r1_start, "-", proper_overlaps$r1_end, " ", substr(geno_seq, proper_overlaps$r1_start, proper_overlaps$r1_end)), r2_seq = paste0(">",chrom_name, ":", proper_overlaps$r2_start, "-", proper_overlaps$r2_end, " " , substr(geno_seq, proper_overlaps$r2_start, proper_overlaps$r2_end)))
+
+
+
+    paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
+    fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
+
+    write.table(unlist(fastas), paste0(dir, "piRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+  }
+
+
+
   z_res <- make_count_table(forward_dt$start, forward_dt$end, forward_dt$width,
                             reverse_dt$start, reverse_dt$end, reverse_dt$width)
 
@@ -275,13 +302,13 @@ piRNA_function <- function(chrom_name, reg_start, reg_stop, input_file, logfile,
     minus_phased_plot <- plot_phasedz(minus_df, "-")
 
 
-    top <- cowplot::plot_grid(dist_plot, density_plot, ncol = 2, rel_widths = c(1,1), align = "vh", axis = "lrtb")
-    middle <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), NULL, z, rel_widths = c(1,0.1,1), nrow = 1, ncol = 3, align = "vh", axis = "lrtb")
+    top <- cowplot::plot_grid(dist_plot, NULL, density_plot, ncol = 3, rel_widths = c(1,0.1,1), align = "vh", axis = "lrtb")
+    middle <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), NULL, z, rel_widths = c(1,0.1,0.8), nrow = 1, ncol = 3, align = "vh", axis = "lrtb")
     bottom <- cowplot::plot_grid(plus_phased_plot, NULL, minus_phased_plot, rel_widths = c(1,0.1,1), nrow = 1, ncol = 3, align = "vh", axis = "lrtb")
     ## phased plots
 
-    all_plot <- cowplot::plot_grid(top, middle, bottom, ncol = 1, rel_widths = c(1, 1, 0.8), rel_heights = c(1,1,1))
-    grDevices::pdf(file = paste0(dir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 5, width = 7)
+    all_plot <- cowplot::plot_grid(top, NULL, middle, NULL,bottom, ncol = 1, rel_widths = c(1,1, 1, 1,0.8), rel_heights = c(1,0.1, 1.2, 0.1, 0.8))
+    grDevices::pdf(file = paste0(dir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 7, width = 7)
     print(all_plot)
     grDevices::dev.off()
   }

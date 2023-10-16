@@ -8,7 +8,7 @@ plots output
 takes data frame
 returns plots}
 \usage{
-plot_phasedz(df1, strand, df2 = NULL)
+plot_phasedz(df1, strand = NULL, df2 = NULL)
 }
 \arguments{
 \item{df1}{a data frame}

@@ -2,7 +2,7 @@
 #' plots output
 #' takes two read dataframes
 #' returns table of phasing scores
-#' 
+#'
 #' @param df1 a character passed in, either "+" or "-"
 #' @param df2 a string
 #' @return phased_counts
@@ -15,9 +15,9 @@ phased <- find_hp_overlaps(df1, df2)
 
 dist <- start_r1 <- widthx <- start_r2 <- widthy <- num.y <- num.x <- Zscore <- num <- NULL
 
-phased <- phased %>% 
-  dplyr::filter(dist >= 0) %>% 
-  dplyr::mutate(end_r1 = start_r1 + widthx - 1, end_r2 = start_r2 + widthy - 1)
+phased <- phased %>%
+  dplyr::filter(dist >= 0) %>%
+  dplyr::mutate(r1_end = r1_start + r1_width - 1, r2_end = r2_start + r2_width - 1)
 
 if(!nrow(phased) == 0){
   print('making phased_counts')
@@ -25,7 +25,7 @@ if(!nrow(phased) == 0){
   phased_counts <- phased %>%
     dplyr::group_by(dist) %>%
     dplyr::summarize(num= dplyr::n()) %>%
-    dplyr::mutate(dist = abs(dist)) %>% 
+    dplyr::mutate(dist = abs(dist)) %>%
     dplyr::filter(dist <= 50)
   #filter_r1_dt <- NULL
   #filter_r2_dt <- NULL

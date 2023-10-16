@@ -26,7 +26,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   end <- dist <- num.y <- num.x <- Zscore <- converted <- phased_z <- NULL
 
 
-  fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold){
+  fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold){
 
      dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
 
@@ -76,14 +76,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   ################################################ compute plus strand ########################################################
   strand <- "+"
+  bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what=c('rname', 'pos', 'qwidth'), which=which)
+  chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
 
-  if(strand == "-"){
-    bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
-    chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-  } else {
-    bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what=c('rname', 'pos', 'qwidth'), which=which)
-    chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-    }
 
   filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
     base::subset(width <= 25 & width >= 20) %>%
@@ -92,13 +87,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  #dt <- filter_r2_dt %>%
-  #  dplyr::group_by_all() %>%
-  #  dplyr::reframe(count = dplyr::n())
+  dt <- filter_r2_dt
 
-  dt <- filter_r2_dt #%>%
-    #dplyr::group_by_all() #%>%
-    #dplyr::reframe(count = dplyr::n())
   if(weight_reads == "T"){
     r2_dt <- get_top_n_weighted(dt, chrom_name, 100)
   } else {
@@ -150,15 +140,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     fold_bool <- 'TRUE'
 
-    fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold)
+    fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold)
     MFE <- fold_list$MFE
     perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
 
     all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
-    if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
-      #plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
-      #                                       all_overlaps$r2_start, all_overlaps$r2_width))
+    if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
       plus_overhangs <- data.frame(calc_expand_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                all_overlaps$r2_start, all_overlaps$r2_width))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
@@ -189,15 +177,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   ####################################################### compute minus strand ############################################################
   strand <- "-"
-
-  if(strand == "-"){
-    bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
-    chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-  } else {
-    bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what=c('rname', 'pos', 'qwidth'), which=which)
-    chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-  }
-
+  bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
+  chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
   filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
     base::subset(width <= 25 & width >= 20) %>%
@@ -245,7 +226,6 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else {
 
     cat(file = paste0(dir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    #return(NA)
     minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,50), phased_z = rep(0,50))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
 

@@ -107,7 +107,7 @@ vectorsToMap <- function(k, v) {
 #' @param end_r1 A vector of end positions from read group 2
 #' @param start_r2 A vector of start positions from read group 2
 #' @param end_r2 A vector of end positions from read group 2
-#' @param count A vector of ints representing the number of duplicates each start_r1, end_r1, start_r2, end_r2 had prior to grouping 
+#' @param count A vector of ints representing the number of duplicates each start_r1, end_r1, start_r2, end_r2 had prior to grouping
 #' @return A data.frame consisting of the average pileups in read 1 range and in read 2 range
 #' @export
 getPileupsMap <- function(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2, count) {
@@ -132,7 +132,7 @@ group_helix_res <- function(x, y) {
 #'
 #' This function takes in vectors of start and stop positions for read groups 1 and 2
 #' It then shifts the positions and checks to see which sets have proper and improper overhangs
-#' 
+#'
 #' @param r1_start A vector of ints
 #' @param r1_end A vector of ints
 #' @param r2_start A vector of ints
@@ -148,7 +148,7 @@ calc_overhangs <- function(r1_start, r1_end, r2_start, r2_width) {
 #' This function takes in vectors of start and stop positions for read groups 1 and 2
 #' It then shifts the positions and checks to see which sets have proper and improper overhangs
 #' Over a larger distance of shifts compared to calc_overhangs
-#' 
+#'
 #' @param r1_start A vector of ints
 #' @param r1_end A vector of ints
 #' @param r2_start A vector of ints
@@ -162,7 +162,7 @@ calc_expand_overhangs <- function(r1_start, r1_end, r2_start, r2_width) {
 #' proper_overlap
 #'
 #' This function takes in two integers representing widths and returns a proper overlap
-#' 
+#'
 #' @param widthx An Integer
 #' @param widthy An Integer
 #' @return proper_overlap An integer representing what the proper overlap should be for these positions
@@ -176,7 +176,7 @@ proper_overlap <- function(widthx, widthy) {
 #' This function takes in vectors of start positions from read group 1 and end positions from read group 2
 #' It also takes in an overlap amount integer
 #' The function counts the number of overlaps occurring and returns them as an integer
-#' 
+#'
 #' @param f_start A vector of ints
 #' @param X_SIZE An Integer
 #' @param r_end A vector of ints
@@ -192,7 +192,7 @@ overlap_counts <- function(f_start, X_SIZE, r_end, Y_SIZE, overlap) {
 #'
 #' This function takes in vectors of start and stop positions for read groups 1 and 2
 #' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
-#' 
+#'
 #' @param fdt_start A vector of ints
 #' @param fdt_end A vector of ints
 #' @param fwidth An integer
@@ -210,7 +210,7 @@ get_si_overlaps <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwid
 #' This function takes in vectors of start and stop positions for read groups 1 and 2
 #' It calculates the distance between the end of one group and start of another and returns
 #' The results in a data.frame
-#' 
+#'
 #' @param startX A vector of ints
 #' @param endX A vector of ints
 #' @param startY A vector of ints
@@ -223,9 +223,9 @@ get_phased_dist <- function(startX, endX, startY, endY, dfsize) {
 }
 
 #' make_count_table
-#' 
+#'
 #' This functions calculates the counts of each overlap to be used for z score
-#' 
+#'
 #' @param fdt_start A vector of ints
 #' @param fdt_end A vector of ints
 #' @param fwidth An integer
@@ -241,7 +241,7 @@ make_count_table <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwi
 #' get_pi_overlaps
 #'
 #' This function calculates the overlaps present at each width of reads from 15-32
-#' 
+#'
 #' @param fdt_start A vector of ints
 #' @param fdt_end A vector of ints
 #' @param fwidth An integer
@@ -258,7 +258,7 @@ get_pi_overlaps <- function(fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwid
 #'
 #' This function returns a data.frame containing the start and stop positions of read 1, read 2, and a loop
 #' If the number of pileups in a loop divided by the total number of pileups is less that 0.05
-#' 
+#'
 #' @param r1Start A vector of ints
 #' @param r1Stop A vector of ints
 #' @param lStart A vector of ints
