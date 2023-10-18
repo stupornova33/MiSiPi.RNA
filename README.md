@@ -23,10 +23,10 @@ Bed_file is your list of regions of interest in BED format. Input file is the BA
 RNA fold must be installed on your system, but path_to_RNAfold is only the path to the RNAfold binary .exe.
 
 ```
-vars <- set_vars(bed_file = "path/to/bed", input_file = "path/to/bamfile", 
+ROI <- set_vars(roi = "path/to/bed", bam_file = "path/to/bamfile", 
                 genome = "path/to/genome", min_read_count = 1, plot_output = "T", 
                 path_to_RNAfold = "path/to/ViennaRNA/RNAfold.exe", pi_pal = "BlYel", si_pal = "RdYlBl", annotate_bed = "T",
-                gff_file = "extdata/processed_dmel_annot.txt") #gff is included in misipi extdata
+                bed_file = "extdata/processed_dmel_annot.txt", weight_reads = "F") #sample BED is included in misipi extdata
 
 ```
 
@@ -35,7 +35,7 @@ Pi_pal is the piRNA heatmap plot, Si_pal is the siRNA heatmap plot.
 Palette options are: "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens". 
 
 ### Locus annotation: 
-If annotate_bed = "T", a GFF file must be supplied to the gff_file argument. This will plot annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci. 
+If annotate_bed = "T", a BED file must be supplied to the bed_file argument. This will plot annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci. 
 
 
 ## to run all lines of bed file
@@ -49,6 +49,4 @@ run_piRNA_function(vars)
 
 run_siRNA_function(vars)
 
-
-run_phased_piRNA(vars)
 ```
