@@ -2,18 +2,63 @@
 % Please edit documentation in R/run_miRNA_function.R
 \name{run_miRNA_function}
 \alias{run_miRNA_function}
-\title{run miRNA function
-calls the miRNA function for both strands, creates miRNA logfile}
+\title{miRNA_function
+processes reads according to phased miRNA algorithm
+plots output
+returns plots}
 \usage{
-run_miRNA_function(vars)
+run_miRNA_function(
+  chrom_name,
+  reg_start,
+  reg_stop,
+  chromosome,
+  length,
+  strand,
+  min_read_count,
+  genome_file,
+  bam_file,
+  logfile,
+  dir,
+  plot_output,
+  path_to_RNAfold,
+  weight_reads
+)
 }
 \arguments{
-\item{vars}{a list of variables provided by user}
+\item{chrom_name}{a string}
+
+\item{reg_start}{a whole number}
+
+\item{reg_stop}{a whole number}
+
+\item{chromosome}{chrom names extracted from bam file}
+
+\item{length}{length of chromosome of interest}
+
+\item{strand}{a character passed in, "+" or "-"}
+
+\item{min_read_count}{a whole number}
+
+\item{genome_file}{a fasta file of chrom sequences}
+
+\item{bam_file}{a BAM file}
+
+\item{logfile}{a string}
+
+\item{dir}{a string}
+
+\item{plot_output}{a string, default = TRUE}
+
+\item{path_to_RNAfold}{a string}
+
+\item{weight_reads}{a string, "T" or "F"}
 }
 \value{
 plots
 }
 \description{
-run miRNA function
-calls the miRNA function for both strands, creates miRNA logfile
+miRNA_function
+processes reads according to phased miRNA algorithm
+plots output
+returns plots
 }

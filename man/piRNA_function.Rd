@@ -2,43 +2,16 @@
 % Please edit documentation in R/piRNA_function.R
 \name{piRNA_function}
 \alias{piRNA_function}
-\title{run the piRNA function
-processes forward and reverse reads according to piRNA algorithm
-outputs plots, heat results, and zdf}
+\title{runs piRNA_function and creates dir and logfile for outputs}
 \usage{
-piRNA_function(
-  chrom_name,
-  reg_start,
-  reg_stop,
-  input_file,
-  logfile,
-  dir,
-  pal,
-  plot_output
-)
+piRNA_function(vars)
 }
 \arguments{
-\item{chrom_name}{a string}
-
-\item{reg_start}{a whole number}
-
-\item{reg_stop}{a whole number}
-
-\item{input_file}{a string}
-
-\item{logfile}{a string}
-
-\item{dir}{a string}
-
-\item{pal}{a string}
-
-\item{plot_output}{a string, 'T' or 'F', default = 'T}
+\item{vars}{a list}
 }
 \value{
-plots, heat results, and zdf
+pi_res, plots
 }
 \description{
-run the piRNA function
-processes forward and reverse reads according to piRNA algorithm
-outputs plots, heat results, and zdf
+runs piRNA_function and creates dir and logfile for outputs
 }

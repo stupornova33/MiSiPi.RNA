@@ -24,7 +24,7 @@ plot_overhangz <- function(overhang1, overhang2 = NULL){
          ggplot2::scale_x_continuous("Shift")+
          ggplot2::scale_color_manual(values = c("red", "blue"))+
          ggplot2::scale_y_continuous("Z-score")+
-         ggplot2::ggtitle("Dicer Overhang Probability")+
+         ggplot2::ggtitle("Dicer Overhang Probability By Strand")+
          ggplot2::theme_classic() +
          ggplot2::theme(text = ggplot2::element_text(size = 15), plot.title = ggplot2::element_text(hjust = 0.5, size = 14)) +
          ggplot2::theme(plot.margin = ggplot2::unit(c(2, 0, 0, 0), "cm"))
@@ -32,7 +32,7 @@ plot_overhangz <- function(overhang1, overhang2 = NULL){
 
    p <- ggplot2::ggplot(overhang1, ggplot2::aes(x = shift, y = scale(proper_count))) +
       ggplot2::geom_line(color= "black", linewidth = 2)+
-      ggplot2::ggtitle("Dicer Overhang Probability")+
+      ggplot2::ggtitle("Dicer Overhang Probability (siRNA)")+
       ggplot2::scale_x_continuous("Shift")+
       ggplot2::scale_y_continuous("Z-score")+
 

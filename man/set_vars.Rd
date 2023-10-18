@@ -6,8 +6,8 @@
 only output is hairpin plots}
 \usage{
 set_vars(
-  bed_file,
-  input_file,
+  roi,
+  bam_file,
   genome,
   min_read_count,
   plot_output,
@@ -16,13 +16,13 @@ set_vars(
   si_pal,
   annotate_bed,
   weight_reads,
-  gff_file = NULL
+  bed_file = NULL
 )
 }
 \arguments{
-\item{bed_file}{a string}
+\item{roi}{a string}
 
-\item{input_file}{a string}
+\item{bam_file}{a string}
 
 \item{genome}{a string}
 
@@ -40,7 +40,7 @@ set_vars(
 
 \item{weight_reads}{a string, "T" or "F"}
 
-\item{gff_file}{a string}
+\item{bed_file}{a string}
 }
 \value{
 a list

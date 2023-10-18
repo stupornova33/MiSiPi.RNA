@@ -11,8 +11,8 @@ new_run_all(
   reg_stop,
   chromosome,
   length,
-  input_file,
-  bed_file,
+  bam_file,
+  roi,
   genome_file,
   min_read_count,
   si_pal,
@@ -21,7 +21,7 @@ new_run_all(
   path_to_RNAfold,
   annotate_bed,
   weight_reads,
-  gff_file
+  bed_file
 )
 }
 \arguments{
@@ -35,9 +35,9 @@ new_run_all(
 
 \item{length}{an integer}
 
-\item{input_file}{a string}
+\item{bam_file}{a string}
 
-\item{bed_file}{a string}
+\item{roi}{a string}
 
 \item{genome_file}{a string}
 
@@ -55,7 +55,7 @@ new_run_all(
 
 \item{weight_reads}{a string, "T", or "F"}
 
-\item{gff_file}{a string}
+\item{bed_file}{a string}
 }
 \value{
 results

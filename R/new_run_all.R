@@ -5,8 +5,8 @@
 #' @param reg_start an integer
 #' @param chromosome an integer representing the chromosome number
 #' @param length an integer
-#' @param input_file a string
-#' @param bed_file a string
+#' @param bam_file a string
+#' @param roi a string
 #' @param genome_file a string
 #' @param min_read_count an integer
 #' @param si_pal a string
@@ -15,24 +15,24 @@
 #' @param path_to_RNAfold a string
 #' @param annotate_bed a string, "T" or "F"
 #' @param weight_reads a string, "T", or "F"
-#' @param gff_file a string
+#' @param bed_file a string
 #' @return results
 
 #' @export
 
 
 
-new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, input_file, bed_file, genome_file, min_read_count, si_pal, pi_pal,
-                        plot_output, path_to_RNAfold, annotate_bed, weight_reads, gff_file){
+new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
+                        plot_output, path_to_RNAfold, annotate_bed, weight_reads, bed_file){
 
   width <- pos <- start <- end <- NULL
 
   local_ml <- data.table::data.table(locus = numeric(1), locus_length = numeric(1), unique_read_bias = numeric(1),strand_bias = numeric(1),
   perc_GC = numeric(1), ave_size = numeric(1), perc_first_nucT = numeric(1), perc_A10 = numeric(1),
-  highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),si_dicerz = numeric(1), MFE = numeric(1), hp_dicerz = numeric(1), hp_phasedz = numeric(1),
+  highest_si_col = numeric(1), num_si_dicer_reads = numeric(1),si_dicerz = numeric(1), si_phasedz = numeric(1),MFE = numeric(1), hp_dicerz = numeric(1),
   mirnaMFE = numeric(1), mirna_dicerz = numeric(1), pingpong_col = numeric(1), max_pi_count = numeric(1),
-  max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1),
-  shap_p = numeric(1), auc = numeric(1), max_piz_overlap = numeric(1), phasedz = numeric(1), phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1))
+  max_piz_overlap = numeric(1), pi_phasedz = numeric(1), pi_phased26z = numeric(1), mi_perc_paired = numeric(1), hp_perc_paired = numeric(1), overlapz = numeric(1),
+  shap_p = numeric(1), auc = numeric(1))
 
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
@@ -49,7 +49,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, inp
   if(!file.exists(paste0(all_dir, 'run_all_logfile.txt'))) file.create(paste0(all_dir, 'run_all_logfile.txt'))
   logfile <- paste0(all_dir, "run_all_logfile.txt")
 
-  bam_obj <- OpenBamFile(input_file)
+  bam_obj <- OpenBamFile(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])
@@ -175,38 +175,56 @@ if(nrow(all_data) > 1){
   si_log <- file.create('si_logfile.txt')
 
 
-  si_res <- siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, input_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
-                           annotate_bed, weight_reads, gff_file)
+  si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
+                           annotate_bed, weight_reads, bed_file)
 
   max_si_heat <- get_max_si_heat(si_res)
 
   local_ml$highest_si_col <- max_si_heat$highest_si_col
   local_ml$si_dicerz <- si_res$si_dicer$Z_score[9]
   local_ml$num_si_dicer_reads <- si_res[[2]]$proper_count[5]/total_read_count
-  local_ml$hp_perc_paired <- max(unlist(unname(si_res[[3]][[1]][4])), unlist(unname(si_res[[3]][[2]][4])))
+  local_ml$hp_perc_paired <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
 
   perc_paired_file <- paste0(si_dir, "perc_paired.txt")
   col_status <- ifelse(exists_not_empty(perc_paired_file), FALSE, TRUE)
   write.table(local_ml$hp_perc_paired, perc_paired_file, quote = FALSE, append = TRUE, col.names = col_status)
 
+
+  ## add in get phased results here
+
   #### get hairpin-specific results
+  plus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
+  if(plus_phasedz[1] != -33){
+    plus_mean <- mean(plus_phasedz[1:4])
+  } else {
+    plus_mean <- -33
+  }
+
+   minus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
+  if(minus_phasedz[1] != -33){
+
+    minus_mean <- mean(minus_phasedz[1:4])
+  } else {
+    minus_mean <- -33
+  }
+
+  local_ml$si_phasedz <- max(plus_mean, minus_mean)
 
   local_ml$MFE <- min(unlist(unname(si_res[[3]][[1]][1])), unlist(unname(si_res[[3]][[2]][1])))
 
   local_ml$hp_dicerz <- max(unlist(unname(si_res[[3]][[1]][2])), unlist(unname(si_res[[3]][[2]][2])))
-  local_ml$hp_phasedz <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
+  #local_ml$hp_phasedz <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
 
   hp_dicerz_file <- paste0(si_dir, "hp_dicerz.txt")
   col_status <- ifelse(exists_not_empty(hp_dicerz_file), FALSE, TRUE)
-  write.table(local_ml$hp_dicerz, hp_dicerz_file, quote = FALSE, append = TRUE, col.names = col_status)
+  #write.table(local_ml$hp_dicerz, hp_dicerz_file, quote = FALSE, append = TRUE, col.names = col_status)
 
-  hp_phasedz_file <- paste0(si_dir, "hp_phasedz.txt")
-  col_status <- ifelse(exists_not_empty(hp_phasedz_file), FALSE, TRUE)
-  write.table(local_ml$hp_phasedz, hp_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
+  #hp_phasedz_file <- paste0(si_dir, "hp_phasedz.txt")
+  #col_status <- ifelse(exists_not_empty(hp_phasedz_file), FALSE, TRUE)
+  #write.table(local_ml$hp_phasedz, hp_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
 
-  print(paste0('hp_dicerz: ', local_ml$hp_dicerz))
-  print(paste0('hp_phasedz: ', local_ml$hp_phasedz))
-
+  #print(paste0('hp_dicerz: ', local_ml$hp_dicerz))
+  #print(paste0('hp_phasedz: ', local_ml$hp_phasedz))
   si_res <- NULL
   max_si_heat <- NULL
   ###############################
@@ -215,7 +233,7 @@ if(nrow(all_data) > 1){
   if(!dir.exists('run_all/miRNA_dir/')) dir.create('run_all/miRNA_dir/')
   miRNA_dir <- 'run_all/miRNA_dir/'
   mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
-  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
+  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
 
   #Look at first result
   mi_res <- mi_res[[1]]
@@ -230,7 +248,7 @@ if(nrow(all_data) > 1){
     plus_overlapz <- NA
   }
 
-  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, input_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
+  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
 
   mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -269,7 +287,7 @@ if(nrow(all_data) > 1){
 
   piRNA_dir <- 'run_all/piRNA_dir/'
   pi_log <- file.create(paste0(piRNA_dir, 'pi_logfile.txt'))
-  pi_res <- piRNA_function(chrom_name, reg_start, reg_stop, input_file, pi_log, piRNA_dir, pi_pal, plot_output = "F")
+  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, bam_file, pi_log, piRNA_dir, pi_pal, plot_output = "F")
 
   if(!is.na(pi_res[[1]][1])){
     if(sum(pi_res[[1]] != 0)){
@@ -302,13 +320,13 @@ if(nrow(all_data) > 1){
   if(!dir.exists('run_all/phased_dir/')) dir.create('run_all/phased_dir/')
   phased_dir <- 'run_all/phased_dir/'
   phased_log <- file.create(paste0(phased_dir, 'phased_logfile.txt'))
-  phased_res <- phased_piRNA_function("+", chrom_name, reg_start, reg_stop, input_file, phased_log, phased_dir, plot_output= "F")
+  phased_res <- phased_piRNA_function("+", chrom_name, reg_start, reg_stop, bam_file, phased_log, phased_dir, plot_output= "F")
 
   phasedz_plus <- phased_res[1]
 
   phasedz26_plus <- phased_res[2]
 
-  phased_res <- phased_piRNA_function("-", chrom_name, reg_start, reg_stop, input_file, phased_log, phased_dir, plot_output= "F")
+  phased_res <- phased_piRNA_function("-", chrom_name, reg_start, reg_stop, bam_file, phased_log, phased_dir, plot_output= "F")
 
   phasedz_minus <- phased_res[1]
   phasedz26_minus <- phased_res[2]
@@ -321,8 +339,9 @@ if(nrow(all_data) > 1){
   write.table(local_ml$phasedz, pi_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
   ####################################################################
   # add results to table
-  tbl_pref <- strsplit(bed_file, "[.]")[[1]][1]
-  input_pref <- strsplit(input_file, "[/]")[[1]][4]
+  tbl_pref <- strsplit(roi, "[.]")[[1]][1]
+  tmp <- unlist(strsplit(bam_file, "[/]"))
+  input_pref <- tmp[length(tmp)]
   input_pref2 <- strsplit(input_pref, "[.]")[[1]][1]
 
   tbl_name <- paste0(tbl_pref, "_", input_pref2)

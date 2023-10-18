@@ -38,7 +38,7 @@ find_hp_overlaps <- function(r1_dt, r2_dt){
 
    res_tbl <- data.frame(cbind(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_stop,
                                r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_stop)) %>%
-     dplyr::mutate(dist = r2_start - r1_start) %>%
+     dplyr::mutate(dist = r2_start - r1_end) %>%
      dplyr::filter(dist >= 0 & dist < 60) %>%
      dplyr::mutate(r1_end = r1_start + r1_width - 1, r2_end = r2_start + r2_width - 1) %>%
     dplyr::filter(r1_end < r2_start)

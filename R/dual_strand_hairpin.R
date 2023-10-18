@@ -7,23 +7,23 @@
 #' @param length a whole number
 #' @param min_read_count a whole number
 #' @param genome_file a fasta file of chrom sequences
-#' @param input_file a BAM file
+#' @param bam_file a BAM file
 #' @param logfile a string
 #' @param dir a string
 #' @param plot_output a string, 'T' or 'F', default = 'T
 #' @param path_to_RNAfold a string
 #' @param annotate_bed a string, "T" or "F"
 #' @param weight_reads a string, "T" or "F"
-#' @param gff_file a string
+#' @param bed_file a string
 #' @return max_overhang
 
 #' @export
 
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
-                             min_read_count, genome_file, input_file, logfile, dir, plot_output, path_to_RNAfold, annotate_bed,
-                             weight_reads, gff_file){
+                             min_read_count, genome_file, bam_file, logfile, dir, plot_output, path_to_RNAfold, annotate_bed,
+                             weight_reads, bed_file){
 
-  end <- dist <- num.y <- num.x <- Zscore <- converted <- phased_z <- NULL
+  end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 
 
   fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold){
@@ -50,7 +50,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
 
-  bam_obj <- OpenBamFile(input_file, logfile)
+  bam_obj <- OpenBamFile(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
 
@@ -124,13 +124,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
     plus_hp_phased_tbl <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
-    #plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
+    plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
   } else {
 
     cat(file = paste0(dir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    #return(NA)
+    return(NA)
     plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,50), phased_z = rep(0,50))
-    #plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
+    plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
 
     plus_hp_phased_z <- -33  #??
   }
@@ -152,7 +152,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
       #dicer_count <- overhangs$proper_count[5]
     } else {
-      #plus_hp_phased_counts <- 0
+      plus_hp_phased_counts <- 0
       plus_hp_phased_z <- -33
 
       plus_overhangs <- data.frame(shift = c(-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8), proper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
@@ -162,7 +162,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       #dicer_count <- 0
       plus_overhangs <- data.frame(shift = c(-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8), proper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
-      #plus_hp_phased_counts <- sum(plus_overhangs$proper_count[1:4])
+      plus_hp_phased_counts <- sum(plus_overhangs$proper_count[1:4])
       plus_hp_phased_z <- mean(plus_overhangs$zscore[1:4])
       fold_bool <- 'FALSE'
       perc_paired <- 0
@@ -173,7 +173,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   plus_overhangz <- mean(plus_overhangs$zscore[1:4])
   plus_res <- c(plusMFE = MFE, plus_hp_overhangz = plus_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl = plus_hp_phased_tbl,
                 dicer_tbl = plus_overhangs, perc_paired= perc_paired)
-
+  #plus_res <- c(plusMFE = MFE, plus_hp_overhangz = plus_overhangz,
+  #              dicer_tbl = plus_overhangs, perc_paired= perc_paired)
 
   ####################################################### compute minus strand ############################################################
   strand <- "-"
@@ -280,6 +281,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   minus_overhangz <- mean(minus_overhangs$zscore[1:4])
   minus_res <- c(minusMFE = MFE, minus_hp_overhangz = minus_overhangz, minus_hp_phasedz = minus_phased_hp_z, phased_tbl = minus_hp_phased_tbl,
                  dicer_tbl = minus_overhangs, perc_paired = perc_paired)
+  #minus_res <- c(minusMFE = MFE, minus_hp_overhangz = minus_overhangz,
+  #               dicer_tbl = minus_overhangs, perc_paired = perc_paired)
+
 
   ######################################################### make plots #####################################################################
 
@@ -328,14 +332,14 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
         write.table(minus_phased_out, file = paste0(dir, "minus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
      } else {
         write.table(minus_phased_out, file = paste0(dir, "minus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-     }
+    }
   )
 
-  if(plot_output == 'T' & sum(minus_res$phased_tbl.phased_num) > 0 | sum(plus_res$phased_tbl.phased_num) > 0){
+  if(plot_output == 'T'){
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
     minus_overhangs <- data.frame(shift = minus_res$dicer_tbl.shift, zscore = minus_res$dicer_tbl.zscore)
     overhang_plot <- plot_overhangz(plus_overhangs, minus_overhangs)
-    data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, input_file, dir)
+    data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, dir)
     density_plot <- plot_density(data, reg_start, reg_stop)
     arc_plot <- plot_helix("helix.txt")
 
@@ -343,18 +347,19 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     ## plot bed annotations (optional)
     if(annotate_bed == "T"){
-      bed_plot <- plot_bed(gff_file, chrom_name, reg_start, reg_stop)
+      bed_plot <- plot_bed(bed_file, chrom_name, reg_start, reg_stop)
       left <- cowplot::plot_grid(arc_plot, bed_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 
       # Draw combined plot
-      right <- cowplot::plot_grid(overhang_plot, phased_zscore, ncol = 1, align = "vh", axis = "l")
+      right <- cowplot::plot_grid(overhang_plot, NULL, phased_zscore, ncol = 3, align = "vh", axis = "l", rel_widths = c(1,0.1, 1), rel_heights = c(1,1,1))
    } else {
       left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(1,0.3,1), ncol = 1, align = "vh", axis = "lrtb")
       # Draw combined plot
-      right <- cowplot::plot_grid(overhang_plot, phased_zscore, ncol = 1, align = "vh", axis = "l")
+      right <- cowplot::plot_grid(overhang_plot, NULL,phased_zscore, ncol = 3, align = "vh", axis = "l")
     }
 
-    final_plot <- cowplot::plot_grid(left, right, ncol = 2, align = "vh", axis = "l", rel_widths = c(1, 0.9))
+    final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,1,1), rel_widths = c(1,0.1, 1))
+
     prefix <- paste0(dir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
     grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 7, width = 7.5)

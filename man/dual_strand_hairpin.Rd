@@ -13,14 +13,14 @@ dual_strand_hairpin(
   length,
   min_read_count,
   genome_file,
-  input_file,
+  bam_file,
   logfile,
   dir,
   plot_output,
   path_to_RNAfold,
   annotate_bed,
   weight_reads,
-  gff_file
+  bed_file
 )
 }
 \arguments{
@@ -36,7 +36,7 @@ dual_strand_hairpin(
 
 \item{genome_file}{a fasta file of chrom sequences}
 
-\item{input_file}{a BAM file}
+\item{bam_file}{a BAM file}
 
 \item{logfile}{a string}
 
@@ -50,7 +50,7 @@ dual_strand_hairpin(
 
 \item{weight_reads}{a string, "T" or "F"}
 
-\item{gff_file}{a string}
+\item{bed_file}{a string}
 }
 \value{
 max_overhang

@@ -1,7 +1,7 @@
 #' takes a gff file
 #' only output is hairpin plots
-#' @param bed_file a string
-#' @param input_file a string
+#' @param roi a string
+#' @param bam_file a string
 #' @param genome a string
 #' @param min_read_count an integer
 #' @param plot_output a string, "T" or "F"
@@ -10,20 +10,20 @@
 #' @param si_pal a string
 #' @param annotate_bed a string, "T" or "F"
 #' @param weight_reads a string, "T" or "F"
-#' @param gff_file a string
+#' @param bed_file a string
 #'
 #' @return a list
 #' @export
 
-set_vars <- function(bed_file, input_file, genome, min_read_count, plot_output, path_to_RNAfold, pi_pal, si_pal, annotate_bed, weight_reads, gff_file = NULL){
+set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to_RNAfold, pi_pal, si_pal, annotate_bed, weight_reads, bed_file = NULL){
 
-  bam_obj <- OpenBamFile(input_file)
+  bam_obj <- OpenBamFile(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])
   bam_header <- V2 <- V3 <- NULL
 
-  test_list <- utils::read.csv(bed_file, sep = "\t", header = FALSE)
+  test_list <- utils::read.csv(roi, sep = "\t", header = FALSE)
 
   mut_table <- function(V1){
     result <- which(chr_name == V1)
@@ -52,12 +52,12 @@ set_vars <- function(bed_file, input_file, genome, min_read_count, plot_output, 
                    path_to_RNAfold = path_to_RNAfold,
                    min_read_count = min_read_count,
                    genome= genome,
-                   input_file = input_file,
-                   bed_file = bed_file,
+                   bam_file = bam_file,
+                   roi = roi,
                    pi_pal = pi_pal,
                    si_pal = si_pal,
                    annotate_bed = annotate_bed ,
                    weight_reads = weight_reads,
-                   gff_file = gff_file)
+                   bed_file = bed_file)
   return(var_list)
 }

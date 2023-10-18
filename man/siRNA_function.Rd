@@ -2,62 +2,16 @@
 % Please edit documentation in R/siRNA_function.R
 \name{siRNA_function}
 \alias{siRNA_function}
-\title{siRNA function
-process forward and reverse dt and plot si heatmap}
+\title{run_siRNA_function}
 \usage{
-siRNA_function(
-  chrom_name,
-  reg_start,
-  reg_stop,
-  length,
-  min_read_count,
-  genome_file,
-  input_file,
-  logfile,
-  dir,
-  pal,
-  plot_output,
-  path_to_RNAfold,
-  annotate_bed,
-  weight_reads,
-  gff_file
-)
+siRNA_function(vars)
 }
 \arguments{
-\item{chrom_name}{a string}
-
-\item{reg_start}{a whole number}
-
-\item{reg_stop}{a whole number}
-
-\item{length}{an integer}
-
-\item{min_read_count}{an integer}
-
-\item{genome_file}{a string}
-
-\item{input_file}{a string}
-
-\item{logfile}{a string}
-
-\item{dir}{a string}
-
-\item{pal}{a string}
-
-\item{plot_output}{a string, 'T' or 'F'. Default is 'T'}
-
-\item{path_to_RNAfold}{a string}
-
-\item{annotate_bed}{a string, "T" or "F"}
-
-\item{weight_reads}{a string, "T" or "F"}
-
-\item{gff_file}{a string}
+\item{vars}{a list}
 }
 \value{
-results
+si_res
 }
 \description{
-siRNA function
-process forward and reverse dt and plot si heatmap
+run_siRNA_function
 }
