@@ -41,12 +41,12 @@ If annotate_bed = "T", a BED file must be supplied to the bed_file argument. Thi
 ## to run all lines of bed file
 
 ```
-run_miRNA_function(vars)
+miRNA_function(vars)
 
 
-run_piRNA_function(vars)
+piRNA_function(vars)
 
 
-run_siRNA_function(vars)
+siRNA_function(vars)
 
 ```
