@@ -14,6 +14,7 @@ RoxygenNote: 7.2.3
 Imports: 
     magrittr,
     reshape2,
-    Rcpp
+    Rcpp,
+    tidyr
 LinkingTo: 
     Rcpp
