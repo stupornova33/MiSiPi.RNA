@@ -7,9 +7,8 @@
 #' @export
 
 miRNA_function <- function(vars){
-   `%>%` <- magrittr::`%>%`
 
-   logfile = "miRNA_logfile.txt"
+   logfile <- "miRNA_logfile.txt"
 
    dir <- 'miRNA_outputs/'
    if(!dir.exists(dir) == TRUE) dir.create(dir)

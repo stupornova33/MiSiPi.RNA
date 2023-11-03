@@ -8,8 +8,6 @@
 #' @return plots
 #' @export
 
-`%>%` <- magrittr::`%>%`
-
 run_hairpin_function <- function(vars){
    dir <- 'hairpin_outputs/'
    if(!dir.exists(dir) == TRUE) dir.create(dir)
