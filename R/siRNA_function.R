@@ -8,7 +8,6 @@
 
 
 siRNA_function <- function(vars){
-   `%>%` <- magrittr::`%>%`
    dir <- "siRNA_outputs/"
    logfile <- "siRNA_logfile.txt"
 

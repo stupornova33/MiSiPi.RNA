@@ -11,10 +11,27 @@ License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
-Imports: 
+biocViews:
+Imports:
+    Biostrings,
+    cowplot,
+    data.table,
+    dplyr,
+    GenomicRanges,
+    ggplot2,
+    IRanges,
+    KernSmooth,
     magrittr,
-    reshape2,
+    pheatmap,
+    R4RNA,
     Rcpp,
-    tidyr
+    reshape2,
+    RRNA,
+    Rsamtools,
+    S4Vectors,
+    stringi,
+    stringr,
+    tidyr,
+    viridis
 LinkingTo: 
     Rcpp
