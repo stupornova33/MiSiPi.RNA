@@ -4,10 +4,10 @@
 \alias{plot_density}
 \title{function to plot densities of different read sizes}
 \usage{
-plot_density(all_df, reg_start, reg_stop)
+plot_density(data, reg_start, reg_stop)
 }
 \arguments{
-\item{all_df}{a data frame}
+\item{data}{a data frame}
 
 \item{reg_start}{a whole number}
 

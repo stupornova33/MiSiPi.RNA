@@ -12,7 +12,7 @@ run_piRNA_function(
   reg_stop,
   bam_file,
   logfile,
-  dir,
+  wkdir,
   pal,
   plot_output
 )
@@ -28,7 +28,7 @@ run_piRNA_function(
 
 \item{logfile}{a string}
 
-\item{dir}{a string}
+\item{wkdir}{a string}
 
 \item{pal}{a string}
 

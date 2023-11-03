@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_read_dist.R
 \name{get_read_dist}
 \alias{get_read_dist}
-\title{function to calculate the read distribution
+\title{get_read_dist
 takes forward and reverse data frames
 summarizes read size by count
 returns table of size distribution}
@@ -10,15 +10,19 @@ returns table of size distribution}
 get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 }
 \arguments{
-\item{chrom_m}{a minus strand object}
+\item{bam_obj}{an object created by Rsamtools}
 
-\item{chrom_p}{a plus strand object}
+\item{chrom_name}{a string}
+
+\item{reg_start}{an integer}
+
+\item{reg_stop}{an integer}
 }
 \value{
-dizeDist
+size_dist
 }
 \description{
-function to calculate the read distribution
+get_read_dist
 takes forward and reverse data frames
 summarizes read size by count
 returns table of size distribution

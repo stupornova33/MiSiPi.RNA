@@ -5,14 +5,14 @@
 #' @param chrom_name a string
 #' @param reg_start a whole number
 #' @param reg_stop a whole number
-#' @param dir a string
+#' @param wkdir a string
 #' @param pal a string
 #' @return plots
 #'
 #' @export
 
 
-plot_si_heat <- function(results, chrom_name, reg_start, reg_stop, dir, pal = c('RdYlBl', 'yelOrRed', 'MagYel', 'Greens', 'BlYel')){
+plot_si_heat <- function(results, chrom_name, reg_start, reg_stop, wkdir, pal = c('RdYlBl', 'yelOrRed', 'MagYel', 'Greens', 'BlYel')){
   if (!missing(pal)) {
             m_pal <- match.arg(pal)
       m_pal <- switch(m_pal,

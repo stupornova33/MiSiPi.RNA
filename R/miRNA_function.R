@@ -10,13 +10,13 @@ miRNA_function <- function(vars){
 
    logfile <- "miRNA_logfile.txt"
 
-   dir <- 'miRNA_outputs/'
-   if(!dir.exists(dir) == TRUE) dir.create(dir)
+   wkdir <- 'miRNA_outputs/'
+   if(!dir.exists(wkdir) == TRUE) dir.create(wkdir)
 
-   if(!file.exists(logfile) == TRUE) file.create(paste0(dir, logfile))
+   if(!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
 
-   mapply(run_miRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], "+", 1, vars[[9]], vars[[10]], logfile, dir, vars[[6]], vars[[7]], vars[[15]])
-   mapply(run_miRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], "-", 1, vars[[9]], vars[[10]], logfile, dir, vars[[6]], vars[[7]], vars[[15]])
+   mapply(run_miRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], "+", 1, vars[[9]], vars[[10]], logfile, wkdir, vars[[6]], vars[[7]], vars[[15]])
+   mapply(run_miRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], "-", 1, vars[[9]], vars[[10]], logfile, wkdir, vars[[6]], vars[[7]], vars[[15]])
 
 
 }

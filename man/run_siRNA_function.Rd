@@ -2,7 +2,7 @@
 % Please edit documentation in R/run_siRNA_function.R
 \name{run_siRNA_function}
 \alias{run_siRNA_function}
-\title{siRNA function
+\title{run siRNA function
 process forward and reverse dt and plot si heatmap}
 \usage{
 run_siRNA_function(
@@ -14,7 +14,7 @@ run_siRNA_function(
   genome_file,
   bam_file,
   logfile,
-  dir,
+  wkdir,
   pal,
   plot_output,
   path_to_RNAfold,
@@ -40,7 +40,7 @@ run_siRNA_function(
 
 \item{logfile}{a string}
 
-\item{dir}{a string}
+\item{wkdir}{a string}
 
 \item{pal}{a string}
 
@@ -58,6 +58,6 @@ run_siRNA_function(
 results
 }
 \description{
-siRNA function
+run siRNA function
 process forward and reverse dt and plot si heatmap
 }

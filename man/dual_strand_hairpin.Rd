@@ -15,7 +15,7 @@ dual_strand_hairpin(
   genome_file,
   bam_file,
   logfile,
-  dir,
+  wkdir,
   plot_output,
   path_to_RNAfold,
   annotate_bed,
@@ -40,7 +40,7 @@ dual_strand_hairpin(
 
 \item{logfile}{a string}
 
-\item{dir}{a string}
+\item{wkdir}{a string}
 
 \item{plot_output}{a string, 'T' or 'F', default = 'T}
 

@@ -10,14 +10,14 @@
 #' @param reg_stop a whole number
 #' @param input_file a string
 #' @param logfile a string
-#' @param dir a string
+#' @param wkdir a string
 #' @param pal a string
 #' @param plot_output a string, 'T' or 'F', default is 'T'
 #' @return max_zscore, plots
 
 #' @export
 
-phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input_file, logfile, dir, pal, plot_output){
+phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input_file, logfile, wkdir, pal, plot_output){
    #Calculates a probability based on observations, mean, and standard deviation
 
    # process bam input files
@@ -29,8 +29,8 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
 
    chromosome <- which(chr_name == chrom_name)
 
-   cat(file = paste0(dir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
-   cat(file = paste0(dir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
+   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+   cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
 
    prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
@@ -129,17 +129,17 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
 
    suppressWarnings(
       if(!file.exists("phased_piRNA_zscores.txt")){
-         utils::write.table(phased_output, file = paste0(dir, "phased_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+         utils::write.table(phased_output, file = paste0(wkdir, "phased_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
       } else {
-         utils::write.table(phased_output, file = paste0(dir, "phased_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+         utils::write.table(phased_output, file = paste0(wkdir, "phased_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
       }
    )
 
    suppressWarnings(
       if(!file.exists("phased26_piRNA_zscores.txt")){
-         utils::write.table(phased26_output, file = paste0(dir, "phased26_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+         utils::write.table(phased26_output, file = paste0(wkdir, "phased26_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
       } else {
-         utils::write.table(phased26_output, file = paste0(dir, "phased26_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+         utils::write.table(phased26_output, file = paste0(wkdir, "phased26_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
       }
    )
 
@@ -147,7 +147,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
       dist_plot <- plot_sizes(read_dist)
       phased_plot <- plot_phasedz(df)
       all_plot <- cowplot::plot_grid(phased_plot, dist_plot, rel_widths = c(1, 0.7), rel_heights = c(1,1), ncol = 2)
-      grDevices::pdf(file = paste0(dir, prefix,"_", strand, "_phased_zscore.pdf"), height = 6, width = 11)
+      grDevices::pdf(file = paste0(wkdir, prefix,"_", strand, "_phased_zscore.pdf"), height = 6, width = 11)
       print(all_plot)
       grDevices::dev.off()
    }

@@ -6,13 +6,13 @@
 #' @param reg_stop a whole number
 #' @param bam_file a string
 #' @param logfile a string
-#' @param dir a string
+#' @param wkdir a string
 #' @param pal a string
 #' @param plot_output a string, 'T' or 'F', default = 'T
 #' @return plots, heat results, and zdf
 #' @export
 #'
-run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfile, dir, pal, plot_output){
+run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfile, wkdir, pal, plot_output){
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
@@ -24,8 +24,8 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
 
 
   ### ping pong piRNA
-  cat(file = paste0(dir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
-  cat(file = paste0(dir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
+  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+  cat(file = paste0(wkdir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
   forward_dt <- data.table::setDT(makeBamDF(chromP)) %>%
     subset(width <= 32 & width >= 15) %>%
@@ -41,7 +41,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
 
   #### if no forward reads are appropriate length delete df and print error message
   if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0){
-    cat(file = paste0(dir, logfile), paste0("Zero forward reads of correct length detected", "\n"), append = TRUE)
+    cat(file = paste0(wkdir, logfile), paste0("Zero forward reads of correct length detected", "\n"), append = TRUE)
     z_df <- NA
     heat_results <- NA
     return(list(heat_results, z_df))
@@ -50,7 +50,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
 
 
 
-  if(!nrow(forward_dt == 0) && (!nrow(reverse_dt) == 0)){
+  if(!nrow(forward_dt) == 0 && !nrow(reverse_dt) == 0){
     overlaps <- find_overlaps(forward_dt, reverse_dt)
     size <- nrow(overlaps)
 
@@ -69,7 +69,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
     paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
     fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
 
-    write.table(unlist(fastas), paste0(dir, "piRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+    write.table(unlist(fastas), file = "piRNA_pairs.fa", sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
   }
 
 
@@ -91,9 +91,9 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
 
   suppressWarnings(
     if(!file.exists("piRNA_heatmap.txt")){
-      utils::write.table(output, file = paste0(dir, "piRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
+      utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
     } else {
-      utils::write.table(output, file = paste0(dir, "piRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     }
   )
   output <- NULL
@@ -176,17 +176,17 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
 
   suppressWarnings(
     if(!file.exists("phased_plus_piRNA_zscores.txt")){
-      utils::write.table(phased_plus_output, file = paste0(dir, "phased_plus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+      utils::write.table(phased_plus_output, file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
     } else {
-      utils::write.table(phased_plus_output, file = paste0(dir, "phased_plus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      utils::write.table(phased_plus_output, file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     }
   )
 
   suppressWarnings(
     if(!file.exists("phased26_plus_piRNA_zscores.txt")){
-      utils::write.table(phased26_plus_output, file = paste0(dir, "phased26_plus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+      utils::write.table(phased26_plus_output, file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
     } else {
-      utils::write.table(phased26_plus_output, file = paste0(dir, "phased26_plus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      utils::write.table(phased26_plus_output, file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     }
   )
 
@@ -265,17 +265,17 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
 
   suppressWarnings(
     if(!file.exists("phased_minus_piRNA_zscores.txt")){
-      utils::write.table(phased_minus_output, file = paste0(dir, "phased_minus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+      utils::write.table(phased_minus_output, file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
     } else {
-      utils::write.table(phased_minus_output, file = paste0(dir, "phased_minus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      utils::write.table(phased_minus_output, file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     }
   )
 
   suppressWarnings(
     if(!file.exists("phased26_minus_piRNA_zscores.txt")){
-      utils::write.table(phased26_minus_output, file = paste0(dir, "phased26_minus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+      utils::write.table(phased26_minus_output, file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
     } else {
-      utils::write.table(phased26_minus_output, file = paste0(dir, "phased26_minus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      utils::write.table(phased26_minus_output, file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     }
   )
 
@@ -288,12 +288,12 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
     read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
     ## calculate read density by size
-    data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, dir)
+    data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     z <- plot_overlapz(z_df)
     dist_plot <- plot_sizes(read_dist)
 
-    heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, dir, pal = pal)
+    heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
 
     density_plot <- plot_density(data, reg_start, reg_stop)
     data <- NULL
@@ -308,7 +308,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfil
     ## phased plots
 
     all_plot <- cowplot::plot_grid(top, NULL, middle, NULL,bottom, ncol = 1, rel_widths = c(1,1, 1, 1,0.8), rel_heights = c(1,0.1, 1.2, 0.1, 0.8))
-    grDevices::pdf(file = paste0(dir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 7, width = 7)
+    grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 7, width = 7)
     print(all_plot)
     grDevices::dev.off()
   }

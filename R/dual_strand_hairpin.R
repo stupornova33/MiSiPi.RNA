@@ -9,7 +9,7 @@
 #' @param genome_file a fasta file of chrom sequences
 #' @param bam_file a BAM file
 #' @param logfile a string
-#' @param dir a string
+#' @param wkdir a string
 #' @param plot_output a string, 'T' or 'F', default = 'T
 #' @param path_to_RNAfold a string
 #' @param annotate_bed a string, "T" or "F"
@@ -20,7 +20,7 @@
 #' @export
 
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
-                             min_read_count, genome_file, bam_file, logfile, dir, plot_output, path_to_RNAfold, annotate_bed,
+                             min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_bed,
                              weight_reads, bed_file){
 
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
@@ -42,7 +42,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
      writeLines(as.character(vienna), con = "vienna.txt")
 
-     prefix <- paste0(dir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
+     prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
      helix <- R4RNA::viennaToHelix(unlist(fold_list[,5]))
      R4RNA::writeHelix(helix, file = "helix.txt")
@@ -67,8 +67,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
   geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
 
-  cat(file = paste0(dir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
-  cat(file = paste0(dir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
+  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+  cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
 
   which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
 
@@ -94,11 +94,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else {
     r2_dt <- get_top_n(dt, chrom_name, 100)
   }
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
+  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 63)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
 
-    cat(file = paste0(dir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
+    cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     res <- null_hp_res()
     return(res)
   }
@@ -116,7 +116,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       dplyr::group_by(dist) %>%
       dplyr::summarize(num= dplyr::n())
 
-    table <- data.table::data.table(dist=seq(1,50), num=rep(0, 50))
+    table <- data.table::data.table(dist=seq(1,65), num=rep(0, 65))
     phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, table, by = "dist", "num"))
 
     phased_counts[is.na(phased_counts)] <- 0
@@ -127,9 +127,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
   } else {
 
-    cat(file = paste0(dir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
+    cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     return(NA)
-    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,50), phased_z = rep(0,50))
+    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,65), phased_num = rep(0,65), phased_z = rep(0,65))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
 
     plus_hp_phased_z <- -33  #??
@@ -189,15 +189,15 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     dplyr::summarize(count = dplyr::n())
 
   if(weight_reads == "T"){
-    r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 98)
+    r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
   } else {
-    r2_dt <- get_top_n(filter_r2_dt, chrom_name, 98)
+    r2_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
   }
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
+  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 63)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
 
-    cat(file = paste0(dir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
+    cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     res <- null_hp_res()
     return(res)
   }
@@ -214,8 +214,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     phased_counts <- overlaps %>%
       dplyr::group_by(dist) %>%
       dplyr::summarize(num= dplyr::n())
-    phased_counts <- utils::head(phased_counts, 50)
-    table <- data.table::data.table(dist=seq(1,50), num=rep(0, 50))
+    phased_counts <- utils::head(phased_counts, 63)
+    table <- data.table::data.table(dist=seq(1,63), num=rep(0, 63))
     phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, table, by = "dist", "num"))
 
     phased_counts[is.na(phased_counts)] <- 0
@@ -226,8 +226,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
   } else {
 
-    cat(file = paste0(dir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,50), phased_z = rep(0,50))
+    cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
+    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,65), phased_z = rep(0,65))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
 
     minus_phased_hp_z <- -33  #??
@@ -294,9 +294,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   suppressWarnings(
      if(!file.exists("plus_hp_dicerz.txt")){
-        write.table(plus_overhang_out, file = paste0(dir, "plus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+        write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
      } else {
-        write.table(plus_overhang_out, file = paste0(dir, "plus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+        write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
      }
   )
 
@@ -307,9 +307,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   suppressWarnings(
      if(!file.exists("minus_hp_dicerz.txt")){
-        write.table(minus_overhang_out, file = paste0(dir, "minus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+        write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
      } else {
-        write.table(minus_overhang_out, file = paste0(dir, "minus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+        write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
      }
   )
 
@@ -321,25 +321,27 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   suppressWarnings(
      if(!file.exists("plus_hp_phasedz.txt")){
-        write.table(plus_phased_out, file = paste0(dir, "plus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+        write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
      } else {
-        write.table(plus_phased_out, file = paste0(dir, "plus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+        write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
      }
   )
 
   suppressWarnings(
      if(!file.exists("minus_hp_phasedz")){
-        write.table(minus_phased_out, file = paste0(dir, "minus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+        write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
      } else {
-        write.table(minus_phased_out, file = paste0(dir, "minus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+        write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     }
   )
+
 
   if(plot_output == 'T'){
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
     minus_overhangs <- data.frame(shift = minus_res$dicer_tbl.shift, zscore = minus_res$dicer_tbl.zscore)
     overhang_plot <- plot_overhangz(plus_overhangs, minus_overhangs)
-    data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, dir)
+    data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+
     density_plot <- plot_density(data, reg_start, reg_stop)
     arc_plot <- plot_helix("helix.txt")
 
@@ -351,18 +353,18 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       left <- cowplot::plot_grid(arc_plot, bed_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 
       # Draw combined plot
-      right <- cowplot::plot_grid(overhang_plot, NULL, phased_zscore, ncol = 3, align = "vh", axis = "l", rel_widths = c(1,0.1, 1), rel_heights = c(1,1,1))
+      right <- cowplot::plot_grid(overhang_plot, NULL, phased_zscore, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1, 1), rel_heights = c(1,0.1,1))
    } else {
       left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(1,0.3,1), ncol = 1, align = "vh", axis = "lrtb")
       # Draw combined plot
-      right <- cowplot::plot_grid(overhang_plot, NULL,phased_zscore, ncol = 3, align = "vh", axis = "l")
+      right <- cowplot::plot_grid(overhang_plot, NULL,phased_zscore, ncol = 1, rel_heights = c(1,0.1,1), rel_widths = c(1,1,1), align = "vh", axis = "l")
     }
 
-    final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,1,1), rel_widths = c(1,0.1, 1))
+    final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))
 
-    prefix <- paste0(dir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
+    prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
-    grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 7, width = 7.5)
+    grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 8, width = 8.5)
     print(final_plot)
     grDevices::dev.off()
   }

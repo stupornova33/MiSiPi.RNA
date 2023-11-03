@@ -10,7 +10,7 @@ read_densityBySize(
   reg_start,
   reg_stop,
   input_file,
-  dir,
+  wkdir,
   logfile
 )
 }
@@ -25,7 +25,7 @@ read_densityBySize(
 
 \item{input_file}{a string}
 
-\item{dir}{a string}
+\item{wkdir}{a string}
 
 \item{logfile}{a string}
 }

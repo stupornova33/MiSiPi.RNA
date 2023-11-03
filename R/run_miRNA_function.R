@@ -12,7 +12,7 @@
 #' @param genome_file a fasta file of chrom sequences
 #' @param bam_file a BAM file
 #' @param logfile a string
-#' @param dir a string
+#' @param wkdir a string
 #' @param plot_output a string, default = TRUE
 #' @param path_to_RNAfold a string
 #' @param weight_reads a string, "T" or "F"
@@ -21,13 +21,13 @@
 #' @export
 
 run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
-                           strand, min_read_count, genome_file, bam_file, logfile, dir, plot_output, path_to_RNAfold, weight_reads){
+                           strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, weight_reads){
    print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
-    cat(file = paste0(dir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+    cat(file = paste0(wkdir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
    pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
    if(reg_stop - reg_start > 3000){
-      cat(file = paste0(dir, logfile), "length of region is greater than 3000. \n", append = TRUE)
+      cat(file = paste0(wkdir, logfile), "length of region is greater than 3000. \n", append = TRUE)
       return(null_mi_res())
    }
 
@@ -113,7 +113,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    chrom <- NULL
 
    if(nrow(r1_dt) == 0 || nrow(r2_dt) == 0){
-      cat(paste0(dir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
+      cat(paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
       return(null_mi_res())
    }
 
@@ -152,12 +152,12 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
        paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
        fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
 
-       write.table(unlist(fastas), paste0(dir, "miRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+       write.table(unlist(fastas), paste0(wkdir, "miRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
       }
    }
 
    if(nrow(overlaps) == 0){
-      cat(paste0(dir, logfile), "No overlapping reads found.\n", append = TRUE)
+      cat(paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
       return(null_mi_res())
    }
 
@@ -301,7 +301,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
    plot_rna_struct <- function(x){
       pos <- count <- count.x <- NULL
-      prefix <- paste0(dir, chrom_name, "-", reduced_list[[x]]$start, "-", reduced_list[[x]]$stop)
+      prefix <- paste0(wkdir, chrom_name, "-", reduced_list[[x]]$start, "-", reduced_list[[x]]$stop)
       mfe <- reduced_list[[x]]$mfe
       print(prefix)
       helix_df <- data.frame(reduced_list[[x]]$helix)
@@ -333,7 +333,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       overhang_output$locus <- paste0(chrom_name, "_", reduced_list[[x]]$start, "_", reduced_list[[x]]$stop)
       overhang_output <- overhang_output[, c(10, 1:9)]
 
-      dice_file <- paste0(dir, "miRNA_dicerz.txt")
+      dice_file <- paste0(wkdir, "miRNA_dicerz.txt")
       suppressWarnings(
          if(!file.exists(dice_file)){
             utils::write.table(overhang_output, file = dice_file, sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
@@ -450,7 +450,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          ########################################################################################
          struct_plot <- plot_miRNA_struct(miRNA_df)
 
-         density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, dir)
+         density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
          density_plot <- plot_density(density, reg_start, reg_stop)
 
          dist_plot <- plot_sizes(read_dist)

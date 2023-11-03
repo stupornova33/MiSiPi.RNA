@@ -15,7 +15,7 @@ phased_piRNA_function(
   reg_stop,
   input_file,
   logfile,
-  dir,
+  wkdir,
   pal,
   plot_output
 )
@@ -33,7 +33,7 @@ phased_piRNA_function(
 
 \item{logfile}{a string}
 
-\item{dir}{a string}
+\item{wkdir}{a string}
 
 \item{pal}{a string}
 

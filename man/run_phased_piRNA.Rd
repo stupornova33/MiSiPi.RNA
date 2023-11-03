@@ -3,7 +3,7 @@
 \name{run_phased_piRNA}
 \alias{run_phased_piRNA}
 \title{run_phased_piRNA
-calls phased_piRNA function on both strand, creates output dir and logfile}
+calls phased_piRNA function on both strand, creates output wkdir and logfile}
 \usage{
 run_phased_piRNA(vars)
 }
@@ -15,5 +15,5 @@ plots
 }
 \description{
 run_phased_piRNA
-calls phased_piRNA function on both strand, creates output dir and logfile
+calls phased_piRNA function on both strand, creates output wkdir and logfile
 }

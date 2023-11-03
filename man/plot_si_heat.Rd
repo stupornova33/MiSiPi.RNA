@@ -11,7 +11,7 @@ plot_si_heat(
   chrom_name,
   reg_start,
   reg_stop,
-  dir,
+  wkdir,
   pal = c("RdYlBl", "yelOrRed", "MagYel", "Greens", "BlYel")
 )
 }
@@ -24,7 +24,7 @@ plot_si_heat(
 
 \item{reg_stop}{a whole number}
 
-\item{dir}{a string}
+\item{wkdir}{a string}
 
 \item{pal}{a string}
 }

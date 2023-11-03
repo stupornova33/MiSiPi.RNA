@@ -2,7 +2,7 @@
 % Please edit documentation in R/siRNA_function.R
 \name{siRNA_function}
 \alias{siRNA_function}
-\title{run_siRNA_function}
+\title{siRNA_function}
 \usage{
 siRNA_function(vars)
 }
@@ -13,5 +13,5 @@ siRNA_function(vars)
 si_res
 }
 \description{
-run_siRNA_function
+siRNA_function
 }

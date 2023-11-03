@@ -7,15 +7,15 @@
 
 piRNA_function <- function(vars){
 
-   dir <- 'piRNA_outputs/'
-   if(!dir.exists(dir) == TRUE) dir.create(dir)
+   wkdir <- 'piRNA_outputs/'
+   if(!dir.exists(wkdir) == TRUE) dir.create(wkdir)
 
    logfile = "piRNA_logfile.txt"
-   if(!file.exists(logfile) == TRUE) file.create(paste0(dir, logfile))
+   if(!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
 
 
 
-   mapply(run_piRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[10]], logfile, dir, vars[[12]], vars[[6]])
+   mapply(run_piRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[10]], logfile, wkdir, vars[[12]], vars[[6]])
 
 
 }

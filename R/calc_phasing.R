@@ -26,7 +26,10 @@ if(!nrow(phased) == 0){
     dplyr::group_by(dist) %>%
     dplyr::summarize(num= dplyr::n()) %>%
     dplyr::mutate(dist = abs(dist)) %>%
-    dplyr::filter(dist <= 50)
+    #dplyr::filter(dist <= 50)
+    dplyr::filter(dist <= 63)
+
+
   #filter_r1_dt <- NULL
   #filter_r2_dt <- NULL
 } else {
@@ -37,7 +40,7 @@ if(!nrow(phased) == 0){
 
 #make the results data table
 print('making all_table')
-all_table <- data.table::data.table(dist=seq(1,50), num=rep(0, 50))
+all_table <- data.table::data.table(dist=seq(1,63), num=rep(0, 63))
 
 if(nrow(phased_counts) > 1){
   phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, all_table, by = "dist", "num"))
@@ -46,7 +49,7 @@ if(nrow(phased_counts) > 1){
   phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
   phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
 } else {
-  phased_counts <- data.table::data.table(dist=seq(1,50), num=rep(0, 50))
+  phased_counts <- data.table::data.table(dist=seq(1,63), num=rep(0, 63))
   phased_counts$Zscore <- calc_zscore(phased_counts$num)
   phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num, phased_z = Zscore)
 }

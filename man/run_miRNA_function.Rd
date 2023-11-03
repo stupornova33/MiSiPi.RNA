@@ -18,7 +18,7 @@ run_miRNA_function(
   genome_file,
   bam_file,
   logfile,
-  dir,
+  wkdir,
   plot_output,
   path_to_RNAfold,
   weight_reads
@@ -45,7 +45,7 @@ run_miRNA_function(
 
 \item{logfile}{a string}
 
-\item{dir}{a string}
+\item{wkdir}{a string}
 
 \item{plot_output}{a string, default = TRUE}
 
