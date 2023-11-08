@@ -25,7 +25,6 @@ Imports:
     pheatmap,
     R4RNA,
     Rcpp,
-<<<<<<< Updated upstream
     reshape2,
     RRNA,
     Rsamtools,
@@ -34,12 +33,5 @@ Imports:
     stringr,
     tidyr,
     viridis
-=======
-<<<<<<< Updated upstream
-    tidyr
-=======
-	tidyr
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 LinkingTo: 
     Rcpp

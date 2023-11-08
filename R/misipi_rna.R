@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream:R/run_all_function.R
 #' run the run_all function
 #' @param vars a list
 #' @importFrom Rcpp sourceCpp
@@ -15,7 +14,7 @@ mapply(new_run_all, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], vars[
 
 }
 
-=======
+
 #' run the run_all function
 #' @param vars a list
 #' @importFrom Rcpp sourceCpp
@@ -33,4 +32,3 @@ mapply(new_run_all, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], vars[
 
 }
 
->>>>>>> Stashed changes:R/misipi_rna.R

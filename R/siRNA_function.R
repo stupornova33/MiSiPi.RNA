@@ -8,14 +8,12 @@
 
 
 siRNA_function <- function(vars){
-<<<<<<< Updated upstream
    dir <- "siRNA_outputs/"
-=======
+
    `%>%` <- magrittr::`%>%`
 
    print("calling run_siRNA_function")
    wkdir <- "siRNA_outputs/"
->>>>>>> Stashed changes
    logfile <- "siRNA_logfile.txt"
 
    if(!dir.exists(wkdir) == TRUE) dir.create(wkdir)

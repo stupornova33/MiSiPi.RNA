@@ -184,8 +184,8 @@ proper_overlap <- function(widthx, widthy) {
 #' @param overlap An Integer
 #' @return count An Integer representing the number of overlaps present
 #' @export
-overlap_counts <- function(f_end, X_SIZE, r_start, Y_SIZE, overlap) {
-    .Call(`_MiSiPi_RNA_overlap_counts`, f_end, X_SIZE, r_start, Y_SIZE, overlap)
+overlap_counts <- function(f_start, X_SIZE, r_end, Y_SIZE, overlap) {
+    .Call(`_MiSiPi_RNA_overlap_counts`, f_start, X_SIZE, r_end, Y_SIZE, overlap)
 }
 
 #' get_si_overlaps
