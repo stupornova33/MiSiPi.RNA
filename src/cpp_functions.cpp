@@ -559,7 +559,7 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
       int new_r2_end = new_r2_start + r2_width[j] - 1;
 
 //    if((new_r2_end - r1_end[j] == 2)){
-      if((new_r2_end - r1_end[j] == 2) && (new_r2_start - r1_start[j]) == 2) {
+      if((r1_end[j] - new_r2_end == 2) && (r1_start[j] - new_r2_start) == 2) {
         pcount += 1;
       } else {
         icount += 1;
