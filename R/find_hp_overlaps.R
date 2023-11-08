@@ -29,7 +29,7 @@ find_hp_overlaps <- function(r1_dt, r2_dt){
    res <- NULL
 
    query_values <- data.frame(cbind(r1_start = IRanges::start(gr1_obj[query_idx]), r1_stop = IRanges::end(gr1_obj[query_idx]), r1_width = IRanges::width(gr1_obj[query_idx]))) %>%
-      dplyr::mutate(r1_stop = r1_stop - 62, r1_width = r1_stop - r1_start + 1)
+      dplyr::mutate(r1_stop = r1_stop - 63, r1_width = r1_stop - r1_start + 1)
    query_idx <- NULL
 
    sub_values <- data.frame(cbind(r2_start = IRanges::start(gr2_obj[sub_idx]), r2_stop = IRanges::end(gr2_obj[sub_idx]), r2_width = IRanges::width(gr2_obj[sub_idx])))
@@ -41,7 +41,7 @@ find_hp_overlaps <- function(r1_dt, r2_dt){
      dplyr::mutate(dist = r2_start - r1_end) %>%
      dplyr::filter(dist >= 0 & dist < 64) %>%
      dplyr::mutate(r1_end = r1_start + r1_width - 1, r2_end = r2_start + r2_width - 1) %>%
-    dplyr::filter(r1_end < r2_start)
+     dplyr::filter(r1_end <= r2_start)
    #need to filter to remove self matches, get dist between end of R1 and start of R2
    #size <- nrow(res_tbl)
    #overlaps <- get_nearby(res_tbl$r1_start, res_tbl$r1_end, res_tbl$r2_start, res_tbl$r2_end, 60, size) %>%

@@ -42,7 +42,7 @@ if(!nrow(phased) == 0){
 print('making all_table')
 all_table <- data.table::data.table(dist=seq(1,63), num=rep(0, 63))
 
-if(nrow(phased_counts) > 1){
+if(nrow(phased_counts) >= 1){
   phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, all_table, by = "dist", "num"))
   phased_counts[is.na(phased_counts)] <- 0
   phased_counts <- phased_counts %>% dplyr::select(-c(num.y))

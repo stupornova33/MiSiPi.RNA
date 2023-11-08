@@ -138,6 +138,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
     plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
+    plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,65), phased_z = rep(0,65))
@@ -236,6 +237,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
      minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt)
      minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
+     minus_phased_hp_z <- mean(minus_hp_phased_tbl$phased_z[1:4])
   } else {
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,65), phased_z = rep(0,65))
