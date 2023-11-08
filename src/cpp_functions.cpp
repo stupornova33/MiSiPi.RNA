@@ -555,9 +555,11 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
     int icount = 0;
 
     for(int j = 0; j < mut_size; j++){
-      int new_r2_start = r1_start[j] + 2 + i;
+      int new_r2_start = r2_start[j] + i;
       int new_r2_end = new_r2_start + r2_width[j] - 1;
-      if((new_r2_end - r1_end[j] == 2)){
+
+//    if((new_r2_end - r1_end[j] == 2)){
+      if((new_r2_end - r1_end[j] == 2) && (new_r2_start - r1_start[j]) == 2) {
         pcount += 1;
       } else {
         icount += 1;
@@ -612,8 +614,8 @@ int proper_overlap(int widthx, int widthy) {
 //' @return count An Integer representing the number of overlaps present
 //' @export
 // [[Rcpp::export]]
-int overlap_counts(std::vector<int> f_end, int X_SIZE,
-                   std::vector<int> r_start, int Y_SIZE,
+int overlap_counts(std::vector<int> f_start, int X_SIZE,
+                   std::vector<int> r_end, int Y_SIZE,
                    int overlap) {
    // filter read sizes prior to this
    // For each forward read start position, is there a reverse read rp3 position that is fp5 - overlap + 1?
@@ -622,10 +624,10 @@ int overlap_counts(std::vector<int> f_end, int X_SIZE,
 
    for (int i = 0; i < X_SIZE; i++) {
       bool i_status = false;
-      //int calculated_r_pos = f_start[i] + overlap - 1;
-      int calculated_f_pos = f_end[i] - overlap - 2;
+      int calculated_r_pos = f_start[i] + overlap - 1;
+      //int calculated_f_pos = f_end[i] - overlap - 1;
       for (int j = 0; j < Y_SIZE; j++) {
-         if (calculated_f_pos == r_start[j]) {
+         if (calculated_r_pos == r_end[j]) {
            //changed from calculated_r_pos == rend[j]
             if(!i_status) i_status = true;
             count++;
@@ -685,8 +687,8 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
                   rend_res.push_back(rdt_end[l]);
                }
             }
-              //current_count = overlap_counts(fstart_res, fstart_res.size(), rend_res, rend_res.size(), p_overlap);
-            current_count = overlap_counts(fend_res, fend_res.size(), rstart_res, rstart_res.size(), p_overlap);
+              current_count = overlap_counts(fstart_res, fstart_res.size(), rend_res, rend_res.size(), p_overlap);
+            //current_count = overlap_counts(fend_res, fend_res.size(), rstart_res, rstart_res.size(), p_overlap);
          } else {
             std::vector<int> fstart_res1;
             std::vector<int> fend_res1;
@@ -713,8 +715,8 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
             }
 
 
-            //int c1 = overlap_counts(fstart_res1, fstart_res1.size(), rend_res1, rend_res1.size(), p_overlap);
-            int c1 = overlap_counts(fend_res1, fend_res1.size(), rstart_res1, rstart_res1.size(), p_overlap);
+            int c1 = overlap_counts(fstart_res1, fstart_res1.size(), rend_res1, rend_res1.size(), p_overlap);
+            //int c1 = overlap_counts(fend_res1, fend_res1.size(), rstart_res1, rstart_res1.size(), p_overlap);
 
             for(int k = 0; k < f_size; k++){
                //get reads of size i
@@ -729,8 +731,8 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
                   rend_res2.push_back(rdt_end[l]);
                }
             }
-            //int c2 = overlap_counts(fstart_res2, fstart_res2.size(), rend_res2, rend_res2.size(), p_overlap);
-            int c2 = overlap_counts(fend_res2, fend_res2.size(), rstart_res2, rstart_res2.size(), p_overlap);
+            int c2 = overlap_counts(fstart_res2, fstart_res2.size(), rend_res2, rend_res2.size(), p_overlap);
+            //int c2 = overlap_counts(fend_res2, fend_res2.size(), rstart_res2, rstart_res2.size(), p_overlap);
 
             current_count = c1 + c2;
 

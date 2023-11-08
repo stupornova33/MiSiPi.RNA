@@ -4,18 +4,18 @@
 \alias{overlap_counts}
 \title{overlap_counts}
 \usage{
-overlap_counts(f_end, X_SIZE, r_start, Y_SIZE, overlap)
+overlap_counts(f_start, X_SIZE, r_end, Y_SIZE, overlap)
 }
 \arguments{
+\item{f_start}{A vector of ints}
+
 \item{X_SIZE}{An Integer}
+
+\item{r_end}{A vector of ints}
 
 \item{Y_SIZE}{An Integer}
 
 \item{overlap}{An Integer}
-
-\item{f_start}{A vector of ints}
-
-\item{r_end}{A vector of ints}
 }
 \value{
 count An Integer representing the number of overlaps present

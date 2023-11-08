@@ -164,17 +164,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // overlap_counts
-int overlap_counts(std::vector<int> f_end, int X_SIZE, std::vector<int> r_start, int Y_SIZE, int overlap);
-RcppExport SEXP _MiSiPi_RNA_overlap_counts(SEXP f_endSEXP, SEXP X_SIZESEXP, SEXP r_startSEXP, SEXP Y_SIZESEXP, SEXP overlapSEXP) {
+int overlap_counts(std::vector<int> f_start, int X_SIZE, std::vector<int> r_end, int Y_SIZE, int overlap);
+RcppExport SEXP _MiSiPi_RNA_overlap_counts(SEXP f_startSEXP, SEXP X_SIZESEXP, SEXP r_endSEXP, SEXP Y_SIZESEXP, SEXP overlapSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<int> >::type f_end(f_endSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type f_start(f_startSEXP);
     Rcpp::traits::input_parameter< int >::type X_SIZE(X_SIZESEXP);
-    Rcpp::traits::input_parameter< std::vector<int> >::type r_start(r_startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type r_end(r_endSEXP);
     Rcpp::traits::input_parameter< int >::type Y_SIZE(Y_SIZESEXP);
     Rcpp::traits::input_parameter< int >::type overlap(overlapSEXP);
-    rcpp_result_gen = Rcpp::wrap(overlap_counts(f_end, X_SIZE, r_start, Y_SIZE, overlap));
+    rcpp_result_gen = Rcpp::wrap(overlap_counts(f_start, X_SIZE, r_end, Y_SIZE, overlap));
     return rcpp_result_gen;
 END_RCPP
 }

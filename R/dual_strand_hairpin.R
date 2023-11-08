@@ -104,37 +104,47 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
 
-  if(!nrow(r1_dt) == 0 && !nrow(r2_dt) == 0){
-    overlaps <- find_hp_overlaps(r1_dt, r2_dt)
-  } else {
-    overlaps <- data.frame(one = c(NA), two = c(NA))
-  }
+  #if(!nrow(r1_dt) == 0 && !nrow(r2_dt) == 0){
+  #  overlaps <- find_hp_overlaps(r1_dt, r2_dt)
+  #} else {
+  #  overlaps <- data.frame(one = c(NA), two = c(NA))
+  #}
 
 
-  if(!is.na(overlaps[1,1])){
-    phased_counts <- overlaps %>%
-      dplyr::group_by(dist) %>%
-      dplyr::summarize(num= dplyr::n())
+  #if(!is.na(overlaps[1,1])){
+  #  phased_counts <- overlaps %>%
+  #    dplyr::group_by(dist) %>%
+  #    dplyr::summarize(num= dplyr::n())
 
-    table <- data.table::data.table(dist=seq(1,65), num=rep(0, 65))
-    phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, table, by = "dist", "num"))
+  #  table <- data.table::data.table(dist=seq(1,65), num=rep(0, 65))
+  #  phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, table, by = "dist", "num"))
 
-    phased_counts[is.na(phased_counts)] <- 0
-    phased_counts <- phased_counts %>% dplyr::select(-c(num.y))
-    phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
-    plus_hp_phased_tbl <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
-    plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
+  #  phased_counts[is.na(phased_counts)] <- 0
+  #  phased_counts <- phased_counts %>% dplyr::select(-c(num.y))
+  #  phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
+  #  plus_hp_phased_tbl <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
+  #  plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
+  #  plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
+  #} else {
+
+  #  cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
+  #  return(NA)
+  #  plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,65), phased_num = rep(0,65), phased_z = rep(0,65))
+  #  plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
+
+  #  plus_hp_phased_z <- -33  #??
+  #}
+
+  if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
+    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
   } else {
-
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    return(NA)
-    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,65), phased_num = rep(0,65), phased_z = rep(0,65))
+    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,65), phased_z = rep(0,65))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
 
-    plus_hp_phased_z <- -33  #??
+    plus_phased_hp_z <- -33
   }
-
 
   if(nrow(r2_dt) > 0){
 
@@ -203,34 +213,35 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
 
-  if(!nrow(r1_dt) == 0 && !nrow(r2_dt) == 0){
-    overlaps <- find_hp_overlaps(r1_dt, r2_dt)
+  #if(!nrow(r1_dt) == 0 && !nrow(r2_dt) == 0){
+  #  overlaps <- find_hp_overlaps(r1_dt, r2_dt)
+  #} else {
+  #  overlaps <- data.frame(one = c(NA), two = c(NA))
+  #}
+
+
+  #if(!is.na(overlaps[1,1])){
+  #  phased_counts <- overlaps %>%
+  #    dplyr::group_by(dist) %>%
+  #    dplyr::summarize(num= dplyr::n())
+  #  phased_counts <- utils::head(phased_counts, 63)
+  #  table <- data.table::data.table(dist=seq(1,63), num=rep(0, 63))
+  #  phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, table, by = "dist", "num"))
+
+  #  phased_counts[is.na(phased_counts)] <- 0
+  #  phased_counts <- phased_counts %>% dplyr::select(-c(num.y))
+  #  phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
+  #  minus_hp_phased_tbl <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
+  #  minus_phased_hp_z <- mean(minus_hp_phased_tbl$phased_z[1:4])
+  if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
+     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt)
+     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
   } else {
-    overlaps <- data.frame(one = c(NA), two = c(NA))
-  }
-
-
-  if(!is.na(overlaps[1,1])){
-    phased_counts <- overlaps %>%
-      dplyr::group_by(dist) %>%
-      dplyr::summarize(num= dplyr::n())
-    phased_counts <- utils::head(phased_counts, 63)
-    table <- data.table::data.table(dist=seq(1,63), num=rep(0, 63))
-    phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, table, by = "dist", "num"))
-
-    phased_counts[is.na(phased_counts)] <- 0
-    phased_counts <- phased_counts %>% dplyr::select(-c(num.y))
-    phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
-    minus_hp_phased_tbl <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
-    minus_phased_hp_z <- mean(minus_hp_phased_tbl$phased_z[1:4])
-    minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
-  } else {
-
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,65), phased_z = rep(0,65))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
 
-    minus_phased_hp_z <- -33  #??
+    minus_phased_hp_z <- -33
   }
 
   if(nrow(r2_dt) > 0){
