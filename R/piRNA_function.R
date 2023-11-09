@@ -15,7 +15,7 @@ piRNA_function <- function(vars){
 
 
 
-   mapply(run_piRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[10]], logfile, wkdir, vars[[12]], vars[[6]])
+   mapply(run_piRNA_function, vars[[1]], vars[[2]], vars[[4]], vars[[3]], vars[[10]], vars[[9]], logfile, wkdir, vars[[12]], vars[[6]])
 
 
 }

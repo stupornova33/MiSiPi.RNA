@@ -4,7 +4,9 @@
 #' @param chrom_name a string
 #' @param reg_start a whole number
 #' @param reg_stop a whole number
+#' @param length an integer
 #' @param bam_file a string
+#' @param genome_file a string
 #' @param logfile a string
 #' @param wkdir a string
 #' @param pal a string
@@ -12,7 +14,7 @@
 #' @return plots, heat results, and zdf
 #' @export
 #'
-run_piRNA_function <- function(chrom_name, reg_start, reg_stop, bam_file, logfile, wkdir, pal, plot_output){
+run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal, plot_output){
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)

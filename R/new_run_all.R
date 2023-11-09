@@ -175,7 +175,7 @@ if(nrow(all_data) > 1){
   si_log <- file.create('si_logfile.txt')
 
 
-  si_res <- siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
+  si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
                            annotate_bed, weight_reads, bed_file)
 
   max_si_heat <- get_max_si_heat(si_res)
@@ -233,7 +233,7 @@ if(nrow(all_data) > 1){
   if(!dir.exists('run_all/miRNA_dir/')) dir.create('run_all/miRNA_dir/')
   miRNA_dir <- 'run_all/miRNA_dir/'
   mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
-  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
+  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
 
   #Look at first result
   mi_res <- mi_res[[1]]
@@ -248,7 +248,7 @@ if(nrow(all_data) > 1){
     plus_overlapz <- NA
   }
 
-  mi_res <- miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
+  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
 
   mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -287,7 +287,7 @@ if(nrow(all_data) > 1){
 
   piRNA_dir <- 'run_all/piRNA_dir/'
   pi_log <- file.create(paste0(piRNA_dir, 'pi_logfile.txt'))
-  pi_res <- piRNA_function(chrom_name, reg_start, reg_stop, bam_file, pi_log, piRNA_dir, pi_pal, plot_output = "F")
+  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, pi_log, piRNA_dir, pi_pal, plot_output = "F")
 
   if(!is.na(pi_res[[1]][1])){
     if(sum(pi_res[[1]] != 0)){
@@ -320,7 +320,7 @@ if(nrow(all_data) > 1){
   if(!dir.exists('run_all/phased_dir/')) dir.create('run_all/phased_dir/')
   phased_dir <- 'run_all/phased_dir/'
   phased_log <- file.create(paste0(phased_dir, 'phased_logfile.txt'))
-  phased_res <- piRNA_function("+", chrom_name, reg_start, reg_stop, bam_file, phased_log, phased_dir, plot_output= "F")
+  phased_res <- phased_piRNA_function("+", chrom_name, reg_start, reg_stop, bam_file, phased_log, phased_dir, plot_output= "F")
 
   phasedz_plus <- phased_res[1]
 

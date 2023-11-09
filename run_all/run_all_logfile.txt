@@ -1,0 +1,5 @@
+chrom_name: Dsim_3L reg_start: 606947 reg_stop: 607007
+Filtering forward and reverse reads by length
+Creating size plots
+Begin siRNA function
+Begin miRNA function

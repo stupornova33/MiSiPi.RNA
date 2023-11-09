@@ -10,7 +10,9 @@ run_piRNA_function(
   chrom_name,
   reg_start,
   reg_stop,
+  length,
   bam_file,
+  genome_file,
   logfile,
   wkdir,
   pal,
@@ -24,7 +26,11 @@ run_piRNA_function(
 
 \item{reg_stop}{a whole number}
 
+\item{length}{an integer}
+
 \item{bam_file}{a string}
+
+\item{genome_file}{a string}
 
 \item{logfile}{a string}
 
