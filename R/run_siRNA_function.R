@@ -54,22 +54,25 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
        dplyr::group_by_all() %>%
        dplyr::summarize(count = dplyr::n())
 
-   #chromP <- NULL
-   #chromM <- NULL
-
 
    if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       print("f_dt and r_dt are not empty")
       cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
-      if(weight_reads == "T"){
-        #testing weighting by normalizing to library size
+      if(weight_reads == "Top"){
+        print("forward_dt: ")
+        print(head(forward_dt))
+        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 100)
+        print("reverse_dt: ")
+        print(head(reverse_dt))
+        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 100)
+
+        print("Completed getting weighted dataframes.")
+      } else if(weight_reads == "Locus_norm"){
 
         forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
         reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
 
-        #forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 100)
-        #reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 100)
       } else {
         forward_dt <- get_top_n(forward_dt, chrom_name, 100)
         reverse_dt <- get_top_n(reverse_dt, chrom_name, 100)
@@ -154,8 +157,8 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
  if(!sum(results) == 0){
    ### phasing
 
-   r1_dt <- forward_dt %>% dplyr::mutate(end = end + 59)
-   r2_dt <- reverse_dt %>% dplyr::mutate(end = end + 59)
+   #r1_dt <- forward_dt %>% dplyr::mutate(end = end + 59)
+   #r2_dt <- reverse_dt %>% dplyr::mutate(end = end + 59)
    #plus_phased_counts <- calc_phasing(r1_dt, forward_dt)
    #minus_phased_counts <- calc_phasing(r2_dt, reverse_dt)
 
@@ -185,7 +188,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
   #       utils::write.table(minus_phased_output, file = paste0(wkdir, "siRNA_minus_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
   #    }
   # )
-
+   print("Beginning hairpin function.")
    dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
                               path_to_RNAfold, annotate_bed, weight_reads, bed_file)
    ### hairpins
@@ -194,6 +197,10 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
       cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
+      print("forward_dt: ")
+      print(head(forward_dt))
+      print("reverse_dt: ")
+      print(head(reverse_dt))
       dist <- get_weighted_read_dist(forward_dt, reverse_dt)
       #forward_dt <- NULL
       #reverse_dt <- NULL

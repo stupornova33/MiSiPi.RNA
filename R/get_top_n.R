@@ -16,8 +16,8 @@ get_top_n <- function(filter_dt, chrom_name, n){
       rname <- rep(filter_dt$rname[i], rep_count)
       start <- rep(filter_dt$start[i], rep_count)
       end <- rep(filter_dt$end[i], rep_count)
-
-      current_df <- data.frame(rname = rname, start = start, end = end)
+      first <- rep(filter_dt$first[i], rep_count)
+      current_df <- data.frame(rname = rname, start = start, end = end, first= first)
 
       return(current_df)
    }
@@ -44,7 +44,7 @@ get_top_n <- function(filter_dt, chrom_name, n){
 
    if(nrow(counts_dt) > 0){
       #select a subset
-      final_df <- utils::head(res_df, 8000)
+      final_df <- utils::head(res_df, 10000)
    } else {
       final_df <- counts_dt
    }

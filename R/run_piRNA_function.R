@@ -20,14 +20,16 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
   bam_header <- NULL
-
+  print("Making chromP and chromM")
+  cat(file = paste0(wkdir, logfile), "Making chromP and chromM", append = TRUE)
   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
   chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
-
+  print("Finished making chromP and chromM. Filtering forward and reverse reads by length.")
   ### ping pong piRNA
   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
   cat(file = paste0(wkdir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
+
 
   forward_dt <- data.table::setDT(makeBamDF(chromP)) %>%
     subset(width <= 32 & width >= 15) %>%
@@ -75,11 +77,11 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   }
 
 
-
+  cat(file = paste0(wkdir, logfile), paste0("Making counts table.", "\n"), append = TRUE)
   z_res <- make_count_table(forward_dt$start, forward_dt$end, forward_dt$width,
                             reverse_dt$start, reverse_dt$end, reverse_dt$width)
 
-
+  cat(file = paste0(wkdir, logfile), paste0("Finding overlaps.", "\n"), append = TRUE)
   heat_results <- get_pi_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
                                   reverse_dt$end, reverse_dt$start, reverse_dt$width)
 
@@ -109,13 +111,13 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
   #for the read size dist plot
-
+  cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
   read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
   ################## run plus strand
 
   chrom <- data.table::setDT(getChrPlus(bam_obj, chrom_name, reg_start, reg_stop))
-
+  cat(file = paste0(wkdir, logfile), paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
   filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + (width -1)) %>%
@@ -137,7 +139,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   filter_r2_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
     dplyr::select(-c(first))
 
-  all_table <- data.table::data.table(phased_dist=seq(1,50), phased_num=rep(0, 50))
+  all_table <- data.table::data.table(phased_dist=seq(0,63), phased_num=rep(0, 64))
 
 
   if(!nrow(filter_r1_dt) == 0) {
@@ -148,6 +150,8 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
     phased_plus_counts[is.na(phased_plus_counts)] <- 0
   }
+
+  cat(file = paste0(wkdir, logfile), paste0("Calculating plus strand phasing.", "\n"), append = TRUE)
 
   if(!nrow(over_26_dt) == 0){
     phased_26_plus_counts <- calc_phasing(over_26_dt, over_26_dt)
@@ -193,6 +197,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   ############# run minus strand
+  cat(file = paste0(wkdir, logfile), paste0("Running minus strand phasing.", "\n"), append = TRUE)
   chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
   filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
@@ -226,9 +231,9 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   filter_r2_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
     dplyr::select(-c(first))
 
-  all_table <- data.table::data.table(phased_dist=seq(1,50), phased_num=rep(0, 50))
+  all_table <- data.table::data.table(phased_dist=seq(0,63), phased_num=rep(0, 64))
 
-
+  cat(file = paste0(wkdir, logfile), paste0("Calculating minus strand phasing.", "\n"), append = TRUE)
   if(!nrow(filter_r1_dt) == 0) {
     phased_minus_counts <- calc_phasing(filter_r1_dt, filter_r2_dt)
   } else {
@@ -284,9 +289,9 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   #################################################################################################
   ## make plots
-
-  if(sum(heat_results != 0) && plot_output == 'T'){
-    ### ping pong plots
+    if(sum(heat_results != 0) && plot_output == 'T'){
+    cat(file = paste0(wkdir, logfile), paste0("Generating plots.", "\n"), append = TRUE)
+### ping pong plots
     read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
     ## calculate read density by size
@@ -347,7 +352,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
 
   #return(c(ave_z, ave_26z))
-
+  cat(file = paste0(wkdir, logfile), paste0("Returning results for ML table.", "\n"), append = TRUE)
   #results for ML table
   return(list(heat_results, z_df, ave_plus_z, ave_plus_26z, ave_minus_z, ave_minus_26z))
 }

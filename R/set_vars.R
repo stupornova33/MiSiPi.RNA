@@ -22,7 +22,6 @@ set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])
   bam_header <- V2 <- V3 <- NULL
-
   test_list <- utils::read.csv(roi, sep = "\t", header = FALSE)
 
   mut_table <- function(V1){

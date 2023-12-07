@@ -90,7 +90,16 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
    ########################################################## main logic ################################################################
    ## make the read data tables
-   filter_r2_dt <- filter_mi_dt(chrom, chrom_name)
+
+   chrom_df <- makeBamDF(chrom) %>%
+     subset(width <= 25 & width >= 18) %>%
+     dplyr::mutate(start = pos, end = pos + width - 1) %>%
+     dplyr::select(-c(pos)) %>%
+     dplyr::group_by_all() %>%
+     dplyr::summarize(count = dplyr::n())
+   filter_r2_dt <- chrom_df %>% dplyr::mutate(rname = chrom_name)
+
+   #filter_r2_dt <- filter_mi_dt(chrom_df, chrom_name)
    #new_dt <- filter_r2_dt
 
    if(nrow(filter_r2_dt) == 0){

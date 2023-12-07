@@ -58,9 +58,11 @@ plot_bed <- function(gff_file, chrom_name, reg_start, reg_stop){
    if (nrow(bed) < 1) {
       print('nrow bed < 1')
       current_plot <- get_g()
+      print('making new_plot.')
       new_plot <- current_plot +
          ggplot2::coord_cartesian(ylim = c(0,nrow(bed) + 3), xlim = c(reg_start, reg_stop))
          #ggplot2::scale_x_continuous(breaks = seq(reg_start, reg_stop, by = round(length/10)), expand = ggplot2::expansion(mult = c(0,0.06)))
+      print('setting new_plot')
       set_g(new_plot)
    } else {
       current_plot <- get_g()
@@ -119,6 +121,7 @@ plot_bed <- function(gff_file, chrom_name, reg_start, reg_stop){
 
 
    }
+   print('setting g')
    g <- get_g()
    return(g)
 }
