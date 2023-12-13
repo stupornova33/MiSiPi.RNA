@@ -21,14 +21,14 @@ get_read_dist <- function(bam_obj, chrom_name, reg_start, reg_stop) {
    plus_dt <- data.table::setDT(makeBamDF(chrom_p)) %>%
       base::subset(width <= 32 & width >= 18) %>%
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
-      dplyr::select(-c(pos, seq))
+      dplyr::select(-c(pos))
    chrom_p <- NULL
 
    chrom_m <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
    minus_dt <- data.table::setDT(makeBamDF(chrom_m)) %>%
       base::subset(width <= 32 & width >= 18) %>%
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
-      dplyr::select(-c(pos, seq))
+      dplyr::select(-c(pos))
    chrom_m <- NULL
 
    all_dat <- rbind(plus_dt, minus_dt)

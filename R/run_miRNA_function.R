@@ -108,6 +108,11 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       if(weight_reads == "T"){
         r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
         r1_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
+      } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
+        locus_length <- reg_stop - reg_start
+        locus_read_count <- sum(filter_r2_dt$count)
+        r2_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
+        r1_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
       } else {
         r2_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
         r1_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
@@ -116,7 +121,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       filter_r2_dt <- NULL
       if(nrow(r2_dt) == 0){
         return(null_mi_res())
-     }
+      }
    }
 
    chrom <- NULL
@@ -149,7 +154,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
      geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
      geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
-     proper_overlaps <- overlaps_tmp %>% dplyr::filter(r2_start - r1_start == 2 | r2_end - r1_end == 2)
+     proper_overlaps <- overlaps_tmp %>% dplyr::filter(r2_start - r1_start == 2 & r2_end - r1_end == 2)
 
      if(nrow(proper_overlaps) > 0){
         paired_seqs <- proper_overlaps %>%
@@ -355,7 +360,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       if(plot_output == "T"){
 
          dicer_sig <- plot_overhangz(overhangs)
-
+         print(overhangs)
          #make new pileups dt for structure
 
          new_pileups <- get_read_pileups(reduced_list[[x]]$start, reduced_list[[x]]$stop, bam_scan, bam_file)  %>%

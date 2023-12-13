@@ -12,6 +12,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    bin <- j <- X.End <- X.Start <- Y.Start <- Y.End <- paired_pos <- start <- width <- NULL
 
    helix_df <- helix_df %>% dplyr::mutate(i = i + reg_start, j = j + reg_start)
+   print(helix_df)
    ### paired bases are several nucleotides diff. than read starts... pad the ends of the helix
    if(nrow(helix_df) == 0){
      return(i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
@@ -47,12 +48,13 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    startdf <- new_startdf
    enddf <- new_enddf
 
-
+   #add the new intervals to helix_df
    tmp_df <- rbind(startdf, helix_df)
 
    final_helix_df <- rbind(tmp_df, enddf)
 
    #remove results where segment of paired bases is less than 15nt
+   # for example the loop sequence
    final_helix_df <- final_helix_df %>% dplyr::filter(j - i > 15)
 
    if(nrow(final_helix_df) == 0){
@@ -63,10 +65,10 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
 
    grouped_helix <- group_helix_res(final_helix_df$i, final_helix_df$j)
    filter_helix <- grouped_helix %>% dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
+   write.table(grouped_helix, "grouped_helix.txt", sep = "\t", row.names = FALSE, quote = FALSE)
 
-
-   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0))
-   j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0))
+   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_pos = numeric(0))
+   j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_pos = numeric(0))
 
    #print('dicer_dt')
    #print(head(dicer_dt))
@@ -74,44 +76,100 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
      data.frame() %>%
      dplyr::select(c(start, end, rname))
 
-   global_i_idx <- numeric()
-   
-   if(nrow(filter_helix) > 0){
-     for(i in 1:nrow(filter_helix)){
+   #global_i_idx <- numeric()
+
+   #if(nrow(filter_helix) > 0){
+  #   for(i in 1:nrow(filter_helix)){
 
        # Make a range of position numbers from x.start to x.end for each row
        # If any of the dicer_dt start or end positions fall in that range, then store the index of which ones those are
        # Take the dicer_dt rows that have positions that fall in the range, and append them to a table called i_dat
        # Essentially filter dicer_dt for rows that have start or end positions withing the range of the current iteration of the helix range
-       x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
-
+   #    x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
+  #     print("x_rng: ")
+  #     print(x_rng)
        # Now do the exact same thing for y.start and y.end for each row and store those reads in j_dat
        #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i]) # Seq doesn't need to be reversed here. if you're just searching for a match in the range, the range direction is irrelevent
-       y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
 
-       i_idx <- which(dicer_dt$start %in% x_rng)
-       global_i_idx <- append(global_i_idx, i_idx)
-       j_idx <- which(dicer_dt$start %in% y_rng)
+  #     y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
+  #     print("y_rng: ")
+  #     print(y_rng)
+  #     i_idx <- which(dicer_dt$start %in% x_rng)
 
-       i_dat <- rbind(i_dat, dicer_dt[i_idx,])
-       j_dat <- rbind(j_dat, dicer_dt[j_idx,])
-     }
+       #keep track of which reads are found in the helix rngs over all iterations
+       #for future use
+  #     global_i_idx <- append(global_i_idx, i_idx)
+  #     j_idx <- which(dicer_dt$start %in% y_rng)
 
-     # Now lets calculate the width and add that column.
-     # This will be used to translate the read start and stop positions soon
+  #     i_dat <- rbind(i_dat, dicer_dt[i_idx,])
+  #     j_dat <- rbind(j_dat, dicer_dt[j_idx,])
+  #   }
+
+   ## Start
+   if(nrow(filter_helix) > 0){
+      for(i in 1:nrow(filter_helix)){
+
+        x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
+
+        #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i])
+        y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
+
+        #get i reads that start at a paired pos in helix_df
+        x_idx <- which(dicer_dt$start %in% x_rng)
+        x_dat <- dicer_dt[x_idx,] %>%
+          dplyr::arrange(start)
+        #get j reads that start at a paired pos in helix_df
+        y_idx <- which(dicer_dt$start %in% y_rng)
+
+        #don't need to transform j reads, just extract
+        y_dat <- dicer_dt[y_idx,]
+
+        paired_pos <- vector() # Possibly move above into i loop
+        prior_i_idx <- integer()
+
+        for (j in 1:nrow(x_dat)) {
+          i_idx <- which(final_helix_df$i == x_dat$start[j])
+          #print(i_idx)
+          #if no results returned
+          if(identical(i_idx, integer(0)) & !(j == 1)) {
+             #get the index of the last paired pos
+             i_idx <- prior_i_idx
+          } else if (identical(i_idx, integer(0)) & (j == 1)) {
+              ## TODO j + 1 won't work here...figure out what to do in this case
+              i_idx <- j + 1
+              print(paste0("i_idx: ", i_idx))
+          } else {
+            # Set prior i_idx if we have a valid one
+            prior_i_idx <- i_idx
+          }
+            paired_pos <- append(paired_pos, final_helix_df$j[i_idx])
+        } # End 'j' for loop
+
+        x_dat$paired_pos <- paired_pos
+        i_dat <- rbind(i_dat, x_dat)
+        j_dat <- rbind(j_dat, y_dat)
+
+     } # End 'i' for loop
+
+   } # End if statement
+   ## END
+
      i_dat <- i_dat %>%
        dplyr::mutate(width = end - start + 1)
 
+
+     #write.table(i_dat, "i_dat_before_convert.txt", sep = "\t", row.names = FALSE, quote = FALSE)
      #since we're converting to the paired position, we should take $j for i_dat
-     i_dat$paired_pos <- final_helix_df$j[global_i_idx]
+     #i_dat$paired_pos <- final_helix_df$j[global_i_idx]
 
      i_dat <- i_dat %>%
-       dplyr::mutate(paired_end = paired_pos + width - 1)
+       dplyr::mutate(paired_start = paired_pos - width + 1)
      i_dat <- i_dat %>%
-       dplyr::select(rname, paired_pos, paired_end)
+       dplyr::select(rname, paired_pos, paired_start)
      i_dat <- i_dat %>%
-       dplyr::rename(start = paired_pos, end = paired_end)
+       dplyr::rename(start = paired_start, end = paired_pos)
 
+     #write.table(i_dat, "i_dat_after_convert.txt", sep = "\t", row.names = FALSE, quote = FALSE)
      j_dat <- j_dat %>%
        dplyr::relocate(rname)
 
@@ -132,11 +190,6 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
         i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
                                    r2_start = 0, r2_width = 0, r2_end = 0)
       }
-
-   } else {
-      i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
-                                 r2_start = 0, r2_width = 0, r2_end = 0)
-   }
 
    #return table of overlapping read pairs
    return(i_j_overlaps)

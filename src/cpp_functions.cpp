@@ -513,7 +513,12 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
       for(int j = 0; j < mut_size; j++){
          int new_r2_start = r1_start[j] + 2 + i;
          int new_r2_end = new_r2_start + r2_width[j] - 1;
-         if((new_r2_end - r1_end[j] == 2)){
+         //if((new_r2_end - r1_end[j] == 2)){
+         //if((r1_end[j] - new_r2_end == 2) && (r1_start[j] - new_r2_start) == 2) {
+         //third time's a charm?
+         int p5_overhang = new_r2_start - r1_start[j];
+         int p3_overhang = new_r2_end - r1_end[j];
+         if(p5_overhang == 2 && p3_overhang == 2){
             pcount += 1;
          } else {
             icount += 1;
@@ -555,11 +560,14 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
     int icount = 0;
 
     for(int j = 0; j < mut_size; j++){
-      int new_r2_start = r2_start[j] + i;
+      int new_r2_start = r2_start[j] + 2 + i;
       int new_r2_end = new_r2_start + r2_width[j] - 1;
 
-//    if((new_r2_end - r1_end[j] == 2)){
-      if((r1_end[j] - new_r2_end == 2) && (r1_start[j] - new_r2_start) == 2) {
+    //if((new_r2_end - r1_end[j] == 2)){
+    //if((r1_end[j] - new_r2_end == 2) && (r1_start[j] - new_r2_start) == 2) {
+    int p5_overhang = new_r2_start - r1_start[j];
+    int p3_overhang = new_r2_end - r1_end[j];
+    if(p5_overhang == 2 && p3_overhang == 2){
         pcount += 1;
       } else {
         icount += 1;
