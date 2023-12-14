@@ -102,7 +102,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
 
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 63)
+  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
 
@@ -149,7 +149,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,65), phased_z = rep(0,65))
+    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
 
     plus_phased_hp_z <- -33
@@ -209,18 +209,18 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
   if(weight_reads == "Top"){
-    r2_dt <- get_top_n_weighted(dt, chrom_name, 100)
+    r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
 
   } else if(weight_reads == "Locus_norm"){
 
-    r2_dt <- locus_norm(dt, sum(dt$count))
+    r2_dt <- locus_norm(filter_r2_dt, sum(filter_r2_dt$count))
 
   } else {
-    r2_dt <- get_top_n(dt, chrom_name, 100)
+    r2_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
   }
 
 
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 63)
+  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
 
@@ -256,7 +256,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
      minus_phased_hp_z <- mean(minus_hp_phased_tbl$phased_z[1:4])
   } else {
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,65), phased_z = rep(0,65))
+    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
 
     minus_phased_hp_z <- -33
@@ -374,15 +374,16 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     density_plot <- plot_density(data, reg_start, reg_stop)
     arc_plot <- plot_helix("helix.txt")
 
-    phased_zscore <- plot_hp_phasedz(plus_hp_phased_tbl, minus_hp_phased_tbl)
-
+    #phased_zscore <- plot_hp_phasedz(plus_hp_phased_tbl, minus_hp_phased_tbl)
+    plus_phasedz <- plot_hp_phasedz(plus_hp_phased_tbl, "+")
+    minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
     ## plot bed annotations (optional)
     if(annotate_bed == "T"){
       bed_plot <- plot_bed(bed_file, chrom_name, reg_start, reg_stop)
       left <- cowplot::plot_grid(arc_plot, bed_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 
       # Draw combined plot
-      right <- cowplot::plot_grid(overhang_plot, NULL, phased_zscore, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1, 1), rel_heights = c(1,0.1,1))
+      right <- cowplot::plot_grid(overhang_plot, NULL, plus_phasedz, NULL, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,0.1,1,0.1,1), rel_heights = c(1,0.1,1))
    } else {
       left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(1,0.3,1), ncol = 1, align = "vh", axis = "lrtb")
       # Draw combined plot

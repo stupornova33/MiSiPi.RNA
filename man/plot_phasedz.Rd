@@ -8,14 +8,12 @@ plots output
 takes data frame
 returns plots}
 \usage{
-plot_phasedz(df1, strand = NULL, df2 = NULL)
+plot_phasedz(df1, strand = NULL)
 }
 \arguments{
 \item{df1}{a data frame}
 
 \item{strand}{a string, "+" or "-"}
-
-\item{df2}{a data frame}
 }
 \value{
 plots

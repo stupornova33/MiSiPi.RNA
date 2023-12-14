@@ -8,12 +8,12 @@ plots output
 takes data frame
 returns plots}
 \usage{
-plot_hp_phasedz(df1, df2 = NULL)
+plot_hp_phasedz(df1, strand)
 }
 \arguments{
 \item{df1}{a data frame}
 
-\item{df2}{a data frame}
+\item{strand}{a string, "+" or "-"}
 }
 \value{
 plots
