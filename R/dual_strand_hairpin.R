@@ -383,7 +383,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       left <- cowplot::plot_grid(arc_plot, bed_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 
       # Draw combined plot
-      right <- cowplot::plot_grid(overhang_plot, NULL, plus_phasedz, NULL, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,0.1,1,0.1,1), rel_heights = c(1,0.1,1))
+      right <- cowplot::plot_grid(overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1))
    } else {
       left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(1,0.3,1), ncol = 1, align = "vh", axis = "lrtb")
       # Draw combined plot
@@ -394,7 +394,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
-    grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 8, width = 8.5)
+    grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 8.5, width = 8.5)
     print(final_plot)
     grDevices::dev.off()
   }
