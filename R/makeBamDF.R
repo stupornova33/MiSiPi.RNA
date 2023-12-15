@@ -1,6 +1,5 @@
 #' function to convert chrom obj into a data frame
 #' extracts rname, pos, width, seq, and the first letter of the sequence
-#' finds max row, column, and count of highest cell
 #'
 #' @param chrom_obj an object created from a bam obj
 #' @return bam_df

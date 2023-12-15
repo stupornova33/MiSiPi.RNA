@@ -4,16 +4,16 @@
 \alias{get_top_n_weighted}
 \title{function takes a data table of reads
 summarizes count of grouped reads
-returns a weighted top n\% of reads}
+returns dataframe of top reads replicated to reflect their weight}
 \usage{
-get_top_n_weighted(dt, chrom_name, n)
+get_top_n_weighted(dt, chrom_name, seq = NULL)
 }
 \arguments{
 \item{dt}{a data table of reads}
 
 \item{chrom_name}{a string}
 
-\item{n}{a decimal representing percent of reads to return}
+\item{seq}{a string, "T" or "F"}
 }
 \value{
 filter_dt
@@ -21,5 +21,5 @@ filter_dt
 \description{
 function takes a data table of reads
 summarizes count of grouped reads
-returns a weighted top n\% of reads
+returns dataframe of top reads replicated to reflect their weight
 }

@@ -38,7 +38,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
 
    cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
-   forward_dt <- data.table::setDT(makeBamDF(chromP)) %>%
+   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
      subset(width <= 25 & width >= 20) %>%
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
@@ -47,7 +47,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
 
    cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
-   reverse_dt <- data.table::setDT(makeBamDF(chromM)) %>%
+   reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
        subset(width <= 25 & width >= 20) %>%
        dplyr::mutate(start = pos, end = pos + width - 1) %>%
        dplyr::select(-c(pos)) %>%
@@ -55,34 +55,32 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
        dplyr::summarize(count = dplyr::n())
 
 
+   chromP <- NULL
+   chromM <- NULL
+
    if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       print("f_dt and r_dt are not empty")
       cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
+      #include "T" argument to return read sequences
       if(weight_reads == "Top"){
-        print("forward_dt: ")
-        print(head(forward_dt))
-        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, 100)
-        print("reverse_dt: ")
-        print(head(reverse_dt))
-        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, 100)
+        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, "T")
+        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, "T")
 
         print("Completed getting weighted dataframes.")
       } else if(weight_reads == "Locus_norm"){
 
-        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
-        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
+        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count), "T")
+        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count), "T")
 
       } else {
-        forward_dt <- get_top_n(forward_dt, chrom_name, 100)
-        reverse_dt <- get_top_n(reverse_dt, chrom_name, 100)
+        forward_dt <- get_top_n(forward_dt, chrom_name, "T")
+        reverse_dt <- get_top_n(reverse_dt, chrom_name, "T")
       }
       #check to see if subsetted dfs are empty
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
-      ### added, testing
-      overlaps <- find_overlaps(forward_dt, reverse_dt)
 
-      #uniq_overlaps <- dplyr::distinct(overlaps)
+      overlaps <- find_overlaps(forward_dt, reverse_dt)
 
       mygranges <- GenomicRanges::GRanges(
         seqnames = c(chrom_name),
@@ -105,10 +103,10 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         cat(file = paste0(wkdir, logfile), "No proper siRNA pairs were found.\n", append = TRUE)
       }
 
-      #dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
+
       dicer_overhangs <- calc_expand_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
       dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
-      ###
+
       cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
       results <- get_si_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
                               reverse_dt$start, reverse_dt$end, reverse_dt$width)
@@ -155,63 +153,25 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
 
  if(!sum(results) == 0){
-   ### phasing
-
-   #r1_dt <- forward_dt %>% dplyr::mutate(end = end + 59)
-   #r2_dt <- reverse_dt %>% dplyr::mutate(end = end + 59)
-   #plus_phased_counts <- calc_phasing(r1_dt, forward_dt)
-   #minus_phased_counts <- calc_phasing(r2_dt, reverse_dt)
-
-   #plus_phased_counts <- plus_phased_counts %>% dplyr::rename('phased_dist2' = phased_dist, 'plus_num2' = phased_num, 'phased_z2' = phased_z)
-   #minus_phased_counts <- minus_phased_counts %>% dplyr::rename('phased_dist1' = phased_dist, 'phased_num1' = phased_num, 'phased_z1' = phased_z)
-
-   #df <- cbind(minus_phased_counts, plus_phased_counts)
-
-   ## write phased results to file
-   #plus_phased_output <- plus_phased_counts %>% dplyr::select(-c(phased_dist2, plus_num2))
-   #plus_phased_output <- t(c(prefix, t(plus_phased_output)))
-   #minus_phased_output <- minus_phased_counts %>% dplyr::select(-c(phased_dist1, phased_num1))
-   #minus_phased_output <- t(c(prefix, t(minus_phased_output)))
-
-   #suppressWarnings(
-  #    if(!file.exists("siRNA_plus_phasedz.txt")){
-  #       utils::write.table(plus_phased_output, file = paste0(wkdir, "siRNA_plus_phasedz.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
-  #    } else {
-  #       utils::write.table(plus_phased_output, file = paste0(wkdir, "siRNA_plus_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-  #    }
-  # )
-
-  # suppressWarnings(
-  #    if(!file.exists("siRNA_minus_phasedz.txt")){
-  #       utils::write.table(minus_phased_output, file = paste0(wkdir, "siRNA_minus_phasedz.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
-  #    } else {
-  #       utils::write.table(minus_phased_output, file = paste0(wkdir, "siRNA_minus_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-  #    }
-  # )
+   ### hairpin function
    print("Beginning hairpin function.")
    dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
                               path_to_RNAfold, annotate_bed, weight_reads, bed_file)
-   ### hairpins
+
    if(plot_output == "T"){
       cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
 
       heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
       cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
-      print("forward_dt: ")
-      print(head(forward_dt))
-      print("reverse_dt: ")
-      print(head(reverse_dt))
+
       dist <- get_weighted_read_dist(forward_dt, reverse_dt)
-      #forward_dt <- NULL
-      #reverse_dt <- NULL
+
       cat(file = paste0(wkdir, logfile), "plot_sizes\n", append = TRUE)
       size_plot <- plot_sizes(dist)
       cat(file = paste0(wkdir, logfile), "plot_overhangz\n", append = TRUE)
 
-      dicer_plot <- plot_overhangz(dicer_overhangs)
-
-      #phased_plot <- plot_phasedz(df)
-      #will output the hairpin plots to file "_hairpin_fold.pdf"
+      dicer_overhangs$zscore <- calc_zscore(dicer_overhangs$proper_count)
+      dicer_plot <- plot_overhangz(dicer_overhangs, "none")
 
 
       ### make siRNA plots

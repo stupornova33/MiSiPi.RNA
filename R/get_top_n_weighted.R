@@ -1,20 +1,18 @@
 #' function takes a data table of reads
 #' summarizes count of grouped reads
-#' returns a weighted top n% of reads
+#' returns dataframe of top reads replicated to reflect their weight
 #'
 #' @param dt a data table of reads
 #' @param chrom_name a string
-#' @param n a decimal representing percent of reads to return
+#' @param seq a string, "T" or "F"
 #' @return filter_dt
 #' @export
 
 
-get_top_n_weighted <- function(dt, chrom_name, n){
+get_top_n_weighted <- function(dt, chrom_name, seq = NULL){
   width <- pos <- start <- end <- first <- count <- NULL
-  #n <- n/100
   dt$rname <- chrom_name
-  print("dt: ")
-  print(head(dt))
+
   rep_reads <- function(i) {
     rep_count <- counts_dt$weighted_count[i]
     rname <- rep(counts_dt$rname[i], rep_count)
@@ -22,7 +20,13 @@ get_top_n_weighted <- function(dt, chrom_name, n){
     end <- rep(counts_dt$end[i], rep_count)
     first <- rep(counts_dt$first[i], rep_count)
 
-    current_df <- data.frame(rname = rname, start = start, end = end, first = first)
+    #for getting siRNA pairs
+    if(!is.null(seq)){
+      seq <- rep(counts_dt$seq[i], rep_count)
+      current_df <- data.frame(rname = rname, start = start, end = end, first = first, seq = seq)
+    } else {
+      current_df <- data.frame(rname = rname, start = start, end = end, first = first)
+    }
 
     return(current_df)
   }
@@ -35,70 +39,44 @@ get_top_n_weighted <- function(dt, chrom_name, n){
     counts_dt <- dt
      mn <- min(counts_dt$count)
      mx <- max(counts_dt$count)
-     #window <- round(mx - mn)/10
 
-     #if(window < 1){
-        #binned_tbl <- counts_dt %>% dplyr::mutate(wt_count = count)
-        #counts_dt <- counts_dt %>% dplyr::arrange(count)
-        #final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
-     #} else {
-        #vec <- seq((mn - 1), mx + window, by = window)
-        #counts_dt <- counts_dt[counts_dt$count > stats::quantile(counts_dt$count,prob=n),]
-        #binned_tbl <- counts_dt %>% dplyr::mutate(bin = cut(count, breaks = c(vec)))
-        counts_dt <- counts_dt %>% dplyr::mutate(prop = count/mx)
-        counts_dt <- counts_dt %>% dplyr::mutate(weighted_count = prop*count)
+     counts_dt <- counts_dt %>% dplyr::mutate(prop = count/mx)
+     counts_dt <- counts_dt %>% dplyr::mutate(weighted_count = prop*count)
 
-        for(i in 1:nrow(counts_dt)){
-          if(counts_dt$weighted_count[i] < 1){
-            counts_dt$weighted_count[i] <- 1
-          }
-        }
+     #counts cant be fractions, set counts < 1 to 1
+     #counts_dt$weighted_count[counts_dt$weighted_count < 1] <- 1
 
-        #binned_tbl$bin <- gsub("[()]", "", binned_tbl$bin)
-        #binned_tbl$bin <- gsub("[[]", "", binned_tbl$bin)
-        #binned_tbl$bin <- gsub("[]]", "", binned_tbl$bin)
-        counts_dt$weighted_count <- round(counts_dt$weighted_count)
-        counts_dt <- counts_dt %>%
-          dplyr::filter(weighted_count > 0)
-
-        #levels <- unique(binned_tbl$bin)
-        #wt_df <- data.frame(level = levels)
-
-        #wt_df$weight <- seq(1, (2- (1/length(levels))), by = 1/length(levels))
-
-        #weight <- vector("integer", nrow(counts_dt))
-
-        #binned_tbl$weight <- weight
-
-        #for(i in 1:nrow(wt_df)){
-        # idx <- which(binned_tbl$bin == wt_df$level[i])
-        # binned_tbl$weight[idx] <- wt_df$weight[i]
-        #}
-
-       #binned_tbl <- binned_tbl %>% dplyr::mutate(wt_count = round(weight*count))
-
-       res <- lapply(seq(nrow(counts_dt)), rep_reads)
-       res_df <- dplyr::bind_rows(res)
-
-       #shuffle order randomly
-       res_df <- res_df[sample(1:nrow(res_df)), ] %>%
-         dplyr::mutate(width = end - start + 1)
+     #remove values < 1?
+     counts_dt <- counts_dt[counts_dt$weighted_count > 1,]
 
 
+     if(nrow(counts_dt) > 0){
+     counts_dt$weighted_count <- round(counts_dt$weighted_count)
 
-      if(nrow(res_df) > 0){
-        #select a subset
-        final_df <- utils::head(res_df, 10000)
-      } else {
-        final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
-      }
+     res <- lapply(seq(nrow(counts_dt)), rep_reads)
+     res_df <- dplyr::bind_rows(res)
 
 
+     # speed things up by selecting random subset.
+     # find overlaps struggles with larger vectors
 
-    }
-  #}
+     #shuffle order randomly
+     res_df <- res_df[sample(1:nrow(res_df)), ] %>%
+       dplyr::mutate(width = end - start + 1)
 
-  #final_df <- final_df %>% dplyr::select(-c(count))
+     if(nrow(res_df) > 0){
+       #select a subset
+       final_df <- utils::head(res_df, 10000)
+     } else {
+       final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
+     }
+
+     } else {
+       final_df <- data.frame(matrix(ncol = 3, nrow = 0))
+  }
+
+ }
+
   return(final_df)
 }
 

@@ -4,12 +4,12 @@
 \alias{plot_overhangz}
 \title{function to plot the zscore for Dicer overhangs}
 \usage{
-plot_overhangz(overhang1, overhang2 = NULL)
+plot_overhangz(overhang1, strand)
 }
 \arguments{
 \item{overhang1}{a dataframe}
 
-\item{overhang2}{a dataframe}
+\item{strand}{a string, "+", "-", or "none"}
 }
 \value{
 plot

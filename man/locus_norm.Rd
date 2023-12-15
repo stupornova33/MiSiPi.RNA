@@ -4,14 +4,14 @@
 \alias{locus_norm}
 \title{normalize read counts by total number of reads mapped to locus}
 \usage{
-locus_norm(dt, locus_read_count, locus_length)
+locus_norm(dt, locus_read_count, seq = NULL)
 }
 \arguments{
 \item{dt}{a dataframe of reads summarized by count}
 
 \item{locus_read_count}{an integer}
 
-\item{locus_length}{an integer}
+\item{seq}{a string, "T" or "F"}
 }
 \value{
 final_df a dataframe
