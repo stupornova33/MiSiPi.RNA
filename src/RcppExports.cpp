@@ -260,6 +260,37 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rep_nonseq_reads
+DataFrame rep_nonseq_reads(std::vector<int> rep_count, std::vector<std::string> rname, std::vector<int> start, std::vector<int> end, std::vector<std::string> first);
+RcppExport SEXP _MiSiPi_RNA_rep_nonseq_reads(SEXP rep_countSEXP, SEXP rnameSEXP, SEXP startSEXP, SEXP endSEXP, SEXP firstSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type rep_count(rep_countSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type rname(rnameSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type start(startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type end(endSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type first(firstSEXP);
+    rcpp_result_gen = Rcpp::wrap(rep_nonseq_reads(rep_count, rname, start, end, first));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rep_seq_reads
+DataFrame rep_seq_reads(std::vector<int> rep_count, std::vector<std::string> rname, std::vector<int> start, std::vector<int> end, std::vector<std::string> first, std::vector<std::string> seq);
+RcppExport SEXP _MiSiPi_RNA_rep_seq_reads(SEXP rep_countSEXP, SEXP rnameSEXP, SEXP startSEXP, SEXP endSEXP, SEXP firstSEXP, SEXP seqSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type rep_count(rep_countSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type rname(rnameSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type start(startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type end(endSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type first(firstSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type seq(seqSEXP);
+    rcpp_result_gen = Rcpp::wrap(rep_seq_reads(rep_count, rname, start, end, first, seq));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MiSiPi_RNA_mergePileups", (DL_FUNC) &_MiSiPi_RNA_mergePileups, 4},
@@ -279,6 +310,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MiSiPi_RNA_make_count_table", (DL_FUNC) &_MiSiPi_RNA_make_count_table, 6},
     {"_MiSiPi_RNA_get_pi_overlaps", (DL_FUNC) &_MiSiPi_RNA_get_pi_overlaps, 6},
     {"_MiSiPi_RNA_getLoopPileupsCPP", (DL_FUNC) &_MiSiPi_RNA_getLoopPileupsCPP, 9},
+    {"_MiSiPi_RNA_rep_nonseq_reads", (DL_FUNC) &_MiSiPi_RNA_rep_nonseq_reads, 5},
+    {"_MiSiPi_RNA_rep_seq_reads", (DL_FUNC) &_MiSiPi_RNA_rep_seq_reads, 6},
     {NULL, NULL, 0}
 };
 
