@@ -1054,3 +1054,116 @@ DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop,
   return df;
 }
 
+//' rep_nonseq_reads
+//'
+//' Takes a vector of "collapsed" reads with a count value and replicates each read as many times as it occurs
+//' @param rep_count a vector of ints
+//' @param rname a vector of strings
+//' @param start a vector of ints
+//' @param end a vector of ints
+//' @param first a vector of characters
+//' @return df a dataframe
+//' @export
+// [[Rcpp::export]]
+DataFrame rep_nonseq_reads(std::vector<int> rep_count, std::vector<std::string> rname,
+                          std::vector<int> start, std::vector<int> end,
+                          std::vector<std::string> first) {
+   
+  int countSize = rep_count.size();
+  int finalNumberOfRows = 0;
+   
+  // Calculate the size of the vectors we're creating to keep from reallocating memory
+  for (int i = 0; i < countSize; i++) {
+     finalNumberOfRows += rep_count[i];
+   }
+   
+   // Create vectors and reserve memory for their final size
+   std::vector<std::string> glob_rname_vec;
+   glob_rname_vec.reserve(finalNumberOfRows);
+   
+   std::vector<int> glob_start_vec;
+   glob_start_vec.reserve(finalNumberOfRows);
+   
+   std::vector<int> glob_end_vec;
+   glob_end_vec.reserve(finalNumberOfRows);
+   
+   std::vector<std::string> glob_first_vec;
+   glob_first_vec.reserve(finalNumberOfRows);
+   
+   
+   for (int i = 0; i < countSize; i++) {
+     int count = rep_count[i];
+     
+     glob_rname_vec.insert(glob_rname_vec.end(), count, rname[i]);
+     glob_start_vec.insert(glob_start_vec.end(), count, start[i]);
+     glob_end_vec.insert(glob_end_vec.end(), count, end[i]);
+     glob_first_vec.insert(glob_first_vec.end(), count, first[i]);
+     
+   }
+   
+   DataFrame df = DataFrame::create(Named("rname") = glob_rname_vec,
+                                    Named("start") = glob_start_vec,
+                                    Named("end") = glob_end_vec,
+                                    Named("first") = glob_first_vec);
+   return df;
+ }
+
+
+
+//' rep_seq_reads
+//'
+//' Takes a vector of "collapsed" reads with a count value and replicates each read as many times as it occurs
+//' @param rep_count a vector of ints
+//' @param rname a vector of strings
+//' @param start a vector of ints
+//' @param end a vector of ints
+//' @param first a vector of characters
+//' @param seq a vector of strings
+//' @return df a dataframe
+//' @export
+// [[Rcpp::export]]
+DataFrame rep_seq_reads(std::vector<int> rep_count, std::vector<std::string> rname,
+                         std::vector<int> start, std::vector<int> end,
+                         std::vector<std::string> first, std::vector<std::string> seq) {
+   
+   int countSize = rep_count.size();
+   int finalNumberOfRows = 0;
+   
+   // Calculate the size of the vectors we're creating to keep from reallocating memory
+   for (int i = 0; i < countSize; i++) {
+     finalNumberOfRows += rep_count[i];
+   }
+   
+   // Create vectors and reserve memory for their final size
+   std::vector<std::string> glob_rname_vec;
+   glob_rname_vec.reserve(finalNumberOfRows);
+   
+   std::vector<int> glob_start_vec;
+   glob_start_vec.reserve(finalNumberOfRows);
+   
+   std::vector<int> glob_end_vec;
+   glob_end_vec.reserve(finalNumberOfRows);
+   
+   std::vector<std::string> glob_first_vec;
+   glob_first_vec.reserve(finalNumberOfRows);
+   
+   std::vector<std::string> glob_seq_vec;
+   glob_seq_vec.reserve(finalNumberOfRows);
+   
+   for (int i = 0; i < countSize; i++) {
+     int count = rep_count[i];
+     
+     glob_rname_vec.insert(glob_rname_vec.end(), count, rname[i]);
+     glob_start_vec.insert(glob_start_vec.end(), count, start[i]);
+     glob_end_vec.insert(glob_end_vec.end(), count, end[i]);
+     glob_first_vec.insert(glob_first_vec.end(), count, first[i]);
+     glob_seq_vec.insert(glob_seq_vec.end(), count, seq[i]);
+   }
+   
+   DataFrame df = DataFrame::create(Named("rname") = glob_rname_vec,
+                                    Named("start") = glob_start_vec,
+                                    Named("end") = glob_end_vec,
+                                    Named("first") = glob_first_vec,
+                                    Named("seq") = glob_seq_vec);
+   return df;
+ }

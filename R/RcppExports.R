@@ -274,3 +274,32 @@ getLoopPileupsCPP <- function(r1Start, r1Stop, lStart, lStop, r2Start, r2Stop, d
     .Call(`_MiSiPi_RNA_getLoopPileupsCPP`, r1Start, r1Stop, lStart, lStop, r2Start, r2Stop, dt_col_1, dt_col_2, total_count)
 }
 
+#' rep_nonseq_reads
+#'
+#' Takes a vector of "collapsed" reads with a count value and replicates each read as many times as it occurs
+#' @param rep_count a vector of ints
+#' @param rname a vector of strings
+#' @param start a vector of ints
+#' @param end a vector of ints
+#' @param first a vector of characters
+#' @return df a dataframe
+#' @export
+rep_nonseq_reads <- function(rep_count, rname, start, end, first) {
+    .Call(`_MiSiPi_RNA_rep_nonseq_reads`, rep_count, rname, start, end, first)
+}
+
+#' rep_seq_reads
+#'
+#' Takes a vector of "collapsed" reads with a count value and replicates each read as many times as it occurs
+#' @param rep_count a vector of ints
+#' @param rname a vector of strings
+#' @param start a vector of ints
+#' @param end a vector of ints
+#' @param first a vector of characters
+#' @param seq a vector of strings
+#' @return df a dataframe
+#' @export
+rep_seq_reads <- function(rep_count, rname, start, end, first, seq) {
+    .Call(`_MiSiPi_RNA_rep_seq_reads`, rep_count, rname, start, end, first, seq)
+}
+
