@@ -24,6 +24,8 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
    print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
    prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
    width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
+
+   # use Rsamtools to process the bam file
    bam_obj <- OpenBamFile(bam_file, logfile)
    bam_header <- Rsamtools::scanBamHeader(bam_obj)
    chr_name <- names(bam_header[['targets']])
@@ -33,22 +35,26 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
    cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
    cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
 
+   # extract reads by strand
+   # this creates a list object
    chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
    chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
-
+   # turn the list object into a more useable data frame and filter reads by length,
+   # bam only contains pos and width, need to add an end column
    cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
    forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
-     subset(width <= 25 & width >= 20) %>%
+     subset(width <= 32 & width >= 18) %>%
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
       dplyr::group_by_all() %>%
+     # get the number of times a read occurs
       dplyr::summarize(count = dplyr::n())
 
 
    cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
    reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
-       subset(width <= 25 & width >= 20) %>%
+       subset(width <= 32 & width >= 18) %>%
        dplyr::mutate(start = pos, end = pos + width - 1) %>%
        dplyr::select(-c(pos)) %>%
        dplyr::group_by_all() %>%
@@ -58,6 +64,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
    chromP <- NULL
    chromM <- NULL
 
+   # If the data frames are empty there are no reads, can't do siRNA calculations
    if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       print("f_dt and r_dt are not empty")
       cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
@@ -77,19 +84,29 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         forward_dt <- get_top_n(forward_dt, chrom_name, "T")
         reverse_dt <- get_top_n(reverse_dt, chrom_name, "T")
       }
-      #check to see if subsetted dfs are empty
+      # check to see if subsetted dfs are empty
+      # have to keep doing this at each step otherwise errors will happen
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
 
+      # get overlapping reads
       overlaps <- find_overlaps(forward_dt, reverse_dt)
 
+      # create a GRanges object to extract the chromosome sequence from the genome file
       mygranges <- GenomicRanges::GRanges(
         seqnames = c(chrom_name),
         ranges = IRanges::IRanges(start=c(1), end=c(length)))
 
       geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
+
+      #get sequence for only the region of interest from the chromosome
       geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+
+      #check to see how many overlaps have the 2nt overhang
+      #currently this extracts pairs with overhang at 3p OR 5p
+      #tried getting pairs with overhang at 3p AND 5p but few/no results returned in many cases...
       proper_overlaps <- overlaps %>% dplyr::filter(r2_start - r1_start == 2 | r2_end - r1_end == 2)
 
+      #write the pairs to file
       if(nrow(proper_overlaps > 0)){
         paired_seqs <- proper_overlaps %>%
          dplyr::mutate(r1_seq = paste0(">",chrom_name, ":", proper_overlaps$r1_start, "-", proper_overlaps$r1_end, " ", substr(geno_seq, proper_overlaps$r1_start, proper_overlaps$r1_end)), r2_seq = paste0(">",chrom_name, ":", proper_overlaps$r2_start, "-", proper_overlaps$r2_end, " " , substr(geno_seq, proper_overlaps$r2_start, proper_overlaps$r2_end))) %>%
@@ -104,33 +121,43 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       }
 
 
-      dicer_overhangs <- calc_expand_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
+      #calculate the number of dicer pairs for the zscore
+      dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
       dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
 
       cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
+      # calculate the siRNA pairs for the heatmap
       results <- get_si_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
                               reverse_dt$start, reverse_dt$end, reverse_dt$width)
 
       row.names(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
       colnames(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
       } else {
+
+
+        # results are being stored also in case the run_all function is being used, at the end they will be written to a table
         cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
-        dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+        #the data.frame should be modified if using calc_expand_overhangs
+        dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
+        #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
         results <- 0
       }
 
    } else {
       cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
-      dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+      #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+      dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
       results <- 0
    }
 
 
+   # transform the data frame for writing to table by row
+   # output is the locus followed by all zscores
    overhang_output <- data.frame(t(dicer_overhangs$Z_score))
    colnames(overhang_output) <- dicer_overhangs$shift
    print(overhang_output)
    overhang_output <- overhang_output %>% dplyr::mutate(locus = prefix)
-   overhang_output <- overhang_output[, c(18, 1:17)]
+   overhang_output <- overhang_output[, c(10, 1:9)]
 
    suppressWarnings(
       if(!file.exists("siRNA_dicerz.txt")){
@@ -141,6 +168,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
    )
 
 
+   #heat output nees to be a matrix, so transform
    heat_output <- t(c(prefix, as.vector(results)))
 
    suppressWarnings(
@@ -152,12 +180,17 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
    )
 
 
+ #if there are results then do the hairpin functions and plots
  if(!sum(results) == 0){
    ### hairpin function
    print("Beginning hairpin function.")
+
+
+   #run the hairpin function on each strand separately
    dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
                               path_to_RNAfold, annotate_bed, weight_reads, bed_file)
 
+   #user provides argument plot = T or plot = F
    if(plot_output == "T"){
       cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
 
@@ -189,6 +222,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
      }
 
    } else {
+
       dsh <- null_hp_res()
       forward_dt <- NULL
       reverse_dt <- NULL

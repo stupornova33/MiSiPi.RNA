@@ -7,12 +7,14 @@ plots output
 takes two read dataframes
 returns table of phasing scores}
 \usage{
-calc_phasing(df1, df2)
+calc_phasing(df1, df2, n)
 }
 \arguments{
 \item{df1}{a character passed in, either "+" or "-"}
 
 \item{df2}{a string}
+
+\item{n}{the number of bases to transform the read by}
 }
 \value{
 phased_counts

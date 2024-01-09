@@ -5,13 +5,14 @@
 #'
 #' @param df1 a character passed in, either "+" or "-"
 #' @param df2 a string
+#' @param n the number of bases to transform the read by
 #' @return phased_counts
 
 #' @export
 
 
-calc_phasing <- function(df1, df2){
-phased <- find_hp_overlaps(df1, df2)
+calc_phasing <- function(df1, df2, n){
+phased <- find_hp_overlaps(df1, df2, n)
 
 dist <- start_r1 <- widthx <- start_r2 <- widthy <- num.y <- num.x <- Zscore <- num <- NULL
 

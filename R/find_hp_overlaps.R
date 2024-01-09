@@ -5,6 +5,7 @@
 #'
 #' @param r1_dt a data frame containing chrom name, start, and stop
 #' @param r2_dt a data frame containing chrom name, start, and stop
+#' @param n the number of bases to transform the read by
 #' @return overlap table
 
 
@@ -12,7 +13,7 @@
 #' @export
 
 
-find_hp_overlaps <- function(r1_dt, r2_dt){
+find_hp_overlaps <- function(r1_dt, r2_dt, n){
    gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
    gr2_obj <- makeGRobj(r2_dt, "rname", "start", "end")
    r1_stop <- r1_start <- dist <- start_r1 <- widthx <- start_r2 <- widthy <- NULL
@@ -29,7 +30,7 @@ find_hp_overlaps <- function(r1_dt, r2_dt){
    res <- NULL
 
    query_values <- data.frame(cbind(r1_start = IRanges::start(gr1_obj[query_idx]), r1_stop = IRanges::end(gr1_obj[query_idx]), r1_width = IRanges::width(gr1_obj[query_idx]))) %>%
-      dplyr::mutate(r1_stop = r1_stop - 63, r1_width = r1_stop - r1_start + 1)
+      dplyr::mutate(r1_stop = r1_stop - n, r1_width = r1_stop - r1_start + 1)
    query_idx <- NULL
 
    sub_values <- data.frame(cbind(r2_start = IRanges::start(gr2_obj[sub_idx]), r2_stop = IRanges::end(gr2_obj[sub_idx]), r2_width = IRanges::width(gr2_obj[sub_idx])))
@@ -39,7 +40,7 @@ find_hp_overlaps <- function(r1_dt, r2_dt){
    res_tbl <- data.frame(cbind(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_stop,
                                r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_stop)) %>%
      dplyr::mutate(dist = r2_start - r1_end) %>%
-     dplyr::filter(dist >= 0 & dist < 64) %>%
+     dplyr::filter(dist >= 0 & dist < 60) %>%
      dplyr::mutate(r1_end = r1_start + r1_width - 1, r2_end = r2_start + r2_width - 1) %>%
      dplyr::filter(r1_end <= r2_start)
    #need to filter to remove self matches, get dist between end of R1 and start of R2

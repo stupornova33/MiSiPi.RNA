@@ -26,6 +26,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 
 
+  # function to fold the genomic sequence and extract relevant results
+  # calls fold_long_rna which runs RNAfold from ViennaRNA, splits the strings returned into
+  # the dot thing and the mfe
+  # R4RNA viennaToHelix is used to create the helix from the dot
   fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold){
 
      dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
@@ -34,6 +38,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
      writeLines(converted, con = "converted.txt")
      dna_vec <- NULL
 
+     # use
      fold_list <- mapply(fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold)
      fold_list <- t(fold_list)
      MFE <- unlist(unname(fold_list[,3]))
@@ -53,13 +58,14 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   bam_obj <- OpenBamFile(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
-
+  #RNAfold can't fold things longer than 10kb
   if(reg_stop - reg_start > 10000){
     res <- null_hp_res()
     return(res)
   }
   bam_header <- NULL
 
+  # Extract chromosome sequence from genome file
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
     ranges = IRanges::IRanges(start=c(1), end=c(length)))
@@ -70,9 +76,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
   cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
 
+  #define which for Rsamtools ScanBamParam
   which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
-
-
 
   ############################################################ compute plus strand ########################################################
   strand <- "+"
@@ -80,13 +85,16 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
 
 
+  #filter the reads and calculate the end position
   filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
-    base::subset(width <= 25 & width >= 20) %>%
+    base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos)) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
+  # We're operating on a single strand but need one data frame where the reads aren't transformed, one where they are
+  # so set the other dt to be the same as the first
   dt <- filter_r2_dt
 
   # weight reads if argument supplied
@@ -99,7 +107,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
   #transform end of reads in one df
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
+  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
+
+  # if no results, need to store a specific value for the run_all/machine learning
+  # null_hp_res() creates a table of specific "no result" values for zscores and such
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     res <- null_hp_res()
@@ -108,19 +119,23 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   # calculate phasing signatures
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
-    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt)
+    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
-    # if read dfs are empty set results to null. Still need to create the empty tables for plots
+    # if read dfs are empty set results to null. Still need to create the empty tables for plots/ML
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
+    # creating an empty table with "null" values
     plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
+    # -33 is an arbitrary value
     plus_phased_hp_z <- -33
   }
 
   if(nrow(r2_dt) > 0){
 
+    # don't want to fold the dna for each strand, since it is the same. So once it's been folded
+    # set fold_bool to TRUE
     fold_bool <- 'TRUE'
 
     fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold)
@@ -130,12 +145,16 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     #transform reads and find dicer pairs
     all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
+    # dicer_overlaps() returns zero values if there are no valid overlaps
+    # so check to make sure the first values are not zero
     if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
       plus_overhangs <- data.frame(calc_expand_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                all_overlaps$r2_start, all_overlaps$r2_width))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
 
     } else {
+
+      # return arbitrary "null" value if there are no valid results for ML
       plus_hp_phased_counts <- 0
       plus_hp_phased_z <- -33
 
@@ -147,23 +166,28 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
       plus_hp_phased_counts <- sum(plus_overhangs$proper_count[1:4])
       plus_hp_phased_z <- mean(plus_overhangs$zscore[1:4])
+
+      # if there were no results, and the dna didn't get folded, set fold_bool to FALSE so it gets folded in the minus strand part
       fold_bool <- 'FALSE'
       perc_paired <- 0
   }
 
 
+  # results for the ML table
   plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
   plus_overhangz <- mean(plus_overhangs$zscore[1:4])
   plus_res <- c(plusMFE = MFE, plus_hp_overhangz = plus_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl = plus_hp_phased_tbl,
                 dicer_tbl = plus_overhangs, perc_paired= perc_paired)
 
   ############################################################# compute minus strand ############################################################
+  # do the same thing for the minus strand
+
   strand <- "-"
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
   chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
   filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
-    base::subset(width <= 25 & width >= 20) %>%
+    base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos))  %>%
     dplyr::group_by_all() %>%
@@ -179,7 +203,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
   #transform ends of reads for phasing/finding overlaps
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 59)
+  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
@@ -189,7 +213,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   #calculate phasing
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
-     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt)
+     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
      minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
      minus_phased_hp_z <- mean(minus_hp_phased_tbl$phased_z[1:4])
   } else {
@@ -252,7 +276,12 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   plus_overhang_out <- data.frame(t(plus_res$dicer_tbl.zscore))
   plus_overhang_out <- plus_overhang_out %>% dplyr::mutate(locus = paste0(chrom_name, "_", reg_start, "_", reg_stop))
   colnames(plus_overhang_out) <- c(plus_res$dicer_tbl.shift, 'locus')
-  plus_overhang_out <- plus_overhang_out[, c(18, 1:17)]
+
+  #if calc_overhang there are 10 columns
+  plus_overhang_out <- plus_overhang_out[, c(10, 1:9)]
+
+  #if calc_expand_overhang there are 18 columns
+  #plus_overhang_out <- plus_overhang_out[, c(18, 1:17)]
 
   suppressWarnings(
      if(!file.exists("plus_hp_dicerz.txt")){
@@ -265,7 +294,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   minus_overhang_out <- data.frame(t(minus_res$dicer_tbl.zscore))
   colnames(minus_overhang_out) <- minus_res$shift
   minus_overhang_out$locus <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-  minus_overhang_out <- minus_overhang_out[, c(18, 1:17)]
+
+  minus_overhang_out <- minus_overhang_out[, c(10, 1:9)]
+  #minus_overhang_out <- minus_overhang_out[, c(18, 1:18)]
 
   suppressWarnings(
      if(!file.exists("minus_hp_dicerz.txt")){
