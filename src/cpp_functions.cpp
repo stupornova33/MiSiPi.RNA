@@ -498,38 +498,39 @@ DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
 // [[Rcpp::export]]
 DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
                          std::vector<int> r2_start, std::vector<int> r2_width){
-   std::vector<int> shift_vec = {-4,-3,-2,-1,0,1,2,3,4};
-   int mut_size = r1_start.size();
-   int MEMORY_SIZE = 9;
+  std::vector<int> shift_vec = {-4,-3,-2,-1,0,1,2,3,4};
+  int vector_length = r1_start.size();
+  int MEMORY_SIZE = 9;
 
-   std::vector<int> proper_count;
-   std::vector<int> improper_count;
-   proper_count.reserve(MEMORY_SIZE);
-   improper_count.reserve(MEMORY_SIZE);
-   for(int i = -4; i <= 4; i++){
-      int pcount = 0;
-      int icount = 0;
+  std::vector<int> proper_count;
+  std::vector<int> improper_count;
+  proper_count.reserve(MEMORY_SIZE);
+  improper_count.reserve(MEMORY_SIZE);
 
-      for(int j = 0; j < mut_size; j++){
-         int new_r2_start = r1_start[j] + 2 + i;
-         int new_r2_end = new_r2_start + r2_width[j] - 1;
-         //if((new_r2_end - r1_end[j] == 2)){
-         //if((r1_end[j] - new_r2_end == 2) && (r1_start[j] - new_r2_start) == 2) {
-         //third time's a charm?
-         int p5_overhang = new_r2_start - r1_start[j];
-         int p3_overhang = new_r2_end - r1_end[j];
-         if(p5_overhang == 2 && p3_overhang == 2){
-            pcount += 1;
-         } else {
-            icount += 1;
-         }
+  for(int i = -4; i <= 4; i++){
+    int pcount = 0;
+    int icount = 0;
+
+    for (int j = 0; j < vector_length; j++) {
+      int new_r2_start = r2_start[j] + i; // Shift r2_start
+      int new_r2_end = new_r2_start + r2_width[j] - 1;
+
+      int p5_overhang = new_r2_start - r1_start[j];
+      int p3_overhang = new_r2_end - r1_end[j];
+
+      if ((p5_overhang == 2) && (p3_overhang == 2)) {
+        pcount++;
+      } else {
+        icount++;
       }
-      proper_count.emplace_back(pcount);
-      improper_count.emplace_back(icount);
-   }
-   DataFrame overhangs = DataFrame::create(Named("shift") = shift_vec, Named("proper_count") = proper_count,
-                                           Named("improper_count") = improper_count);
-   return(overhangs);
+    }
+    proper_count.emplace_back(pcount);
+    improper_count.emplace_back(icount);
+  }
+  DataFrame overhangs = DataFrame::create(Named("shift") = shift_vec,
+                                          Named("proper_count") = proper_count,
+                                          Named("improper_count") = improper_count);
+  return(overhangs);
 }
 
 //' calc_expand_overhangs
@@ -560,18 +561,16 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
     int icount = 0;
 
     for(int j = 0; j < mut_size; j++){
-      int new_r2_start = r2_start[j] + 2 + i;
+      int new_r2_start = r2_start[j] + i;
       int new_r2_end = new_r2_start + r2_width[j] - 1;
+      int p3_overhang = new_r2_start - r2_start[j];
+      int p5_overhang = new_r2_end - r1_end[j];
 
-    //if((new_r2_end - r1_end[j] == 2)){
-    //if((r1_end[j] - new_r2_end == 2) && (r1_start[j] - new_r2_start) == 2) {
-    int p5_overhang = new_r2_start - r1_start[j];
-    int p3_overhang = new_r2_end - r1_end[j];
-    if(p5_overhang == 2 && p3_overhang == 2){
-        pcount += 1;
-      } else {
-        icount += 1;
-      }
+    if(p5_overhang == 2 & p3_overhang == 2){
+          pcount += 1;
+       } else {
+          icount += 1;
+       }
     }
     proper_count.emplace_back(pcount);
     improper_count.emplace_back(icount);
@@ -1068,39 +1067,39 @@ DataFrame getLoopPileupsCPP(std::vector<int> r1Start, std::vector<int> r1Stop,
 DataFrame rep_nonseq_reads(std::vector<int> rep_count, std::vector<std::string> rname,
                           std::vector<int> start, std::vector<int> end,
                           std::vector<std::string> first) {
-   
+
   int countSize = rep_count.size();
   int finalNumberOfRows = 0;
-   
+
   // Calculate the size of the vectors we're creating to keep from reallocating memory
   for (int i = 0; i < countSize; i++) {
      finalNumberOfRows += rep_count[i];
    }
-   
+
    // Create vectors and reserve memory for their final size
    std::vector<std::string> glob_rname_vec;
    glob_rname_vec.reserve(finalNumberOfRows);
-   
+
    std::vector<int> glob_start_vec;
    glob_start_vec.reserve(finalNumberOfRows);
-   
+
    std::vector<int> glob_end_vec;
    glob_end_vec.reserve(finalNumberOfRows);
-   
+
    std::vector<std::string> glob_first_vec;
    glob_first_vec.reserve(finalNumberOfRows);
-   
-   
+
+
    for (int i = 0; i < countSize; i++) {
      int count = rep_count[i];
-     
+
      glob_rname_vec.insert(glob_rname_vec.end(), count, rname[i]);
      glob_start_vec.insert(glob_start_vec.end(), count, start[i]);
      glob_end_vec.insert(glob_end_vec.end(), count, end[i]);
      glob_first_vec.insert(glob_first_vec.end(), count, first[i]);
-     
+
    }
-   
+
    DataFrame df = DataFrame::create(Named("rname") = glob_rname_vec,
                                     Named("start") = glob_start_vec,
                                     Named("end") = glob_end_vec,
@@ -1125,41 +1124,41 @@ DataFrame rep_nonseq_reads(std::vector<int> rep_count, std::vector<std::string> 
 DataFrame rep_seq_reads(std::vector<int> rep_count, std::vector<std::string> rname,
                          std::vector<int> start, std::vector<int> end,
                          std::vector<std::string> first, std::vector<std::string> seq) {
-   
+
    int countSize = rep_count.size();
    int finalNumberOfRows = 0;
-   
+
    // Calculate the size of the vectors we're creating to keep from reallocating memory
    for (int i = 0; i < countSize; i++) {
      finalNumberOfRows += rep_count[i];
    }
-   
+
    // Create vectors and reserve memory for their final size
    std::vector<std::string> glob_rname_vec;
    glob_rname_vec.reserve(finalNumberOfRows);
-   
+
    std::vector<int> glob_start_vec;
    glob_start_vec.reserve(finalNumberOfRows);
-   
+
    std::vector<int> glob_end_vec;
    glob_end_vec.reserve(finalNumberOfRows);
-   
+
    std::vector<std::string> glob_first_vec;
    glob_first_vec.reserve(finalNumberOfRows);
-   
+
    std::vector<std::string> glob_seq_vec;
    glob_seq_vec.reserve(finalNumberOfRows);
-   
+
    for (int i = 0; i < countSize; i++) {
      int count = rep_count[i];
-     
+
      glob_rname_vec.insert(glob_rname_vec.end(), count, rname[i]);
      glob_start_vec.insert(glob_start_vec.end(), count, start[i]);
      glob_end_vec.insert(glob_end_vec.end(), count, end[i]);
      glob_first_vec.insert(glob_first_vec.end(), count, first[i]);
      glob_seq_vec.insert(glob_seq_vec.end(), count, seq[i]);
    }
-   
+
    DataFrame df = DataFrame::create(Named("rname") = glob_rname_vec,
                                     Named("start") = glob_start_vec,
                                     Named("end") = glob_end_vec,

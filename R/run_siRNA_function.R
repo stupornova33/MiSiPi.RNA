@@ -89,7 +89,8 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
 
       # get overlapping reads
-      overlaps <- find_overlaps(forward_dt, reverse_dt)
+      overlaps <- find_overlaps(forward_dt, reverse_dt) %>% dplyr::mutate(p5_overhang = r2_end - r1_end, p3_overhang = r2_start - r1_start) %>%
+        dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
 
       # create a GRanges object to extract the chromosome sequence from the genome file
       mygranges <- GenomicRanges::GRanges(

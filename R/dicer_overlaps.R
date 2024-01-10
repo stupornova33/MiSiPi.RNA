@@ -36,6 +36,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
 
    new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
    new_enddf <- data.frame(matrix(ncol = 4, nrow = 0))
+
    for(i in 1:nrow(startdf)){
      if(startdf$i[i] != startdf$j[i])
        new_startdf <- rbind(new_startdf, startdf[i,])
@@ -55,7 +56,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
 
    #remove results where segment of paired bases is less than 15nt
    # for example the loop sequence
-   final_helix_df <- final_helix_df %>% dplyr::filter(j - i > 15)
+   #final_helix_df <- final_helix_df %>% dplyr::filter(j - i > 15)
 
    if(nrow(final_helix_df) == 0){
       i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,

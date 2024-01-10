@@ -158,11 +158,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_hp_phased_counts <- 0
       plus_hp_phased_z <- -33
 
-      plus_overhangs <- data.frame(shift = c(-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8), proper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
+      plus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
     }
   } else {
-      plus_overhangs <- data.frame(shift = c(-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8), proper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
+      plus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
       plus_hp_phased_counts <- sum(plus_overhangs$proper_count[1:4])
       plus_hp_phased_z <- mean(plus_overhangs$zscore[1:4])
@@ -236,7 +236,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
            minus_hp_phased_counts <- 0
            minus_phased_hp_z <- -33
 
-           minus_overhangs <- data.frame(shift = c(-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8), proper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
+           minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
            minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
            minus_hp_phased_counts <- sum(minus_overhangs$proper_count[1:4])
            minus_hp_phased_z <- mean(minus_overhangs$zscore[1:4])
@@ -255,13 +255,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
          minus_hp_phased_counts <- 0
          minus_phased_hp_z <- -33
 
-         minus_overhangs <- data.frame(shift = c(-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8), proper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
+         minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
       }
    }
 
   } else { #else if fold bool is false and no results in r2_dt
-      minus_overhangs <- data.frame(shift = c(-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,8), proper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0))
+      minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
       perc_paired <- 0
   }
