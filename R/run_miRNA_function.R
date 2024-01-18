@@ -23,9 +23,10 @@
 run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
                            strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, weight_reads){
    print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
-    cat(file = paste0(wkdir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+   cat(file = paste0(wkdir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
    pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
+   # do not run locus if length is > 3000 - not a miRNA
    if(reg_stop - reg_start > 3000){
       cat(file = paste0(wkdir, logfile), "length of region is greater than 3000. \n", append = TRUE)
       return(null_mi_res())
@@ -91,16 +92,16 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    ########################################################## main logic ################################################################
    ## make the read data tables
 
-   chrom_df <- makeBamDF(chrom) %>%
-     subset(width <= 25 & width >= 18) %>%
+   # Processing one strand, so make copy of df to transform
+   # 1/9/24 added seq back in for writing miRNA pairs (arms)
+
+   chrom_df <- make_si_BamDF(chrom) %>%
+     subset(width <= 32 & width >= 18) %>%
      dplyr::mutate(start = pos, end = pos + width - 1) %>%
      dplyr::select(-c(pos)) %>%
      dplyr::group_by_all() %>%
      dplyr::summarize(count = dplyr::n())
    filter_r2_dt <- chrom_df %>% dplyr::mutate(rname = chrom_name)
-
-   #filter_r2_dt <- filter_mi_dt(chrom_df, chrom_name)
-   #new_dt <- filter_r2_dt
 
    if(nrow(filter_r2_dt) == 0){
       return(null_mi_res())
@@ -117,6 +118,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
         r2_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
         r1_dt <- get_top_n(filter_r2_dt, chrom_name, 100)
       }
+      #transform ends of one set of reads
       r1_dt <- r1_dt %>% dplyr::mutate(end = end + 59)
       filter_r2_dt <- NULL
       if(nrow(r2_dt) == 0){
@@ -131,7 +133,10 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       return(null_mi_res())
    }
 
-   #returns overlaps
+   # returns overlaps
+   # using find_overlaps instead of find_hp_overlaps
+   # find_overlaps only requires one df passed in and doesn't transform end of reads to original
+   # find_hp_overlaps requires two dfs and automatically transforms ends of reads
    overlaps_tmp <- find_overlaps(r1_dt, r2_dt)
 
    overlaps <- overlaps_tmp %>%
@@ -142,33 +147,57 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    size <- nrow(overlaps)
    overlaps <- get_nearby(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_end, 60, size)
 
+   # only want read pairs where start position of read 2 is after the end of read 1
    overlaps <- overlaps %>%
       dplyr::filter(dist > 2) %>%
       #dplyr::mutate(end_r1 = start_r1 + widthx - 1, end_r2 = start_r2 + widthy - 1) %>%
       dplyr::select(-c(dist))
 
-   if(!nrow(overlaps_tmp) == 0){
-      mygranges <- GenomicRanges::GRanges(
-       seqnames = c(chrom_name),
-      ranges = IRanges::IRanges(start=c(1), end=c(length)))
+   #if(!nrow(overlaps_tmp) == 0){
 
-     geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
-     geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
-     proper_overlaps <- overlaps_tmp %>% dplyr::filter(r2_start - r1_start == 2 & r2_end - r1_end == 2)
+   # WIP
+   # Added sequences back into makeBamDF so using Biostring unecessary
+      #mygranges <- GenomicRanges::GRanges(
+      # seqnames = c(chrom_name),
+      #ranges = IRanges::IRanges(start=c(1), end=c(length)))
 
-     if(nrow(proper_overlaps) > 0){
-        paired_seqs <- proper_overlaps %>%
-         dplyr::mutate(r1_seq = paste0(">",chrom_name, ":", proper_overlaps$r1_start, "-", proper_overlaps$r1_end, " ", substr(geno_seq, proper_overlaps$r1_start, proper_overlaps$r1_end)),
-                   r2_seq = paste0(">",chrom_name, ":", proper_overlaps$r2_start, "-", proper_overlaps$r2_end, " " , substr(geno_seq, proper_overlaps$r2_start, proper_overlaps$r2_end)))
+     #geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
+     #geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+
+     #uniq_overlaps <- overlaps %>% dplyr::distinct()
+
+     #func1 <- function(i){
+     # tmp_1 <- chrom_df[which(r1_dt$start == uniq_overlaps$start_r1[i] & r1_dt$end == uniq_overlaps$end_r1[i]),] %>%
+     #     dplyr::distinct(start, end, .keep_all = TRUE)
+     #}
+     #func2 <- function(i){
+     #  tmp_2 <- chrom_df[which(r2_dt$start == uniq_overlaps$start_r2[i] & r2_dt$end == uniq_overlaps$end_r2[i]),] %>%
+     #     dplyr::distinct(start, end, .keep_all = TRUE)
+     #}
+
+     #res1 <- lapply(seq(nrow(uniq_overlaps)), func1)
+     #res2 <- lapply(seq(nrow(uniq_overlaps)), func2)
 
 
+     #reads <- dplyr::bind_rows(res)
 
-       paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
-       fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
+     #res <- NULL
+     #uniq_overlaps <- NULL
 
-       write.table(unlist(fastas), paste0(wkdir, "miRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
-      }
-   }
+     #reads <- reads %>% dplyr::rename("r1_start" = "start", "r1_end" = "end", "r1_seq" = seq) %>% dplyr::select(-c(width, first,rname))
+
+     #reads <- NULL
+
+
+     #write.table(unlist(fastas), paste0(wkdir, "siRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+
+     #paired_seqs <- overlaps %>% dplyr::mutate(r1_seq = paste0(">", chrom_name, ":", overlaps$start_r1, "-", overlaps$end_r2, " ", ))
+     #paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
+     #fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
+
+     #write.table(unlist(fastas), paste0(wkdir, "miRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+    #  }
+  # }
 
    if(nrow(overlaps) == 0){
       cat(paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
@@ -211,17 +240,20 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    #remove results where loop sequence has greater than 5% of total read count
    total_count <- sum(pileups$count)
 
-   m_tst <- getLoopPileupsCPP(loop_coord$r1_start, loop_coord$r1_stop, loop_coord$lstart, loop_coord$lstop,
-                             loop_coord$r2_start, loop_coord$r2_stop, dt$pos, dt$count, total_count)
+   # get pileups of loop part
+   # this doesn't appear to do anything. Removing for now.
+   #m_tst <- getLoopPileupsCPP(loop_coord$r1_start, loop_coord$r1_stop, loop_coord$lstart, loop_coord$lstop,
+   #                          loop_coord$r2_start, loop_coord$r2_stop, dt$pos, dt$count, total_count)
 
-   if(is.null(m_tst)){
-      return(null_mi_res())
-   }
+   #if(is.null(m_tst)){
+   #    return(null_mi_res())
+   #}
 
    #m_tst <- m_tst[!sapply(m_tst, is.null)]
-   df <- m_tst %>% dplyr::distinct()
-   m_tst <- NULL
+   #df <- m_tst %>% dplyr::distinct()
+   #m_tst <- NULL
 
+   df <- loop_coord
    loop_seqs <- getFastas(geno_seq, df$lstart, df$lstop, nrow(df))
    r1_seqs <- getFastas(geno_seq, df$r1_start, df$r1_stop, nrow(df))
    r2_seqs <- getFastas(geno_seq, df$r2_start, df$r2_stop, nrow(df))
@@ -249,12 +281,15 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
    #use IRanges accessor functions to get values
    reduced_df <- data.frame("start" = IRanges::start(reduce_ir), "stop"= IRanges::start(reduce_ir) + IRanges::width(reduce_ir) - 1, "width" = IRanges::width(reduce_ir)) %>%
-      dplyr::filter(width < 140)
+      dplyr::filter(width <= 170)
    if(nrow(reduced_df) < 1){
       return(null_mi_res())
    }
 
+   #get the sequence from the genome
    reduced_seqs <- getFastas(geno_seq, reduced_df$start, reduced_df$stop, nrow(reduced_df))
+
+   #RNAfold wants U's not T's, so convert to U
    converted <- list(convertU(reduced_seqs$Seq, nrow(reduced_seqs)))
 
    converted <- data.frame('V1' = unname(unlist(converted)))
@@ -292,8 +327,10 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
    print('making fold_list')
    ################################################################################################################
+   #fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
    fold_list <- mapply(fold_short_rna, reduced_df$start, reduced_df$stop, reduced_df$converted, path_to_RNAfold)
 
+   #extracts the needed fields from the fold list, store in more compack list
    make_reduced_list <- function(x){
       start <- fold_list[[x]][[2]]
       stop <- fold_list[[x]][[3]]
@@ -308,29 +345,29 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    reduced_list <- lapply(1:length(fold_list), make_reduced_list)
 
 
-
-
-
-
-
+   #make the plots for all the sequences in the "reduced_list"
    plot_rna_struct <- function(x){
       pos <- count <- count.x <- NULL
       prefix <- paste0(wkdir, chrom_name, "-", reduced_list[[x]]$start, "-", reduced_list[[x]]$stop)
       mfe <- reduced_list[[x]]$mfe
       print(prefix)
+
+      # put the helix table into a data.frame
       helix_df <- data.frame(reduced_list[[x]]$helix)
 
       perc_paired <- (length(reduced_list[[x]]$helix$i)*2)/(reduced_list[[x]]$stop - reduced_list[[x]]$start)
 
-      #dicer_dt <- rep_reads(filter2_dt)
-      #since the reads are replicated in the get_top_n function, no need for that now
+      # transforms reads from one arm of hairpin to their paired position
+      # makes a table of reads which are overlapping
       dicer_overlaps <- dicer_overlaps(r2_dt, reduced_list[[x]]$helix, chrom_name, reduced_list[[x]]$start)
 
-
+      # summarize the counts by the # overlapping nucleotides
       z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
+
+      # create empty z_df
       z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
 
-      #calculate dicer signature
+      # calculate the zscores, if there are results
       if(is.na(dicer_overlaps[1,1]) | dicer_overlaps[1,1] == 0) {
          overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
          overhangs$zscore <- calc_zscore(overhangs$proper_count)
@@ -342,6 +379,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          overhangs$zscore <- calc_zscore(overhangs$proper_count)
       }
 
+      # transform data frame from table to row
       overhang_output <- data.frame(t(overhangs$zscore))
       colnames(overhang_output) <- overhangs$shift
       overhang_output$locus <- paste0(chrom_name, "_", reduced_list[[x]]$start, "_", reduced_list[[x]]$stop)
@@ -358,31 +396,46 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
 
       if(plot_output == "T"){
-
+         #make the plots
          dicer_sig <- plot_overhangz(overhangs)
          print(overhangs)
          #make new pileups dt for structure
 
+         # get the per-base coverage
+         # returns a two column df with pos and coverage
          new_pileups <- get_read_pileups(reduced_list[[x]]$start, reduced_list[[x]]$stop, bam_scan, bam_file)  %>%
             dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
 
-         #new_pileups <- NULL
+         # make a table with the same positions but empty cov column for combining with pileups
+         # necessary because the pileups table doesn't have all positions from the first nt to the last because
+         # coverages of zero aren't reported
+         # set these to zero below
          empty_table <- data.frame(pos = c(seq(reduced_list[[x]]$start, reduced_list[[x]]$stop)), count = c(0))
+
 
          struct_table <- merge(empty_table, new_pileups, by = 'pos', all.x = TRUE) %>%
             dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
+         #set NA to zero
          struct_table[is.na(struct_table)] = 0
 
+         # the pileup df is the whole region of interest, so subset the df to match
+         # the coordinates of the reduced_list (potential miRNAs)
          seq_cov_dat <- subset(struct_table, pos >= reduced_list[[x]]$start & pos <= reduced_list[[x]]$stop)
 
+         # assign colors to the coverage values
          dat_with_colorvals <- data.table::as.data.table(colorNtByDepth(seq_cov_dat))
 
          #######################################################################################
          graphics::par(mar = c(1,1,1,1))
-         print(reduced_list)
+         #print(reduced_list)
 
+         # assign the color values to each nucloeotide in the predicted structure
+         # this function is obscenely complicated
+         # creates a 5-line text output for plotting similar to miRBase plots
          miRNA_list <- process_miRNA_struct(reduced_list[[x]]$vienna, reduced_list[[x]]$converted)
 
+
+         # function to place dashes in the correct place
          insert_vector <- function(input, position, values) {
             options(warn=-1)
             #Create result vector
@@ -396,14 +449,18 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
             res[inds2] <- input
             return(res)
          }
-         ### previous method did not color the right nucleotides because of the way miRNA_list is created
+
+         ### replace paired bases with their respective nucleotide and unpaired bases with "-"
+         ### get positions where there is only a space
+         ### combine color values with this data
+
          top <- unname(unlist(miRNA_list$top[3]))
          mid_top <- unname(unlist(miRNA_list$mid_top[3]))
          mid_bottom <- unname(unlist(miRNA_list$mid_bottom[3]))
          bottom <- unname(unlist(miRNA_list$bottom[3]))
          char <- unname(unlist(miRNA_list$char_df[3]))
 
-
+         #get the positions of paired bases on each line
          top_pos <- which(top == "U" | top == "C" | top == "G" | top == "A")
 
          mid_top_pos <- which(mid_top == "U" | mid_top == "C" | mid_top == "G" | mid_top == "A")
@@ -414,18 +471,25 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
          mid_bottom_pos <- which(mid_bottom == "U" | mid_bottom == "C" | mid_bottom == "G" | mid_bottom == "A")
 
+         # get the position of unpaired bases on each line that has them
          top_dash_pos <- which(top == "-")
          bottom_dash_pos <- which(bottom == "-")
 
+         # reverse the bottom half of the data because they will be reversed!
          rev_color_dat <- rev(dat_with_colorvals$bin)
+         # this is the top half
          color_half1 <- dat_with_colorvals$bin[1:(length(mid_top_pos) + length(top_pos))]
+         # this is the bottom half
          color_half2 <- rev_color_dat[1:(length(mid_bottom_pos) + length(bottom_pos))]
 
+         # put the dashes in their place
          color_half1 <- insert_vector(color_half1, top_dash_pos, rep("-", length(top_dash_pos)))
          color_half2 <- insert_vector(color_half2, bottom_dash_pos, rep("-", length(bottom_dash_pos)))
 
+         # get the number of unique expression values so we know how many colors to use
          num_uniq <- length(unique(dat_with_colorvals$bin)) + 1
 
+         # use the positions gotten earler to create a vector containing the color by position
          mid_color_vec <- dat_with_colorvals$bin[char_pos]
 
          top_vec <- numeric(length(top))
@@ -448,6 +512,8 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          bottom_vec[bottom_pos] <- color_half2[bottom_pos]
          bottom_vec[(bottom_vec == 0)] <- num_uniq
 
+
+         # now put them all together in the correct order into a data frame for plotting
          top_df <- data.frame(x = unname(unlist(miRNA_list$top[1])), y = unname(unlist(miRNA_list$top[2])), text = unname(unlist(miRNA_list$top[3])),
                               color_bins = top_vec)
 
@@ -460,6 +526,8 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          bottom_df <- data.frame(x = unname(unlist(miRNA_list$bottom[1])), y = unname(unlist(miRNA_list$bottom[2])), text = unname(unlist(miRNA_list$bottom[3])),
                               color_bins = bottom_vec)
 
+         # rbind the results
+         # this results in a 4-column df with x-coordinate, y-coordinate (chosen by me), the text character to use, and the color bin
          miRNA_df <- rbind(top_df, mid_top_df, char_df, mid_bottom_df, bottom_df)
          ########################################################################################
          struct_plot <- plot_miRNA_struct(miRNA_df)

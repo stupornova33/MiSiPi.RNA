@@ -7,12 +7,14 @@ takes two data tables of reads with start and stop positions
 converts to gr objects and finds overlaps, transforms positions back to original
 returns overlap table}
 \usage{
-find_hp_overlaps(r1_dt, r2_dt)
+find_hp_overlaps(r1_dt, r2_dt, n)
 }
 \arguments{
 \item{r1_dt}{a data frame containing chrom name, start, and stop}
 
 \item{r2_dt}{a data frame containing chrom name, start, and stop}
+
+\item{n}{the number of bases to transform the read by}
 }
 \value{
 overlap table

@@ -21,7 +21,7 @@ get_top_n <- function(filter_dt, chrom_name, seq = NULL){
       end <- rep(filter_dt$end[i], rep_count)
       first <- rep(filter_dt$first[i], rep_count)
 
-      #for getting siRNA pairs
+      # if sequence is present, need to return it as well
       if(!is.null(seq)){
         seq <- rep(counts_dt$seq[i], rep_count)
         current_df <- data.frame(rname = rname, start = start, end = end, first = first, seq = seq)

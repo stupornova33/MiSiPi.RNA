@@ -28,6 +28,8 @@ fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold){
          fold <- fold[1:(grep("WARNING", fold)) - 1]
       }
 
+   # RNAfold returns 3 objects in some cases and only 2 in others
+   # Need to extract the vienna things differently based on this
    if(length(fold) > 2){
       vien_split <- stringi::stri_split_fixed(fold[4], pattern = " ")[[1]][2]
       vien_struct <- paste0(fold[3],stringi::stri_split_fixed(fold[4], pattern = " ")[[1]][1])
@@ -42,6 +44,7 @@ fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold){
    coord <- RRNA::ct2coord(ct)
    #RRNA::RNAPlot(coord, nt = TRUE)
    #split the string to get mfe
+   #Split based on space and remove parentheses
    mfe <- gsub(' ', '', gsub('[)]','', gsub('[(]', '', vien_split)))
    mfe <- as.numeric(mfe)
    start <- start

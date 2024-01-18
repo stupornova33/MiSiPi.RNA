@@ -76,6 +76,10 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
      data.frame() %>%
      dplyr::select(c(start, end, rname))
 
+
+
+##################### OLD CODE #################
+# leaving for now JIC
    #global_i_idx <- numeric()
 
    #if(nrow(filter_helix) > 0){
