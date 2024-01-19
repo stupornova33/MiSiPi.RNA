@@ -22,7 +22,7 @@ siRNA_function <- function(vars){
 
 
    si_res <- mapply(run_siRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[4]], 1, vars[[9]], vars[[10]], logfile, wkdir, vars[[13]], vars[[6]], vars[[7]],
-                    vars[[14]], vars[[15]], vars[[16]])
+                    vars[[14]], vars[[15]], vars[[16]], vars[[17]])
    return(si_res)
 
 }

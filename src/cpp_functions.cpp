@@ -515,10 +515,10 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
       int new_r2_start = r2_start[j] + i; // Shift r2_start
       int new_r2_end = new_r2_start + r2_width[j] - 1;
 
-      int p5_overhang = new_r2_start - r1_start[j];
-      int p3_overhang = new_r2_end - r1_end[j];
+      int p3_overhang = new_r2_start - r1_start[j];
+      int p5_overhang = new_r2_end - r1_end[j];
 
-      if ((p5_overhang == 2) && (p3_overhang == 2)) {
+      if ((p5_overhang == 2) & (p3_overhang == 2)) {
         pcount++;
       } else {
         icount++;
@@ -563,10 +563,10 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
     for(int j = 0; j < mut_size; j++){
       int new_r2_start = r2_start[j] + i;
       int new_r2_end = new_r2_start + r2_width[j] - 1;
-      int p3_overhang = new_r2_start - r2_start[j];
+      int p3_overhang = new_r2_start - r1_start[j];
       int p5_overhang = new_r2_end - r1_end[j];
 
-    if(p5_overhang == 2 & p3_overhang == 2){
+    if((p5_overhang == 2 & p3_overhang == 2)){
           pcount += 1;
        } else {
           icount += 1;
@@ -672,6 +672,7 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 
    for(int i = 15; i <= 32; i++) {
       for(int j = 15; j <= 32; j++) {
+        //the python script only checks reads which overlap by a "proper" amount
          int p_overlap = proper_overlap(i,j);
          int current_count = 0;
 

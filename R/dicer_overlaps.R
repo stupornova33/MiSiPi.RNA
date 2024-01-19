@@ -23,36 +23,40 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    j_begin <- helix_df$j[1]
    j_end <- helix_df$j[nrow(helix_df)]
 
-   istartvals <- seq(i_begin - 8, i_begin - 1)
-   iendvals <- seq(i_end + 1, i_end + 8)
-   jstartvals <- seq(j_begin + 8,j_begin + 1 )
-   jendvals <- seq(j_end - 1,j_end - 8)
+   if(reg_start >= 8){
+     istartvals <- seq(i_begin - 8, i_begin - 1)
+     iendvals <- seq(i_end + 1, i_end + 8)
+     jstartvals <- seq(j_begin + 8,j_begin + 1 )
+     jendvals <- seq(j_end - 1,j_end - 8)
 
+     startdf <- data.frame(i = istartvals, j = jstartvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
+     enddf <- data.frame(i = iendvals, j = jendvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
+     #check to make sure start and end values are not the same. If they are, remove
 
+     new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
+     new_enddf <- data.frame(matrix(ncol = 4, nrow = 0))
 
-   startdf <- data.frame(i = istartvals, j = jstartvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
-   enddf <- data.frame(i = iendvals, j = jendvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
-   #check to make sure start and end values are not the same. If they are, remove
+     for(i in 1:nrow(startdf)){
+       if(startdf$i[i] != startdf$j[i])
+         new_startdf <- rbind(new_startdf, startdf[i,])
+     }
+     for(i in 1:nrow(enddf)){
+       if(enddf$i[i] != enddf$j[i])
+         new_enddf <- rbind(new_enddf, enddf[i,])
+     }
 
-   new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
-   new_enddf <- data.frame(matrix(ncol = 4, nrow = 0))
+     startdf <- new_startdf
+     enddf <- new_enddf
 
-   for(i in 1:nrow(startdf)){
-     if(startdf$i[i] != startdf$j[i])
-       new_startdf <- rbind(new_startdf, startdf[i,])
+     #add the new intervals to helix_df
+     tmp_df <- rbind(startdf, helix_df)
+
+     final_helix_df <- rbind(tmp_df, enddf)
+
+   } else {
+     final_helix_df <- helix_df
    }
-   for(i in 1:nrow(enddf)){
-     if(enddf$i[i] != enddf$j[i])
-       new_enddf <- rbind(new_enddf, enddf[i,])
-   }
 
-   startdf <- new_startdf
-   enddf <- new_enddf
-
-   #add the new intervals to helix_df
-   tmp_df <- rbind(startdf, helix_df)
-
-   final_helix_df <- rbind(tmp_df, enddf)
 
    #remove results where segment of paired bases is less than 15nt
    # for example the loop sequence
@@ -116,10 +120,9 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
         #print(paste0("i: ", i))
         x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
 
-        #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i])
         y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
 
-        #get i reads that start at a paired pos in helix_df
+        #get i reads that start at a pos in helix_df
         x_idx <- which(dicer_dt$start %in% x_rng)
         x_dat <- dicer_dt[x_idx,] %>%
           dplyr::arrange(start)
@@ -135,12 +138,19 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
         if(nrow(x_dat) > 0){
         for (j in 1:nrow(x_dat)) {
           #print(paste0("j: ", j))
+
+          #get helix$i position that matches reads in x_dat
           i_idx <- which(final_helix_df$i == x_dat$start[j])
-          #if no results returned
+          #if no results returned, there is a bulge
+          #if i_idx is identical to integer(0) and it is not the first iteration of j
+          #if first iteration there will be no prior idx
+
           if(identical(i_idx, integer(0)) & !(j == 1)) {
              #get the index of the last paired pos
              i_idx <- prior_i_idx
+             bulge_size <- i_idx - prior_i_idx
             #else if no results and this is the first iteration
+            #subtract 1 from the start
           } else if (identical(i_idx, integer(0)) & (j == 1)) {
               found <- FALSE
               current_start <- x_dat$start[j]

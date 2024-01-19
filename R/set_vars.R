@@ -1,21 +1,21 @@
-#' takes a gff file
-#' only output is hairpin plots
-#' @param roi a string
-#' @param bam_file a string
-#' @param genome a string
-#' @param min_read_count an integer
-#' @param plot_output a string, "T" or "F"
-#' @param path_to_RNAfold a string
-#' @param pi_pal a string
-#' @param si_pal a string
-#' @param annotate_bed a string, "T" or "F"
-#' @param weight_reads a string, "T" or "F"
-#' @param bed_file a string
+#' Function to process and set the arguments passed by the user for each function
+#' @param roi The path to a BED file of loci of interest
+#' @param bam_file The path to a BAM file
+#' @param genome The path to a genome Fasta file
+#' @param min_read_count An integer. Default is 1
+#' @param plot_output Determines whether the program will output plots as PDFs. Expected input is "T" or "F".
+#' @param path_to_RNAfold The full path to the RNAfold binary executable.
+#' @param pi_pal The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
+#' @param si_pal The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
+#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.
+#' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "none". See MiSiPi documentation for descriptions of the weighting methods.
+#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format.
+#' @param write_fastas A string, "T" or "F". Optional. If "T", read pairs from functions will be written to file.
 #'
 #' @return a list
 #' @export
 
-set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to_RNAfold, pi_pal, si_pal, annotate_bed, weight_reads, bed_file = NULL){
+set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to_RNAfold, pi_pal, si_pal, annotate_region, weight_reads, gtf_file = NULL, write_fastas = NULL){
 
   bam_obj <- OpenBamFile(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
@@ -55,8 +55,9 @@ set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to
                    roi = roi,
                    pi_pal = pi_pal,
                    si_pal = si_pal,
-                   annotate_bed = annotate_bed ,
+                   annotate_region = annotate_region,
                    weight_reads = weight_reads,
-                   bed_file = bed_file)
+                   gtf_file = gtf_file,
+                   write_fastas = write_fastas)
   return(var_list)
 }

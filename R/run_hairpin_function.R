@@ -1,6 +1,6 @@
 #' run the hairpin function
 #' runs hairpin function on both strands
-#' takes a bed file, bam file, and genome file specified by user
+#' takes a gtf file, bam file, and genome file specified by user
 #' takes min_read_count specified by user. Default = 1
 #'
 #' @param vars a list

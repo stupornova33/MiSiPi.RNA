@@ -1,27 +1,27 @@
-#' function to run the hairpin algorithm
-#' processes reads from bam object according to strand
-#' plots the arc plot and read dist
-#' @param chrom_name a string
-#' @param reg_start a whole number
-#' @param reg_stop a whole number
-#' @param length a whole number
-#' @param min_read_count a whole number
-#' @param genome_file a fasta file of chrom sequences
-#' @param bam_file a BAM file
-#' @param logfile a string
-#' @param wkdir a string
-#' @param plot_output a string, 'T' or 'F', default = 'T
-#' @param path_to_RNAfold a string
-#' @param annotate_bed a string, "T" or "F"
-#' @param weight_reads a string, "T" or "F"
-#' @param bed_file a string
-#' @return max_overhang
+#' Function to run the hairpin algorithm.
+#' Processes reads from bam object according to strand.
+#' Plots the arc plot and read distribution.
+#' @param chrom_name A string corresponding to the chromosome.
+#' @param reg_start An integer corresponding to the start of a region of interest.
+#' @param reg_stop An integer corresponding to the end of a region of interest.
+#' @param length The length of the chromosome of interest.
+#' @param min_read_count A whole number. Default is 1.
+#' @param genome_file The path to a genome fasta file.
+#' @param bam_file The path to a BAM file. There must be a corresponding index ending in .bai in the same directory.
+#' @param logfile The name of the file to which log information will be written.
+#' @param wkdir The path to the directory where all outputs will be written.
+#' @param plot_output Determines whether PDF plots will be made. Expected values are "T" or "F".
+#' @param path_to_RNAfold The full path to the RNAfold binary executable.
+#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.
+#' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "none". See MiSiPi documentation for descriptions of the weighting methods.
+#' @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
+#' @return a list of results
 
 #' @export
 
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
-                             min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_bed,
-                             weight_reads, bed_file){
+                             min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
+                             weight_reads, gtf_file){
 
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 
@@ -103,7 +103,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else if(weight_reads == "Locus_norm"){
     r2_dt <- locus_norm(dt, sum(dt$count), NULL)
   } else {
-    r2_dt <- get_top_n(dt, chrom_name, NULL)
+    r2_dt <- no_weight(dt, chrom_name, NULL)
   }
 
   #transform end of reads in one df
@@ -199,7 +199,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else if(weight_reads == "Locus_norm"){
     r2_dt <- locus_norm(filter_r2_dt, sum(filter_r2_dt$count), NULL)
   } else {
-    r2_dt <- get_top_n(filter_r2_dt, chrom_name, NULL)
+    r2_dt <- no_weight(filter_r2_dt, chrom_name, NULL)
   }
 
   #transform ends of reads for phasing/finding overlaps
@@ -344,10 +344,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     plus_phasedz <- plot_hp_phasedz(plus_hp_phased_tbl, "+")
     minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
 
-    ## plot bed annotations (optional)
-    if(annotate_bed == "T"){
-      bed_plot <- plot_bed(bed_file, chrom_name, reg_start, reg_stop)
-      left <- cowplot::plot_grid(arc_plot, bed_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
+    ## plot genome annotations (optional)
+    if(annotate_region == "T"){
+      gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+      left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 
       # Draw combined plot
       right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1, 1))
