@@ -13,9 +13,9 @@
 #' @param pi_pal a string
 #' @param plot_output a string, "T" or "F"
 #' @param path_to_RNAfold a string
-#' @param annotate_bed a string, "T" or "F"
+#' @param annotate_region a string, "T" or "F"
 #' @param weight_reads a string, "T", or "F"
-#' @param bed_file a string
+#' @param gtf_file a string
 #' @return results
 
 #' @export
@@ -23,7 +23,7 @@
 
 
 new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-                        plot_output, path_to_RNAfold, annotate_bed, weight_reads, bed_file){
+                        plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file){
 
   width <- pos <- start <- end <- NULL
 
@@ -176,7 +176,7 @@ if(nrow(all_data) > 1){
 
 
   si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
-                           annotate_bed, weight_reads, bed_file)
+                           annotate_region, weight_reads, gtf_file)
 
   max_si_heat <- get_max_si_heat(si_res)
 

@@ -12,15 +12,16 @@
 #' @param pal a string
 #' @param plot_output a string, 'T' or 'F'. Default is 'T'
 #' @param path_to_RNAfold a string
-#' @param annotate_bed a string, "T" or "F"
+#' @param annotate_region a string, "T" or "F"
 #' @param weight_reads a string, "T" or "F"
-#' @param bed_file a string
+#' @param gtf_file a string
+#' @param write_fastas Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected.
 #' @return results
 
 #' @export
 
 run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, logfile, wkdir,
-                           pal, plot_output, path_to_RNAfold, annotate_bed, weight_reads, bed_file){
+                           pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas){
    print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
    prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
    width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
@@ -71,19 +72,24 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       #include "T" argument to return read sequences
       if(weight_reads == "Top"){
-        forward_dt <- get_top_n_weighted(forward_dt, chrom_name, "T")
-        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, "T")
+        forward_dt <- get_top_n_weighted(forward_dt, chrom_name)
+        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name)
 
-        print("Completed getting weighted dataframes.")
-      } else if(weight_reads == "Locus_norm"){
+
+      } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
 
         forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count), "T")
         reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count), "T")
 
+      } else if(is.integer(weight_reads)){
+        forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start))
+        reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start))
       } else {
-        forward_dt <- get_top_n(forward_dt, chrom_name, "T")
-        reverse_dt <- get_top_n(reverse_dt, chrom_name, "T")
+        forward_dt <- no_weight(forward_dt, chrom_name, "T")
+        reverse_dt <- no_weight(reverse_dt, chrom_name, "T")
       }
+
+      print("Completed getting weighted dataframes.")
       # check to see if subsetted dfs are empty
       # have to keep doing this at each step otherwise errors will happen
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
@@ -92,44 +98,63 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       overlaps <- find_overlaps(forward_dt, reverse_dt) %>% dplyr::mutate(p5_overhang = r2_end - r1_end, p3_overhang = r2_start - r1_start) %>%
         dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
 
-      # create a GRanges object to extract the chromosome sequence from the genome file
-      mygranges <- GenomicRanges::GRanges(
-        seqnames = c(chrom_name),
-        ranges = IRanges::IRanges(start=c(1), end=c(length)))
+      proper_overlaps <- overlaps %>% dplyr::filter(r2_start - r1_start == 2 & r2_end - r1_end == 2)
 
-      geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
+      forw <- proper_overlaps %>% dplyr::select(r1_start, r1_end, r1_width)
+      rev <- proper_overlaps %>% dplyr::select(r2_start, r2_end, r2_width)
 
-      #get sequence for only the region of interest from the chromosome
-      geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+      tmp <- rbind(forward_dt, reverse_dt)
 
-      #check to see how many overlaps have the 2nt overhang
-      #currently this extracts pairs with overhang at 3p OR 5p
-      #tried getting pairs with overhang at 3p AND 5p but few/no results returned in many cases...
-      proper_overlaps <- overlaps %>% dplyr::filter(r2_start - r1_start == 2 | r2_end - r1_end == 2)
-
-      #write the pairs to file
-      if(nrow(proper_overlaps > 0)){
-        paired_seqs <- proper_overlaps %>%
-         dplyr::mutate(r1_seq = paste0(">",chrom_name, ":", proper_overlaps$r1_start, "-", proper_overlaps$r1_end, " ", substr(geno_seq, proper_overlaps$r1_start, proper_overlaps$r1_end)), r2_seq = paste0(">",chrom_name, ":", proper_overlaps$r2_start, "-", proper_overlaps$r2_end, " " , substr(geno_seq, proper_overlaps$r2_start, proper_overlaps$r2_end))) %>%
-          dplyr::distinct()
-
-        paired_seqs <- paired_seqs %>% dplyr::transmute(col1 = paste0(r1_seq, ",", r2_seq)) %>% tidyr::separate_rows(col1, sep = ",")
-        fastas <- stringi::stri_split_regex(paired_seqs$col1, " ")
-
-        write.table(unlist(fastas), paste0(wkdir, "siRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
-      } else {
-        cat(file = paste0(wkdir, logfile), "No proper siRNA pairs were found.\n", append = TRUE)
+      rreads <- data.frame()
+      freads <- data.frame()
+      for(i in 1:nrow(proper_overlaps)){
+        tmp_r <- tmp[which(tmp$start == proper_overlaps$r1_start[i] & tmp$end == proper_overlaps$r1_end[i]), ] %>%
+          dplyr::distinct(start, end, .keep_all = TRUE)
+        tmp_f <- tmp[which(tmp$start == proper_overlaps$r2_start[i] & tmp$end == proper_overlaps$r2_end[i]), ] %>%
+          dplyr::distinct(start, end, .keep_all = TRUE)
+        rreads <- rbind(rreads, tmp_r)
+        freads <- rbind(freads, tmp_f)
       }
+
+
+      proper_overlaps <- NULL
+
+      rreads <- rreads %>% dplyr::rename("r1_start" = "start", "r1_end" = "end", "r1_seq" = seq) %>% dplyr::select(-c(width, first,rname))
+      freads <- freads %>% dplyr::rename("r2_start" = "start", "r2_end" = "end", "r2_seq" = seq) %>% dplyr::select(-c(width, first,rname))
+
+      paired_seqs <- cbind(rreads, freads)
+
+      rreads <- NULL
+      freads <- NULL
+
+      paired_seqs <- paired_seqs %>%
+        dplyr::mutate(read1_seq = paste0(">",chrom_name, ":", paired_seqs$r1_start, "-", paired_seqs$r1_end, " ", paired_seqs$r1_seq), read2_seq = paste0(">",chrom_name, ":", paired_seqs$r2_start, "-", paired_seqs$r2_end, " " , paired_seqs$r2_seq))
+
+      fastas <- paired_seqs %>% dplyr::select(c(read1_seq, read2_seq)) %>%
+        dplyr::transmute(col1 = paste0(read1_seq, ",", read2_seq)) %>%
+        tidyr::separate_rows(col1, sep = ",")
+
+      fastas <- stringi::stri_split_regex(fastas$col1, " ")
+
+      if(write_fastas == "T"){
+        write.table(unlist(fastas), file = paste0(prefix, "_siRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+      }
+      paired_seqs <- NULL
+      fastas <- NULL
 
 
       #calculate the number of dicer pairs for the zscore
       dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
+
       dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
 
       cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
       # calculate the siRNA pairs for the heatmap
-      results <- get_si_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
-                              reverse_dt$start, reverse_dt$end, reverse_dt$width)
+      #results <- get_si_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
+      #                        reverse_dt$start, reverse_dt$end, reverse_dt$width)
+
+      results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
+                                forward_dt$start, forward_dt$end, forward_dt$width)
 
       row.names(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
       colnames(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
@@ -180,16 +205,16 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       }
    )
 
-
+ #run the hairpin function on each strand separately
+   dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
+                              path_to_RNAfold, annotate_region, weight_reads, gtf_file)
  #if there are results then do the hairpin functions and plots
  if(!sum(results) == 0){
    ### hairpin function
    print("Beginning hairpin function.")
 
 
-   #run the hairpin function on each strand separately
-   dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
-                              path_to_RNAfold, annotate_bed, weight_reads, bed_file)
+
 
    #user provides argument plot = T or plot = F
    if(plot_output == "T"){

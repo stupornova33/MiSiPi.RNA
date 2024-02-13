@@ -9,24 +9,23 @@
 
 plot_density <- function(data, reg_start, reg_stop){
 
-   density <- ggplot2::ggplot(data, ggplot2::aes(x = Position, y = Count, fill = Lengths)) +
-     ggplot2::geom_area(colour = "black", linewidth = .2) +
-     ggplot2::scale_x_continuous(limits = c(reg_start - 10, reg_stop + 10), expand = c(0, 0)) +
-     ggplot2::scale_y_continuous(expand = c(0, 0)) +
-     ggplot2::scale_fill_manual(values = c("yellow","red","blue", "black","yellow", "red","blue","black" ))+
-     ggplot2::ggtitle("Read Density")+
+  density <- ggplot2::ggplot(data, ggplot2::aes(x = Position, y = Count, fill = Lengths)) +
+    ggplot2::geom_area() +
+    #ggplot2::scale_x_continuous(limits = c(reg_start - 10, reg_stop + 10), expand = c(0, 0)) +
+    #ggplot2::scale_y_continuous(expand = c(0, 0)) +
+    ggplot2::scale_fill_manual(values = c("yellow","red","blue", "black","yellow", "red","blue","black" )) +
+    ggplot2::ggtitle("Read Density") +
+    ggplot2::theme_classic()+
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))+
+    #ggplot2::theme(legend.key.size = ggplot2::unit(0.3, 'cm'))+
+    ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, angle = 60, hjust = 1))
+   #               axis.ticks.x = ggplot2::element_line(),
+   #               axis.line.x = ggplot2::element_line(),
+   #               panel.grid = ggplot2::element_blank(),
+   #               panel.border = ggplot2::element_blank())
 
-     ggplot2::theme_classic()+
-     ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))+
-     ggplot2::theme(legend.key.size = ggplot2::unit(0.3, 'cm'))+
-     ggplot2::theme(axis.text.x = ggplot2::element_text(size = 10, angle = 60, hjust = 1),
-                    axis.ticks.x = ggplot2::element_line(),
-                    axis.line.x = ggplot2::element_line(),
-                    panel.grid = ggplot2::element_blank(),
-                    panel.border = ggplot2::element_blank())
 
-
-     return(density)
+    return(density)
 
 }
 
