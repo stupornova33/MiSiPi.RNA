@@ -4,7 +4,7 @@
 \alias{getPileupsMap}
 \title{getPileupsMap}
 \usage{
-getPileupsMap(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2, count)
+getPileupsMap(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2)
 }
 \arguments{
 \item{dtpos}{A vector of ints representing positions}

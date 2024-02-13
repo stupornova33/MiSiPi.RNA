@@ -15,7 +15,7 @@
 #' @param wkdir a string
 #' @param plot_output a string, default = TRUE
 #' @param path_to_RNAfold a string
-#' @param weight_reads a string, "T" or "F"
+#' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 
 #' @return plots
 #' @export
@@ -72,22 +72,12 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       bam_scan <- Rsamtools::ScanBamParam(what=c('rname', 'pos', 'strand','qwidth'), which=which)
    }
 
-   pileups <- get_read_pileups(reg_start, reg_stop, bam_scan, bam_file)
+   #pileups <- get_read_pileups(reg_start, reg_stop, bam_scan, bam_file)
 
-   # I think this was already done in the get_read_pileups function
-   # consider removing
-   dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
+   #empty_table <- data.frame(pos = c(seq(reg_start, reg_stop)), count = c(0))
 
-   struct_dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
-
-   empty_table <- data.frame(pos = c(seq(reg_start, reg_stop)), count = c(0))
-
-   dt_table <- merge(empty_table, struct_dt, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
-   dt_table[is.na(dt_table)] = 0
-
-   if(nrow(dt) == 0){
-      return(null_mi_res())
-   }
+   #dt_table <- merge(empty_table, dt, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
+   #dt_table[is.na(dt_table)] = 0
 
    ########################################################## main logic ################################################################
    ## make the read data tables
@@ -107,16 +97,16 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       return(null_mi_res())
    } else {
       if(weight_reads == "T"){
-        r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
-        r1_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, 100)
+        r2_dt <- weight_by_prop(filter_r2_dt, chrom_name)
+        r1_dt <- weight_by_prop(filter_r2_dt, chrom_name)
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
         locus_length <- reg_stop - reg_start
         locus_read_count <- sum(filter_r2_dt$count)
         r2_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
         r1_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
       } else {
-        r2_dt <- no_weight(filter_r2_dt, chrom_name, 100)
-        r1_dt <- no_weight(filter_r2_dt, chrom_name, 100)
+        r2_dt <- no_weight(filter_r2_dt, chrom_name)
+        r1_dt <- no_weight(filter_r2_dt, chrom_name)
       }
       #transform ends of one set of reads
       r1_dt <- r1_dt %>% dplyr::mutate(end = end + 59)
@@ -133,6 +123,20 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       return(null_mi_res())
    }
 
+   pileup_start <- min(r1_dt$start)
+   pileup_stop <- max(r2_dt$end)
+   pileups <- get_read_pileups(pileup_start, pileup_stop, bam_scan, bam_file)
+   #dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
+
+   empty_table <- data.frame(pos = c(seq(pileup_start, pileup_stop)), count = c(0))
+
+   dt_table <- merge(empty_table, pileups, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
+   dt_table[is.na(dt_table)] = 0
+
+   #if(nrow(dt) == 0){
+   #    return(null_mi_res())
+   #}
+
    # returns overlaps
    # using find_overlaps instead of find_hp_overlaps
    # find_overlaps only requires one df passed in and doesn't transform end of reads to original
@@ -143,6 +147,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       dplyr::mutate(r1_end = r1_end - 59) %>%
       dplyr::mutate(r1_width = r1_end - r1_start + 1)
 
+   overlaps_tmp <- NULL
    #need to filter to remove self matches, get dist between end of R1 and start of R2
    size <- nrow(overlaps)
    overlaps <- get_nearby(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_end, 60, size)
@@ -161,13 +166,15 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    }
 
    # Keep only distinct rows in overlaps, but mutate in a column to keep track of the number of duplicates that were present
-   overlaps_group <- overlaps %>%
-      dplyr::group_by_all() %>%
-      dplyr::count()
+   #overlaps_group <- overlaps %>%
+   #    dplyr::group_by_all() %>%
+   #    dplyr::count()
 
    # returns average count pileup for each read
-   read_pileups <- getPileupsMap(dt$pos, dt$count, overlaps_group$start_r1, overlaps_group$end_r1, overlaps_group$start_r2, overlaps_group$end_r2, overlaps_group$n)# %>%
+   #read_pileups <- getPileupsMap(dt$pos, dt$count, overlaps_group$start_r1, overlaps_group$end_r1, overlaps_group$start_r2, overlaps_group$end_r2, overlaps_group$n)# %>%
       #dplyr::filter(r1_count_avg >= 1 & r2_count_avg >= 1)
+   read_pileups <- getPileupsMap(dt_table$pos, dt_table$count, overlaps$start_r1, overlaps$end_r1, overlaps$start_r2, overlaps$end_r2)# %>%
+
    overlaps <- NULL
 
    if(nrow(read_pileups) == 0){
@@ -196,18 +203,6 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    #remove results where loop sequence has greater than 5% of total read count
    total_count <- sum(pileups$count)
 
-   # get pileups of loop part
-   # this doesn't appear to do anything. Removing for now.
-   #m_tst <- getLoopPileupsCPP(loop_coord$r1_start, loop_coord$r1_stop, loop_coord$lstart, loop_coord$lstop,
-   #                          loop_coord$r2_start, loop_coord$r2_stop, dt$pos, dt$count, total_count)
-
-   #if(is.null(m_tst)){
-   #    return(null_mi_res())
-   #}
-
-   #m_tst <- m_tst[!sapply(m_tst, is.null)]
-   #df <- m_tst %>% dplyr::distinct()
-   #m_tst <- NULL
 
    df <- loop_coord
    loop_seqs <- getFastas(geno_seq, df$lstart, df$lstop, nrow(df))
@@ -228,21 +223,41 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
                                     dplyr::filter(width == max(width)) %>%
                                     dplyr::group_by(stop) %>%
                                     dplyr::filter(width == max(width))
-
    #merge overlapping results based on position using IRanges
    #get the new sequence using getFastas
 
-   ir <- IRanges::IRanges(start = longest_seqs$start, end = longest_seqs$stop, width = longest_seqs$width)
-   reduce_ir <- IRanges::reduce(ir)
 
-   #use IRanges accessor functions to get values
-   reduced_df <- data.frame("start" = IRanges::start(reduce_ir), "stop"= IRanges::start(reduce_ir) + IRanges::width(reduce_ir) - 1, "width" = IRanges::width(reduce_ir)) %>%
-      dplyr::filter(width <= 170)
-   if(nrow(reduced_df) < 1){
-      return(null_mi_res())
+   #ir <- IRanges::IRanges(start = longest_seqs$start, end = longest_seqs$stop, width = longest_seqs$width)
+   #reduce_ir <- IRanges::reduce(ir)
+
+   longest_seqs$ave_count <- 0
+   ## get the read abundance for each set of coordinates
+   for(i in 1:nrow(longest_seqs)){
+     df <- dt_table %>% dplyr::filter(pos >= longest_seqs$start[i] & pos <= longest_seqs$stop[i])
+     longest_seqs$ave_count[i] <- round(mean(df$count))
+
    }
 
-   #get the sequence from the genome
+
+   if(nrow(longest_seqs > 1)){
+     out <- longest_seqs %>% dplyr::mutate(chrom = chrom_name) %>%
+        dplyr::select(c(chrom, start, stop, ave_count))
+     write.table(out, file = paste0(wkdir, "alt_miRNAs_coord.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+     cat(file = paste0(wkdir,logfile), "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
+   }
+
+   # select the result with the highest read abundance
+   most_abundant <- which(longest_seqs$ave_count == max(longest_seqs$ave_count))
+
+   #if potential miRNAs have tied abundances, choose first
+   if(length(most_abundant) > 1){
+     most_abundant <- most_abundant[1]
+   }
+
+   # this nomenclature and it's related apply function should be changed in the future
+   # used to iterate over multiple rows of df, but changed to select most abundant read pair
+   reduced_df <- longest_seqs[most_abundant,]
+
    reduced_seqs <- getFastas(geno_seq, reduced_df$start, reduced_df$stop, nrow(reduced_df))
 
    #RNAfold wants U's not T's, so convert to U
@@ -269,9 +284,9 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    }
 
    apply_inner <- function(j) {
-      cur_vec <- which(dt$pos == j)
+      cur_vec <- which(dt_table$pos == j)
       if (length(cur_vec) > 0){
-         tmp_cov <- dt$count[cur_vec]
+         tmp_cov <- dt_table$count[cur_vec]
       } else {
          tmp_cov <- 0
       }
@@ -286,7 +301,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    #fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
    fold_list <- mapply(fold_short_rna, reduced_df$start, reduced_df$stop, reduced_df$converted, path_to_RNAfold)
 
-   #extracts the needed fields from the fold list, store in more compack list
+   #extracts the needed fields from the fold list, store in more compact list
    make_reduced_list <- function(x){
       start <- fold_list[[x]][[2]]
       stop <- fold_list[[x]][[3]]
@@ -497,14 +512,29 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
          zplot <- plot_overlapz(z_df)
 
-         top <- cowplot::plot_grid(dist_plot, density_plot, ncol = 2, rel_widths = c(1,1),rel_heights = c(0.7,1), align = "vh", axis = "lrtb")
-         mid <- cowplot::plot_grid(struct_plot,NULL, dicer_sig, ncol = 3, rel_widths = c(0.8,0.1, 0.4), rel_heights = c(1.5,1,0.7), align = "vh", axis = "lrtb")
-         bottom <- cowplot::plot_grid(NULL,zplot,NULL, ncol = 3, align = "vh", axis = "lrtb")
-         all_plot <- cowplot::plot_grid(top, mid, bottom, nrow = 3, rel_heights = c(0.8, 1.2, 0.8), rel_widths = c(1,1,1.3))
+         if(reg_stop - reg_start <= 100){
+           #if miRNA is long, use landscape orientation so the struct plot isn't squished.
+           left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+           right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+           bottom <- cowplot::plot_grid(struct_plot)
+           top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+           all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
+           grDevices::pdf(file = paste0(prefix, "_combined.pdf"), height = 11, width = 8)
+           print(all_plot)
+           grDevices::dev.off()
 
-         grDevices::pdf(file = paste0(prefix, "_combined.pdf"), height = 9, width = 11)
-         print(all_plot)
-         grDevices::dev.off()
+          } else {
+           top <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
+           #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+           #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+           bottom <- cowplot::plot_grid(struct_plot)
+           #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+           all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
+           grDevices::pdf(file = paste0(prefix, "_combined.pdf"), height = 7, width = 15)
+           print(all_plot)
+           grDevices::dev.off()
+          }
+
       }
       return(list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs,z_df)))
    }

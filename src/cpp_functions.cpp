@@ -339,7 +339,7 @@ std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
 //' @export
 // [[Rcpp::export]]
 DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
-                     std::vector<int> start_r2, std::vector<int> end_r2, std::vector<int> count){
+                     std::vector<int> start_r2, std::vector<int> end_r2){
    //calculates the average pileup for a read using counts at each nucleotide position
    //takes position from read pileups df, count at that position, start pos of candidate read, end pos of candidate read
 
@@ -368,7 +368,6 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
       int r1_end = end_r1[i];
       int r2_start = start_r2[i];
       int r2_end = end_r2[i];
-      int duplicate_count = count[i];
 
       //set read length to be read end - read start
       //set start to be read_start_vec at pos i
@@ -398,14 +397,14 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
          // This was added in to reduce the number of iterations which was approaching 1 billion
          // Used dplyr to group all the duplicate overlap reads and mutate in a count column to keep track of the number of duplicates
          // That way we only have to iterate through each read range once and multiply the results by the number of duplicates
-         r1_running_total *= duplicate_count;
+         //r1_running_total *= duplicate_count;
          r1_count_average = r1_running_total / read_r1_length;
          res_start_r1.emplace_back(r1_start);
          res_end_r1.emplace_back(r1_end);
          res_r1_avg.emplace_back(r1_count_average);
       }
       if (r2_running_total != 0) {
-         r2_running_total *= duplicate_count;
+         //r2_running_total *= duplicate_count;
          r2_count_average = r2_running_total / read_r2_length;
          res_start_r2.emplace_back(r2_start);
          res_end_r2.emplace_back(r2_end);

@@ -51,7 +51,7 @@ run_miRNA_function(
 
 \item{path_to_RNAfold}{a string}
 
-\item{weight_reads}{a string, "T" or "F"}
+\item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
 }
 \value{
 plots

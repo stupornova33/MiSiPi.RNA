@@ -95,8 +95,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // getPileupsMap
-DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1, std::vector<int> start_r2, std::vector<int> end_r2, std::vector<int> count);
-RcppExport SEXP _MiSiPi_RNA_getPileupsMap(SEXP dtposSEXP, SEXP dtcountSEXP, SEXP start_r1SEXP, SEXP end_r1SEXP, SEXP start_r2SEXP, SEXP end_r2SEXP, SEXP countSEXP) {
+DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1, std::vector<int> start_r2, std::vector<int> end_r2);
+RcppExport SEXP _MiSiPi_RNA_getPileupsMap(SEXP dtposSEXP, SEXP dtcountSEXP, SEXP start_r1SEXP, SEXP end_r1SEXP, SEXP start_r2SEXP, SEXP end_r2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -106,8 +106,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<int> >::type end_r1(end_r1SEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type start_r2(start_r2SEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type end_r2(end_r2SEXP);
-    Rcpp::traits::input_parameter< std::vector<int> >::type count(countSEXP);
-    rcpp_result_gen = Rcpp::wrap(getPileupsMap(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2, count));
+    rcpp_result_gen = Rcpp::wrap(getPileupsMap(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -299,7 +298,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MiSiPi_RNA_convertU", (DL_FUNC) &_MiSiPi_RNA_convertU, 2},
     {"_MiSiPi_RNA_getPileups", (DL_FUNC) &_MiSiPi_RNA_getPileups, 6},
     {"_MiSiPi_RNA_vectorsToMap", (DL_FUNC) &_MiSiPi_RNA_vectorsToMap, 2},
-    {"_MiSiPi_RNA_getPileupsMap", (DL_FUNC) &_MiSiPi_RNA_getPileupsMap, 7},
+    {"_MiSiPi_RNA_getPileupsMap", (DL_FUNC) &_MiSiPi_RNA_getPileupsMap, 6},
     {"_MiSiPi_RNA_group_helix_res", (DL_FUNC) &_MiSiPi_RNA_group_helix_res, 2},
     {"_MiSiPi_RNA_calc_overhangs", (DL_FUNC) &_MiSiPi_RNA_calc_overhangs, 4},
     {"_MiSiPi_RNA_calc_expand_overhangs", (DL_FUNC) &_MiSiPi_RNA_calc_expand_overhangs, 4},
