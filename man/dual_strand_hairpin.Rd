@@ -48,7 +48,7 @@ dual_strand_hairpin(
 
 \item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.}
 
-\item{weight_reads}{Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "none". See MiSiPi documentation for descriptions of the weighting methods.}
+\item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
 
 \item{gtf_file}{A string corresponding to the path of genome annotation in 9-column GTF format.}
 }

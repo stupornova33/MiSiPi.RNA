@@ -13,7 +13,7 @@
 #' @param plot_output a string, 'T' or 'F'. Default is 'T'
 #' @param path_to_RNAfold a string
 #' @param annotate_region a string, "T" or "F"
-#' @param weight_reads a string, "T" or "F"
+#' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file a string
 #' @param write_fastas Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected.
 #' @return results
@@ -71,22 +71,22 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
       #include "T" argument to return read sequences
-      if(weight_reads == "Top"){
-        forward_dt <- get_top_n_weighted(forward_dt, chrom_name)
-        reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name)
+      if(weight_reads == "weight_by_prop"){
+        forward_dt <- weight_by_prop(forward_dt, chrom_name)
+        reverse_dt <- weight_by_prop(reverse_dt, chrom_name)
 
 
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
 
-        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count), "T")
-        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count), "T")
+        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
+        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
 
       } else if(is.integer(weight_reads)){
         forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start))
         reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start))
       } else {
-        forward_dt <- no_weight(forward_dt, chrom_name, "T")
-        reverse_dt <- no_weight(reverse_dt, chrom_name, "T")
+        forward_dt <- no_weight(forward_dt, chrom_name)
+        reverse_dt <- no_weight(reverse_dt, chrom_name)
       }
 
       print("Completed getting weighted dataframes.")
