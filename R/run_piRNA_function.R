@@ -11,7 +11,7 @@
 #' @param wkdir a string
 #' @param pal a string
 #' @param plot_output a string, 'T' or 'F', default = 'T
-#' @param weight_reads a string, "T" or "F"
+#' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param write_fastas Determines whether piRNA pairs will be written to fasta. Expected values are "T" or "F".
 #' @return plots, heat results, and zdf
 #' @export
@@ -19,6 +19,7 @@
 run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal,
                                plot_output, weight_reads, write_fastas){
   prefix <- paste0(chrom_name, ":", reg_start, "_", reg_stop)
+  print("The package has been re-compiled successfully.")
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
@@ -56,24 +57,24 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   print("Getting weighted data.frames.")
   #include "T" argument to return read sequences
-  if(weight_reads == "Top" | weight_reads == "top"){
-    forward_dt <- get_top_n_weighted(forward_dt, chrom_name, "T")
-    reverse_dt <- get_top_n_weighted(reverse_dt, chrom_name, "T")
-   print("weight_reads = 'top'")
+  if(weight_reads == "weight_by_prop"){
+    forward_dt <- weight_by_prop(forward_dt, chrom_name)
+    reverse_dt <- weight_by_prop(reverse_dt, chrom_name)
+   print("weight reads by proportion")
 
   } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
-    print("weight_reads = 'locus_norm'")
-    forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count), "T")
-    reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count), "T")
+    print("normalize read count to locus")
+    forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
+    reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
 
   } else if(is.integer(weight_reads)){
-    print("weight_reads is a user provided value")
+    print("weight reads to a user provided value")
     forward_dt <- weight_by_uservalue(forward_dt, norm, (reg_stop - reg_start))
     reverse_dt <- weight_by_uservalue(reverse_dt, norm, (reg_stop - reg_start))
   } else {
     print("weight_reads == 'none")
-    forward_dt <- no_weight(forward_dt, chrom_name, "T")
-    reverse_dt <- no_weight(reverse_dt, chrom_name, "T")
+    forward_dt <- no_weight(forward_dt, chrom_name)
+    reverse_dt <- no_weight(reverse_dt, chrom_name)
   }
 
   print("Completed getting weighted dataframes.")
@@ -375,7 +376,8 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
 
-  if(reg_stop - reg_stop > 7000){
+  if((reg_stop - reg_start) > 7000){
+    print("TRUE")
     density_plot <- plot_large_density(data, reg_start, reg_stop)
   } else {
     density_plot <- plot_density(data, reg_start, reg_stop)
@@ -389,16 +391,20 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   #top <- cowplot::plot_grid(dist_plot, NULL, density_plot, ncol = 3, rel_widths = c(1,0.1,1), align = "vh", axis = "lrtb")
   #middle <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), NULL, z, rel_widths = c(1,0.1,0.8), nrow = 1, ncol = 3, align = "vh", axis = "lrtb")
   #bottom <- cowplot::plot_grid(plus_phased_plot, NULL, minus_phased_plot, rel_widths = c(1,0.1,1), nrow = 1, ncol = 3, align = "vh", axis = "lrtb")
-  top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot), ncol = 1, rel_widths = c(0.8,1,1), rel_heights = c(0.8,0.1,1), align = "vh", axis = "lrtb")
-  top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1), rel_heights = c(1,0.1,1,0.1), align = "vh", axis = "lrtb")
+  top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot), ncol = 1, rel_widths = c(0.8,1,1),
+                                 rel_heights = c(0.8,0.1,1), align = "vh", axis = "lrtb")
+  top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
+                                 rel_heights = c(1,0.1,1,0.1,1), align = "vh", axis = "lrtb")
 
   top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
 
   bottom <- cowplot::plot_grid(density_plot)
   ## phased plots
                                                                                                                    #left null right null bottom
-  all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(1,1,1), align = "vh", axis = "lrtb")
-  grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 9, width = 10)
+  all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
+                                 rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
+  #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
+  grDevices::cairo_pdf(file=paste0(wkdir, chrom_name, "_", reg_start, "-", reg_stop, "_pi-zscore.pdf"), width = 10, height = 11, pointsize = 12, bg = "white")
   print(all_plot)
   grDevices::dev.off()
   }

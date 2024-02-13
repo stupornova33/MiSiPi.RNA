@@ -13,7 +13,7 @@
 #' @param plot_output Determines whether PDF plots will be made. Expected values are "T" or "F".
 #' @param path_to_RNAfold The full path to the RNAfold binary executable.
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.
-#' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "none". See MiSiPi documentation for descriptions of the weighting methods.
+#' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
 #' @return a list of results
 
@@ -99,11 +99,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   # weight reads if argument supplied
   if(weight_reads == "Top"){
-    r2_dt <- get_top_n_weighted(dt, chrom_name, NULL)
+    r2_dt <- weight_by_prop(dt, chrom_name)
   } else if(weight_reads == "Locus_norm"){
-    r2_dt <- locus_norm(dt, sum(dt$count), NULL)
+    r2_dt <- locus_norm(dt, sum(dt$count))
   } else {
-    r2_dt <- no_weight(dt, chrom_name, NULL)
+    r2_dt <- no_weight(dt, chrom_name)
   }
 
   #transform end of reads in one df
@@ -148,7 +148,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     # dicer_overlaps() returns zero values if there are no valid overlaps
     # so check to make sure the first values are not zero
     if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
-      plus_overhangs <- data.frame(calc_expand_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
+      plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                all_overlaps$r2_start, all_overlaps$r2_width))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
 
@@ -195,11 +195,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
   if(weight_reads == "Top"){
-    r2_dt <- get_top_n_weighted(filter_r2_dt, chrom_name, NULL)
+    r2_dt <- weight_by_prop(filter_r2_dt, chrom_name)
   } else if(weight_reads == "Locus_norm"){
-    r2_dt <- locus_norm(filter_r2_dt, sum(filter_r2_dt$count), NULL)
+    r2_dt <- locus_norm(filter_r2_dt, sum(filter_r2_dt$count))
   } else {
-    r2_dt <- no_weight(filter_r2_dt, chrom_name, NULL)
+    r2_dt <- no_weight(filter_r2_dt, chrom_name)
   }
 
   #transform ends of reads for phasing/finding overlaps
@@ -228,7 +228,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
        all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
        if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
-         minus_overhangs <- data.frame(calc_expand_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
+         minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                      all_overlaps$r2_start, all_overlaps$r2_width))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
 
@@ -248,7 +248,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
         all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
       if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
-         minus_overhangs <- data.frame(calc_expand_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
+         minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                       all_overlaps$r2_start, all_overlaps$r2_width))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
       } else {
@@ -352,9 +352,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       # Draw combined plot
       right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1, 1))
    } else {
-      left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(1,0.3,1), ncol = 1, align = "vh", axis = "lrtb")
+      left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(0.9,1,1), rel_heights = c(1,0.1,1), ncol = 1, align = "vh", axis = "lrtb")
       # Draw combined plot
-      right <- cowplot::plot_grid(overhang_plot, NULL,phased_zscore, ncol = 1, rel_heights = c(1,0.1,1), rel_widths = c(1,1,1), align = "vh", axis = "l")
+      right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot,plus_phasedz, minus_phasedz, ncol = 1, rel_heights = c(1,1,1,1), rel_widths = c(1,1,1,1), align = "vh", axis = "l")
     }
 
     final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))

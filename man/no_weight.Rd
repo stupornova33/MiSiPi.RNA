@@ -6,12 +6,10 @@
 summarizes count of grouped reads
 returns an unweighted top n\% of reads}
 \usage{
-no_weight(filter_dt, chrom_name, seq = NULL)
+no_weight(filter_dt, chrom_name)
 }
 \arguments{
 \item{chrom_name}{a string}
-
-\item{seq}{a string, "T" or "F"}
 
 \item{chrom}{a chrom object}
 }

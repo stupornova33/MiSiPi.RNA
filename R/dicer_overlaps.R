@@ -72,7 +72,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    filter_helix <- grouped_helix %>% dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
    #write.table(grouped_helix, "grouped_helix.txt", sep = "\t", row.names = FALSE, quote = FALSE)
 
-   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_pos = numeric(0))
+   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_pos = numeric(0), num_shifted = numeric(0))
    j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_pos = numeric(0))
 
    #print('dicer_dt')
@@ -81,38 +81,6 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
      data.frame() %>%
      dplyr::select(c(start, end, rname))
 
-
-
-##################### OLD CODE #################
-# leaving for now JIC
-   #global_i_idx <- numeric()
-
-   #if(nrow(filter_helix) > 0){
-  #   for(i in 1:nrow(filter_helix)){
-
-       # Make a range of position numbers from x.start to x.end for each row
-       # If any of the dicer_dt start or end positions fall in that range, then store the index of which ones those are
-       # Take the dicer_dt rows that have positions that fall in the range, and append them to a table called i_dat
-       # Essentially filter dicer_dt for rows that have start or end positions withing the range of the current iteration of the helix range
-   #    x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
-  #     print("x_rng: ")
-  #     print(x_rng)
-       # Now do the exact same thing for y.start and y.end for each row and store those reads in j_dat
-       #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i]) # Seq doesn't need to be reversed here. if you're just searching for a match in the range, the range direction is irrelevent
-
-  #     y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
-  #     print("y_rng: ")
-  #     print(y_rng)
-  #     i_idx <- which(dicer_dt$start %in% x_rng)
-
-       #keep track of which reads are found in the helix rngs over all iterations
-       #for future use
-  #     global_i_idx <- append(global_i_idx, i_idx)
-  #     j_idx <- which(dicer_dt$start %in% y_rng)
-
-  #     i_dat <- rbind(i_dat, dicer_dt[i_idx,])
-  #     j_dat <- rbind(j_dat, dicer_dt[j_idx,])
-  #   }
 
    ## Start
    if(nrow(filter_helix) > 0){
@@ -148,23 +116,24 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
           if(identical(i_idx, integer(0)) & !(j == 1)) {
              #get the index of the last paired pos
              i_idx <- prior_i_idx
-             bulge_size <- i_idx - prior_i_idx
+             shift <- 0
             #else if no results and this is the first iteration
             #subtract 1 from the start
           } else if (identical(i_idx, integer(0)) & (j == 1)) {
               found <- FALSE
               current_start <- x_dat$start[j]
               new_start <- current_start - 1
-
               while (!found) {
                 #print("!found")
                 i_idx <- which(final_helix_df$i == new_start)
                 #print("while i_idx: ", i_idx)
                 if (identical(i_idx, integer(0))) {
                   new_start <- new_start - 1
+                  shift <- new_start - current_start
                 } else {
                   found <- TRUE
                   prior_i_idx <- i_idx
+                  shift <- new_start - current_start
                 }
 
               }
@@ -173,10 +142,14 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
 
             # Set prior i_idx if we have a valid one
             prior_i_idx <- i_idx
+            shift <- 0
           }
           paired_pos <- append(paired_pos, final_helix_df$j[i_idx])
+
         } # End 'j' for loop
         x_dat$paired_pos <- paired_pos
+        x_dat$num_shifted <- shift
+
         i_dat <- rbind(i_dat, x_dat)
         j_dat <- rbind(j_dat, y_dat)
         } else { #end if(nrow(x_dat) > 0)
@@ -187,9 +160,11 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    } # End if statement
    ## END
 
+     #i_dat <- i_dat %>%
+    #   dplyr::mutate(width = end - start + 1 + num_shifted)
+
      i_dat <- i_dat %>%
        dplyr::mutate(width = end - start + 1)
-
      #since we're converting to the paired position, we should take $j for i_dat
 
      i_dat <- i_dat %>%

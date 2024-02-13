@@ -110,8 +110,8 @@ vectorsToMap <- function(k, v) {
 #' @param count A vector of ints representing the number of duplicates each start_r1, end_r1, start_r2, end_r2 had prior to grouping
 #' @return A data.frame consisting of the average pileups in read 1 range and in read 2 range
 #' @export
-getPileupsMap <- function(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2, count) {
-    .Call(`_MiSiPi_RNA_getPileupsMap`, dtpos, dtcount, start_r1, end_r1, start_r2, end_r2, count)
+getPileupsMap <- function(dtpos, dtcount, start_r1, end_r1, start_r2, end_r2) {
+    .Call(`_MiSiPi_RNA_getPileupsMap`, dtpos, dtcount, start_r1, end_r1, start_r2, end_r2)
 }
 
 #' group_helix_res
