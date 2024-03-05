@@ -9,9 +9,9 @@ returns an unweighted top n\% of reads}
 no_weight(filter_dt, chrom_name)
 }
 \arguments{
-\item{chrom_name}{a string}
+\item{filter_dt}{a data table or data frame of reads}
 
-\item{chrom}{a chrom object}
+\item{chrom_name}{a string}
 }
 \value{
 filter_dt

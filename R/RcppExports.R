@@ -143,7 +143,7 @@ calc_overhangs <- function(r1_start, r1_end, r2_start, r2_width) {
     .Call(`_MiSiPi_RNA_calc_overhangs`, r1_start, r1_end, r2_start, r2_width)
 }
 
-#' calc_expand_overhangs
+#' calc_expand_overhangs DO NOT USE
 #'
 #' This function takes in vectors of start and stop positions for read groups 1 and 2
 #' It then shifts the positions and checks to see which sets have proper and improper overhangs

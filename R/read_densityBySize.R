@@ -118,35 +118,54 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
    }
 
    pos_18_19_res <- merge_pos_table(empty_dat, pos_18_19_pileup)
+   pos_18_19_res$size <- "18_19"
    neg_18_19_res <- merge_neg_table(empty_dat, neg_18_19_pileup)
-
+   neg_18_19_res$size <- "18_19"
    pos_20_22_res <- merge_pos_table(empty_dat, pos_20_22_pileup)
+   pos_20_22_res$size <- "20_22"
    neg_20_22_res <- merge_neg_table(empty_dat, neg_20_22_pileup)
-
+   neg_20_22_res$size <- "20_22"
    pos_23_25_res <- merge_pos_table(empty_dat, pos_23_25_pileup)
+   pos_23_25_res$size <- "23_25"
    neg_23_25_res <- merge_neg_table(empty_dat, neg_23_25_pileup)
-
+   neg_23_25_res$size <- "23_25"
    pos_26_32_res <- merge_pos_table(empty_dat, pos_26_32_pileup)
+   pos_26_32_res$size <- "26_32"
    neg_26_32_res <- merge_neg_table(empty_dat, neg_26_32_pileup)
+   neg_26_32_res$size <- "26_32"
 
    pos_18_19_pileup <- neg_18_19_pileup <- pos_20_22_pileup <- neg_20_22_pileup <- NULL
    pos_23_25_pileup <- neg_23_25_pileup <- pos_26_32_pileup <- neg_26_32_pileup <- NULL
 
-   all_df <- data.frame(Position = pos_26_32_res$pos,
-                        pos_26_32 = pos_26_32_res$count, neg_26_32 = neg_26_32_res$count,
-                        pos_23_25 = pos_23_25_res$count, neg_23_25 = neg_23_25_res$count,
-                        pos_20_22 = pos_20_22_res$count, neg_20_22 = neg_20_22_res$count,
-                        pos_18_19 = pos_18_19_res$count, neg_18_19 = neg_18_19_res$count)
 
+
+
+   #all_df <- data.frame(Position = pos_26_32_res$pos,
+   #                      pos_26_32 = pos_26_32_res$count, neg_26_32 = neg_26_32_res$count,
+   #                      pos_23_25 = pos_23_25_res$count, neg_23_25 = neg_23_25_res$count,
+   #                      pos_20_22 = pos_20_22_res$count, neg_20_22 = neg_20_22_res$count,
+   #                      pos_18_19 = pos_18_19_res$count, neg_18_19 = neg_18_19_res$count)
+
+   pos_counts <- rbind(pos_18_19_res, pos_20_22_res, pos_23_25_res, pos_26_32_res)
+   neg_counts <- rbind(neg_18_19_res, neg_20_22_res, neg_23_25_res, neg_26_32_res)
+
+   #df <- data.frame(position = pos_counts$pos, pos_count = pos_counts$count, neg_count = neg_counts$size) #%>% dplyr::select(-c(pos_count.pos, neg_counts.pos))
    pos_18_19_res <- neg_18_19_res <- pos_20_22_res <- neg_20_22_res <- NULL
    pos_23_25_res <- neg_23_25_res <- pos_26_32_res <- neg_26_32_res <- NULL
 
+   pos_counts$strand <- "pos"
+   neg_counts$strand <- "neg"
 
-   dat <- all_df %>% tidyr::pivot_longer(cols=c("pos_26_32", "neg_26_32", "pos_23_25", "neg_23_25", "pos_20_22", "neg_20_22", "pos_18_19", "neg_18_19"),
-                       names_to='Lengths',
-                       values_to='Count')
+   df <- rbind(pos_counts, neg_counts)
+   #pos_dat <- pos_counts %>% tidyr::pivot_longer(cols=c(size),
+   #                    names_to='Lengths',
+  #                     values_to='Count')
+
+
+   #data = data.frame(position = pos_counts$pos, size = pos_counts$size, pos_count = pos_counts$count,
+   #                   neg_count = neg_counts$count)
 
 
 
-   return(dat)
+   return(df)
 }

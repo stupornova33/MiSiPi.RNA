@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{calc_expand_overhangs}
 \alias{calc_expand_overhangs}
-\title{calc_expand_overhangs}
+\title{calc_expand_overhangs DO NOT USE}
 \usage{
 calc_expand_overhangs(r1_start, r1_end, r2_start, r2_width)
 }

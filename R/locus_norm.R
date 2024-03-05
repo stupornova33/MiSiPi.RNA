@@ -1,15 +1,14 @@
 #' normalize read counts by total number of reads mapped to locus
 #' @param dt a dataframe of reads summarized by count
 #' @param locus_read_count an integer
-#' @param seq a string, "T" or "F"
 #' @return final_df a dataframe
 
 #' @export
 
 
-locus_norm <- function(dt, locus_read_count, seq = NULL){
+locus_norm <- function(dt, locus_read_count){
   options(scipen = 999)
-
+  dt$rname <- chrom_name
   #rep_reads <- function(i) {
   #  rep_count <- counts_dt$weighted_count[i]
   #  rname <- rep(counts_dt$rname[i], rep_count)
@@ -31,14 +30,14 @@ locus_norm <- function(dt, locus_read_count, seq = NULL){
   #do an RPKM-like normalization
   #counts_dt <- dt %>% dplyr::mutate(weighted_count = count/(locus_length/1000*locus_read_count/100000))
 
-  #CPM-like (thousand)
-  counts_dt <- dt %>% dplyr::mutate(weighted_count = round(count * 1/locus_read_count * 10^3))
+  #CPM-like
+  counts_dt <- dt %>% dplyr::mutate(weighted_count = round(count * (1/locus_read_count) * 10^6))
 
   #res <- lapply(seq(nrow(counts_dt)), rep_reads)
   #res_df <- dplyr::bind_rows(res)
-  res <- rep_seq_reads(dt$weighted_count, dt$rname, dt$start, dt$end, dt$first, dt$seq)
+  res <- rep_seq_reads(counts_dt$weighted_count, counts_dt$rname, counts_dt$start, counts_dt$end, counts_dt$first, counts_dt$seq)
   #shuffle order randomly
-  res_df <- res_df[sample(1:nrow(res_df)), ] %>%
+  res_df <- res[sample(1:nrow(res)), ] %>%
     dplyr::mutate(width = end - start + 1)
 
 

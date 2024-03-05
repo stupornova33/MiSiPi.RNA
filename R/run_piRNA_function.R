@@ -77,6 +77,9 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     reverse_dt <- no_weight(reverse_dt, chrom_name)
   }
 
+  chromP <- NULL
+  chromM <- NULL
+
   print("Completed getting weighted dataframes.")
   #### if no forward reads are appropriate length delete df and print to logfile message
   # set results to "NA" results for machine learning

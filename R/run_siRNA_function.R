@@ -13,7 +13,7 @@
 #' @param plot_output a string, 'T' or 'F'. Default is 'T'
 #' @param path_to_RNAfold a string
 #' @param annotate_region a string, "T" or "F"
-#' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
+#' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none. See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file a string
 #' @param write_fastas Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected.
 #' @return results
@@ -43,8 +43,8 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
    # turn the list object into a more useable data frame and filter reads by length,
    # bam only contains pos and width, need to add an end column
-   cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
-   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
+    cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
+    forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
      subset(width <= 32 & width >= 18) %>%
       dplyr::mutate(start = pos, end = pos + width - 1) %>%
       dplyr::select(-c(pos)) %>%
@@ -52,15 +52,13 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
      # get the number of times a read occurs
       dplyr::summarize(count = dplyr::n())
 
-
-   cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
-   reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
-       subset(width <= 32 & width >= 18) %>%
-       dplyr::mutate(start = pos, end = pos + width - 1) %>%
-       dplyr::select(-c(pos)) %>%
-       dplyr::group_by_all() %>%
-       dplyr::summarize(count = dplyr::n())
-
+    cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
+    reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
+     subset(width <= 32 & width >= 18) %>%
+     dplyr::mutate(start = pos, end = pos + width - 1) %>%
+     dplyr::select(-c(pos)) %>%
+     dplyr::group_by_all() %>%
+     dplyr::summarize(count = dplyr::n())
 
    chromP <- NULL
    chromM <- NULL
@@ -71,22 +69,28 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
       #include "T" argument to return read sequences
-      if(weight_reads == "weight_by_prop"){
-        forward_dt <- weight_by_prop(forward_dt, chrom_name)
-        reverse_dt <- weight_by_prop(reverse_dt, chrom_name)
+
+      if(weight_reads == "None" | weight_reads == "none"){
+        print("No weighting of reads applied.")
+        forward_dt <- no_weight(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- no_weight(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+
+      } else if(weight_reads == "weight_by_prop"){
+        forward_dt <- weight_by_prop(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- weight_by_prop(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
 
 
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
-
-        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
-        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
+        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count)) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count)) %>% dplyr::mutate(width = end - start + 1)
 
       } else if(is.integer(weight_reads)){
-        forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start))
-        reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start))
+        print("User supplied custom weighting value for reads.")
+        forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
+
       } else {
-        forward_dt <- no_weight(forward_dt, chrom_name)
-        reverse_dt <- no_weight(reverse_dt, chrom_name)
+        cat(file = paste0(wkdir, logfile),"Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n", append = TRUE)
       }
 
       print("Completed getting weighted dataframes.")
