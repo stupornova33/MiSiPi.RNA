@@ -86,7 +86,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
   #filter the reads and calculate the end position
-  filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
+  filter_r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos)) %>%
@@ -98,10 +98,12 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   dt <- filter_r2_dt
 
   # weight reads if argument supplied
-  if(weight_reads == "Top"){
+  if(weight_reads == "weight_by_prop"){
     r2_dt <- weight_by_prop(dt, chrom_name)
-  } else if(weight_reads == "Locus_norm"){
+  } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
     r2_dt <- locus_norm(dt, sum(dt$count))
+  } else if(is.integer(weight_reads)){
+    r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
   } else {
     r2_dt <- no_weight(dt, chrom_name)
   }
@@ -134,7 +136,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   if(nrow(r2_dt) > 0){
 
-    # don't want to fold the dna for each strand, since it is the same. So once it's been folded
+    # don't want to fold the dna twice. So once it's been folded
     # set fold_bool to TRUE
     fold_bool <- 'TRUE'
 
@@ -148,8 +150,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     # dicer_overlaps() returns zero values if there are no valid overlaps
     # so check to make sure the first values are not zero
     if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
+      #plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
+      #                                         all_overlaps$r2_start, all_overlaps$r2_width))
       plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
-                                               all_overlaps$r2_start, all_overlaps$r2_width))
+                                                  all_overlaps$r2_start, all_overlaps$r2_width))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
 
     } else {
@@ -186,22 +190,24 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
   chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
-  filter_r2_dt <- data.table::setDT(makeBamDF(chrom)) %>%
+  filter_r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos))  %>%
+    dplyr::select(-c(pos)) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-
-  if(weight_reads == "Top"){
-    r2_dt <- weight_by_prop(filter_r2_dt, chrom_name)
-  } else if(weight_reads == "Locus_norm"){
-    r2_dt <- locus_norm(filter_r2_dt, sum(filter_r2_dt$count))
+  dt <- filter_r2_dt
+  # weight reads if argument supplied
+  if(weight_reads == "weight_by_prop"){
+    r2_dt <- weight_by_prop(dt, chrom_name)
+  } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
+    r2_dt <- locus_norm(dt, sum(dt$count))
+  } else if(is.integer(weight_reads)){
+    r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
   } else {
-    r2_dt <- no_weight(filter_r2_dt, chrom_name)
+    r2_dt <- no_weight(dt, chrom_name)
   }
-
   #transform ends of reads for phasing/finding overlaps
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
 
@@ -292,7 +298,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   )
 
   minus_overhang_out <- data.frame(t(minus_res$dicer_tbl.zscore))
-  colnames(minus_overhang_out) <- minus_res$shift
+  colnames(minus_overhang_out) <- minus_res$dicer_tbl.shift
   minus_overhang_out$locus <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
   minus_overhang_out <- minus_overhang_out[, c(10, 1:9)]

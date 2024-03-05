@@ -9,33 +9,11 @@
 #' @export
 
 weight_by_uservalue <- function(dt, norm, locus_length){
-
-  #rep_reads <- function(i) {
-  #  rep_count <- dt$count[i]
-  #  rname <- rep(dt$rname[i], rep_count)
-  #  start <- rep(dt$start[i], rep_count)
-  #  width <- rep(dt$width[i], rep_count)
-  #  end <- rep(dt$end[i], rep_count)
-  #  first <- rep(dt$first[i], rep_count)
-
-    # if sequence is present, need to return it as well
-  #  if(!is.null(seq)){
-  #    seq <- rep(dt$seq[i], rep_count)
-  #    current_df <- data.frame(rname = rname, start = start, width = width, end = end, first = first, seq = seq)
-  #  } else {
-  #    current_df <- data.frame(rname = rname, start = start, width = width, end = end, first = first)
-  #  }
-  #  return(current_df)
-  #}
-
-  # (reads * 10^9)/(miRNA_reads * locus_length)
-  # check this later
+  dt$rname <- chrom_name
   dt$rep_count <- round((dt$count * 10^9)/(norm * locus_length))
 
   dt <- dt %>% dplyr::arrange(rep_count)
 
-  #res <- lapply(seq(nrow(dt)), rep_reads)
-  #res_df <- dplyr::bind_rows(res)
   res_df <- rep_seq_reads(counts_dt$rep_count, counts_dt$rname, counts_dt$start, counts_dt$end, counts_dt$first, counts_dt$seq)
 
   #shuffle order randomly

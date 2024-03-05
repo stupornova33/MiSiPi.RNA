@@ -517,7 +517,9 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
       int p3_overhang = new_r2_start - r1_start[j];
       int p5_overhang = new_r2_end - r1_end[j];
 
-      if ((p5_overhang == 2) & (p3_overhang == 2)) {
+      //int p3_overhang = r1_start[j] - new_r2_start;
+      //int p5_overhang = r1_end[j] - new_r2_end;
+      if (p5_overhang == 2 && p3_overhang == 2){
         pcount++;
       } else {
         icount++;
@@ -532,7 +534,7 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
   return(overhangs);
 }
 
-//' calc_expand_overhangs
+//' calc_expand_overhangs DO NOT USE
 //'
 //' This function takes in vectors of start and stop positions for read groups 1 and 2
 //' It then shifts the positions and checks to see which sets have proper and improper overhangs

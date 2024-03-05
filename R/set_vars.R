@@ -8,7 +8,7 @@
 #' @param pi_pal The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
 #' @param si_pal The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.
-#' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "none". See MiSiPi documentation for descriptions of the weighting methods.
+#' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format.
 #' @param write_fastas A string, "T" or "F". Optional. If "T", read pairs from functions will be written to file.
 #'
