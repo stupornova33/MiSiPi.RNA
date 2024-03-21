@@ -14,7 +14,7 @@ plot_large_density <- function(data, reg_start, reg_stop){
   #                                  colour = forcats::fct_reorder(Lengths, Count))) +
   #  ggplot2::geom_col(position="identity")
 
-   density <- ggplot2::ggplot(data, ggplot2::aes(x = Position, y = Count, fill = Lengths)) +
+   density <- ggplot2::ggplot(data, ggplot2::aes(x = pos, y = count, fill = size)) +
     ggplot2::geom_col() +
     ggplot2::scale_fill_manual(values = c("yellow","red","blue", "black","yellow", "red","blue","black" )) +
     ggplot2::ggtitle("Read Density") +

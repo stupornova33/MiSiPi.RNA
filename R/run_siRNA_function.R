@@ -141,7 +141,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       fastas <- stringi::stri_split_regex(fastas$col1, " ")
 
       if(write_fastas == "T"){
-        write.table(unlist(fastas), file = paste0(prefix, "_siRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+        write.table(unlist(fastas), file = paste0(wkdir, prefix, "_siRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
       }
       paired_seqs <- NULL
       fastas <- NULL
