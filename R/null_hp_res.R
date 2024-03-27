@@ -6,24 +6,24 @@
 null_hp_res <- function(){
   neg_results <- function(){
     MFE <- 0
-    minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-    minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
-    #minus_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,50), phased_z = rep("NaN",50))
-    #minus_hp_phased_counts <- sum(minus_phased_tbl$phased_num[1:4]
-    minus_hp_phased_z <- -33
+    dicer_tbl <- data.frame(shift = c(seq(-4,4)), zscore = c(rep("NaN", times = 9)))
+    phased_tbl <- data.frame(phased_dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), zscore = c(rep("NaN", times = 51)))
+    #phased_tbl.phased_z <- c(rep("NaN", times = 51))
+
+    minus_hp_phasedz <- -33
     minus_hp_overhangz <- -33
-    return(c(minusMFE = MFE, minus_overhangz = minus_hp_overhangz, perc_paired = 0, tmp = 0, tmp2 = 0, minus_hp_phased_z = minus_hp_phased_z ))
+    return(list(minusMFE = MFE, minus_hp_overhangz = minus_hp_overhangz, perc_paired = 0, minus_hp_phasedz = minus_hp_phasedz,
+             dicer_tbl.zscore = dicer_tbl$zscore, phased_tbl.zscore = phased_tbl$zscore))
   }
 
   pos_results <- function(){
     MFE <- 0
-    plus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-    plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
-    #plus_phased_tbl <- data.table::data.table(phased_dist = seq(1,50), phased_num = rep(0,50), phased_z = rep("NaN",50))
-    #plus_hp_phased_counts <- sum(minus_phased_tbl$phased_num[1:4])
-    plus_hp_phased_z <- -33
+    dicer_tbl <- data.frame(shift = c(seq(-4,4)), zscore = c(rep("NaN", times = 9)))
+    phased_tbl <- data.frame(dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), zscore = c(rep("NaN", times = 51)))
+    plus_hp_phasedz <- -33
     plus_hp_overhangz <- -33
-    return(c(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, perc_paired = 0, tmp = 0, tmp2 = 0, plus_hp_phased_z = plus_hp_phased_z))
+    return(list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, perc_paired = 0, plus_hp_phasedz = plus_hp_phasedz,
+             dicer_tbl.zscore = dicer_tbl$zscore, phased_tbl.zscore = phased_tbl$zscore))
   }
 
   neg_res <- neg_results()

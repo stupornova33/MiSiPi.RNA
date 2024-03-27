@@ -59,6 +59,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
   #RNAfold can't fold things longer than 10kb
+  print("Region greater than 10kb. Creating null_hp_res.")
   if(reg_stop - reg_start > 10000){
     res <- null_hp_res()
     return(res)
@@ -80,11 +81,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
 
   ############################################################ compute plus strand ########################################################
+  print("Computing plus strand.")
   strand <- "+"
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what=c('rname', 'pos', 'qwidth'), which=which)
   chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
 
 
+  print("Filtering reads")
   #filter the reads and calculate the end position
   filter_r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
@@ -97,6 +100,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   # so set the other dt to be the same as the first
   dt <- filter_r2_dt
 
+  print("Weighting reads.")
   # weight reads if argument supplied
   if(weight_reads == "weight_by_prop"){
     r2_dt <- weight_by_prop(dt, chrom_name)
@@ -109,17 +113,19 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
   #transform end of reads in one df
+  print("Transforming ends of reads.")
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
 
   # if no results, need to store a specific value for the run_all/machine learning
   # null_hp_res() creates a table of specific "no result" values for zscores and such
+  print("r1_dt contains less than 3 rows. Setting plus_null_res.")
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
-    res <- null_hp_res()
-    return(res)
+    plus_null_res <- null_hp_res()[[2]]
   }
 
   # calculate phasing signatures
+  print("Calculating plus phasing signature.")
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
     plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
@@ -128,68 +134,82 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     # if read dfs are empty set results to null. Still need to create the empty tables for plots/ML
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     # creating an empty table with "null" values
-    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
+    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), zscore = rep(0,51))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     # -33 is an arbitrary value
-    plus_phased_hp_z <- -33
+    plus_hp_phased_z <- -33
   }
 
-  if(nrow(r2_dt) > 0){
+  print("Checking to see if result is NA.")
+  if(plus_hp_phased_z == "NaN"){
+    plus_hp_phased_z <- -33
+  }
 
+
+  if(nrow(r2_dt) > 0){
+    print("r2_dt contains data. Proceeding with fold and overlap calc.")
     # don't want to fold the dna twice. So once it's been folded
     # set fold_bool to TRUE
     fold_bool <- 'TRUE'
-
+    print("Folding the RNA.")
     fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold)
     MFE <- fold_list$MFE
     perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
 
     #transform reads and find dicer pairs
+    print("Calculating dicer overlaps.")
     all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
     # dicer_overlaps() returns zero values if there are no valid overlaps
     # so check to make sure the first values are not zero
     if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
-      #plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
-      #                                         all_overlaps$r2_start, all_overlaps$r2_width))
+      print("all_overlaps contains data. Calculating overhangs.")
       plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                   all_overlaps$r2_start, all_overlaps$r2_width))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
+      plus_hp_overhangz <- mean(plus_overhangs$zscore[5])
 
     } else {
-
-      # return arbitrary "null" value if there are no valid results for ML
-      plus_hp_phased_counts <- 0
-      plus_hp_phased_z <- -33
-
+      print("all_overlaps does not contain data. Setting null results.")
       plus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
+      # return arbitrary "null" value if there are no valid results for ML
+      plus_hp_overhangs_counts <- 0
+      plus_hp_overhangz <- -33
     }
   } else {
+      print("r2_dt contains less than 2 rows. Setting null results.")
       plus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
-      plus_hp_phased_counts <- sum(plus_overhangs$proper_count[1:4])
-      plus_hp_phased_z <- mean(plus_overhangs$zscore[1:4])
+      plus_hp_overhangs_counts <- sum(plus_overhangs$proper_count[5])
+      plus_hp_overhangz <- mean(plus_overhangs$zscore[5])
 
       # if there were no results, and the dna didn't get folded, set fold_bool to FALSE so it gets folded in the minus strand part
       fold_bool <- 'FALSE'
-      perc_paired <- 0
+      perc_paired <- -33
   }
 
 
   # results for the ML table
-  plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
-  plus_overhangz <- mean(plus_overhangs$zscore[1:4])
-  plus_res <- c(plusMFE = MFE, plus_hp_overhangz = plus_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl = plus_hp_phased_tbl,
-                dicer_tbl = plus_overhangs, perc_paired= perc_paired)
-
+  print("Creating plus_res")
+  if(exists("plus_null_res")){
+    print("plus_null_res exists.")
+    plus_res <- plus_null_res
+  } else {
+    print("plus_null_res does not exist. Creating final plus_res object.")
+      plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
+      plus_overhangz <- mean(plus_overhangs$zscore[1:4])
+      plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
+                phased_tbl.zscore = plus_hp_phased_tbl$phased_z, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
+  }
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
-
+  print("Beginning minus strand.")
   strand <- "-"
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what=c('rname', 'pos', 'qwidth'), which=which)
   chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
+  print("Filtering data.")
   filter_r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
@@ -198,6 +218,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     dplyr::summarize(count = dplyr::n())
 
   dt <- filter_r2_dt
+  print("Weighting reads.")
   # weight reads if argument supplied
   if(weight_reads == "weight_by_prop"){
     r2_dt <- weight_by_prop(dt, chrom_name)
@@ -209,46 +230,63 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     r2_dt <- no_weight(dt, chrom_name)
   }
   #transform ends of reads for phasing/finding overlaps
+  print("Transforming ends of reads.")
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
 
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
+    print("nrow r1_dt is less than 3. Setting null_minus_res.")
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
-    res <- null_hp_res()
-    return(res)
+    minus_null_res <- null_hp_res()[[1]]
+
   }
 
   #calculate phasing
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
+     print("r1_dt contains data. Calculating phasing.")
      minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
+     print("summing minus_hp phased_num.")
      minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
-     minus_phased_hp_z <- mean(minus_hp_phased_tbl$phased_z[1:4])
+     print("getting mean of minus_hp phased_num.")
+     minus_hp_phasedz <- mean(minus_hp_phased_tbl$phased_z[1:4])
+     print("finished getting mean of phased_num.")
   } else {
+    print("r1_dt does not contain data. Setting null phasing results.")
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
+    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), zscore = rep(0,51))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
-    minus_phased_hp_z <- -33
+    minus_hp_phasedz <- -33
   }
 
+  print("minus_hp_phasedz is NA. Setting to -33.")
+  if(minus_hp_phasedz == "NaN"){
+    minus_hp_phasedz <- -33
+  }
+
+  print("Beginning dicer stuff.")
   if(nrow(r2_dt) > 0){
+    print("nrow r2_dt > 0.")
+    print(paste0("fold_bool: ", fold_bool))
     if(fold_bool == 'TRUE'){
+       print("Calculating dicer_overlaps.")
        all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
        if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
+         print("all_overlaps contains results. Computing overhangs.")
          minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                      all_overlaps$r2_start, all_overlaps$r2_width))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
-
+         minus_hp_overhangz <- mean(plus_overhangs$zscore[5])
        } else {
-           minus_hp_phased_counts <- 0
-           minus_phased_hp_z <- -33
-
+           print("all_overlaps does not contain results. Setting results to null.")
+           minus_hp_overhangs_counts <- 0
            minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
            minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
-           minus_hp_phased_counts <- sum(minus_overhangs$proper_count[1:4])
-           minus_hp_phased_z <- mean(minus_overhangs$zscore[1:4])
+           minus_hp_overhangs_counts <- sum(minus_overhangs$proper_count[5])
+           minus_hp_overhangz <- mean(minus_overhangs$zscore[5])
        }
     } else { #else if fold bool is false and r2_dt > 0
-        fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold)
+        print("Fold_bool == FALSE.")
+        fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold)
         MFE <- fold_list$MFE
         perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
         all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
@@ -257,9 +295,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
          minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                       all_overlaps$r2_start, all_overlaps$r2_width))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+         minus_hp_overhangz <- mean(minus_overhangs$zscore[5])
       } else {
-         minus_hp_phased_counts <- 0
-         minus_phased_hp_z <- -33
+         minus_hp_overhangs_counts <- 0
+         minus_hp_overhangz <- -33
 
          minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
@@ -267,17 +306,24 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
    }
 
   } else { #else if fold bool is false and no results in r2_dt
+      print("fold_bool == FALSE & nrow r2_dt == 0.")
       minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
       minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
-      perc_paired <- 0
+      perc_paired <- -33
   }
 
-  minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
-  minus_overhangz <- mean(minus_overhangs$zscore[1:4])
-  minus_res <- c(minusMFE = MFE, minus_hp_overhangz = minus_overhangz, minus_hp_phasedz = minus_phased_hp_z, phased_tbl = minus_hp_phased_tbl,
-                 dicer_tbl = minus_overhangs, perc_paired = perc_paired)
-
-  ################################################################ make plots #####################################################################
+  print("exited the dicer/fold segment.")
+  if(exists("minus_null_res")){
+    print("minus_null_res exists.")
+    minus_res <- minus_null_res
+  } else {
+    print("minus_null_res does not exist.")
+      minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+      minus_overhangz <- mean(minus_overhangs$zscore[1:4])
+      minus_res <- list(minusMFE = MFE, minus_hp_overhangz = minus_hp_overhangz, minus_hp_phasedz = minus_hp_phasedz, phased_tbl.dist = minus_hp_phased_tbl$phased_dist,
+                 phased_tbl.zscore = minus_hp_phased_tbl$phased_z, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)
+  }
+################################################################ make plots #####################################################################
 
   plus_overhang_out <- data.frame(t(plus_res$dicer_tbl.zscore))
   plus_overhang_out <- plus_overhang_out %>% dplyr::mutate(locus = paste0(chrom_name, "_", reg_start, "_", reg_stop))
@@ -314,8 +360,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
-  plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.phased_z)))
-  minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.phased_z)))
+  plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.zscore)))
+  minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.zscore)))
 
 
   suppressWarnings(

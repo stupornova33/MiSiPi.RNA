@@ -21,7 +21,8 @@ new_run_all(
   path_to_RNAfold,
   annotate_region,
   weight_reads,
-  gtf_file
+  gtf_file,
+  write_fastas
 )
 }
 \arguments{
@@ -56,6 +57,8 @@ new_run_all(
 \item{weight_reads}{a string, "T", or "F"}
 
 \item{gtf_file}{a string}
+
+\item{wrie_fastas}{a string, "T" or "F"}
 }
 \value{
 results

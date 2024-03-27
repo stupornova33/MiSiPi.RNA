@@ -170,9 +170,6 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    #    dplyr::group_by_all() %>%
    #    dplyr::count()
 
-   # returns average count pileup for each read
-   #read_pileups <- getPileupsMap(dt$pos, dt$count, overlaps_group$start_r1, overlaps_group$end_r1, overlaps_group$start_r2, overlaps_group$end_r2, overlaps_group$n)# %>%
-      #dplyr::filter(r1_count_avg >= 1 & r2_count_avg >= 1)
    read_pileups <- getPileupsMap(dt_table$pos, dt_table$count, overlaps$start_r1, overlaps$end_r1, overlaps$start_r2, overlaps$end_r2)# %>%
 
    overlaps <- NULL

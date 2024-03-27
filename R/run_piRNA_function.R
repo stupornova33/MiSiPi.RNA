@@ -83,12 +83,14 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   print("Completed getting weighted dataframes.")
   #### if no forward reads are appropriate length delete df and print to logfile message
   # set results to "NA" results for machine learning
-  if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0){
-    cat(file = paste0(wkdir, logfile), paste0("Zero forward reads of correct length detected", "\n"), append = TRUE)
-    z_df <- NA
-    heat_results <- NA
-    return(list(heat_results, z_df))
-  }
+  #if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0){
+  #  cat(file = paste0(wkdir, logfile), paste0("Zero forward reads of correct length detected", "\n"), append = TRUE)
+  #  z_df <- NA
+  #  heat_results <- NA
+
+  #  pingpong_res <- list(heat_results, z_df)
+    #return(list(heat_results, z_df))
+  #}
 
 
   #if there are both forward and reverse results
@@ -142,40 +144,50 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       paired_seqs <- NULL
       fastas <- NULL
       }
+
+
+
+    cat(file = paste0(wkdir, logfile), paste0("Making counts table.", "\n"), append = TRUE)
+    z_res <- make_count_table(forward_dt$start, forward_dt$end, forward_dt$width,
+                              reverse_dt$start, reverse_dt$end, reverse_dt$width)
+
+    cat(file = paste0(wkdir, logfile), paste0("Finding overlaps.", "\n"), append = TRUE)
+    heat_results <- get_pi_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
+                                    reverse_dt$end, reverse_dt$start, reverse_dt$width)
+
+    forward_dt <- NULL
+    reverse_dt <- NULL
+
+    row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
+    colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
+
+    prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+    output <- t(c(prefix, as.vector(heat_results)))
+
+    suppressWarnings(
+      if(!file.exists("piRNA_heatmap.txt")){
+        utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
+      } else {
+        utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      }
+    )
+    output <- NULL
+
+    # Put results into table
+    z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
+    z_res <- NULL
+
+
+
+  } else {
+    z_df <- data.frame("Overlap" = c(seq(4,30), Z_score = c(rep(NA, times = 26))))
+    heat_results <- matrix(data = 0, nrow = 18, ncol = 18)
+    row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
+    colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
   }
 
 
-  cat(file = paste0(wkdir, logfile), paste0("Making counts table.", "\n"), append = TRUE)
-  z_res <- make_count_table(forward_dt$start, forward_dt$end, forward_dt$width,
-                            reverse_dt$start, reverse_dt$end, reverse_dt$width)
-
-  cat(file = paste0(wkdir, logfile), paste0("Finding overlaps.", "\n"), append = TRUE)
-  heat_results <- get_pi_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
-                                  reverse_dt$end, reverse_dt$start, reverse_dt$width)
-
-  forward_dt <- NULL
-  reverse_dt <- NULL
-
-  row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
-  colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
-
-  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-  output <- t(c(prefix, as.vector(heat_results)))
-
-  suppressWarnings(
-    if(!file.exists("piRNA_heatmap.txt")){
-      utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
-    } else {
-      utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-    }
-  )
-  output <- NULL
-
-  # Put results into table
-  z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
-  z_res <- NULL
-
-  ################################################################### phased piRNAs #########################################################################
+################################################################### phased piRNAs #########################################################################
   #prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
   #for the read size dist plot
@@ -211,17 +223,17 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   filter_r2_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
     dplyr::select(-c(first))
 
-  all_table <- data.table::data.table(phased_dist=seq(0,63), phased_num=rep(0, 64))
+  all_table <- data.table::data.table(phased_dist=seq(0,50), phased_num=rep(0, 51))
 
 
   if(!nrow(filter_r1_dt) == 0) {
     phased_plus_counts <- calc_phasing(filter_r1_dt, filter_r2_dt, 59)
   } else {
     # set null results for machine learning if no reads
-    phased_plus_counts <- data.table::data.table(phased_dist = 1, phased_num = 0L, phased_z = 0)
+    phased_plus_counts <- data.table::data.table(phased_dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
     phased_plus_counts <- data.table::setDT(dplyr::full_join(phased_plus_counts, all_table, by = "phased_dist", "phased_num")) %>%
       dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
-    phased_plus_counts[is.na(phased_plus_counts)] <- 0
+    #phased_plus_counts[is.na(phased_plus_counts)] <- NA
   }
 
   cat(file = paste0(wkdir, logfile), paste0("Calculating plus strand phasing.", "\n"), append = TRUE)
@@ -229,10 +241,10 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   if(!nrow(over_26_dt) == 0){
     phased_26_plus_counts <- calc_phasing(over_26_dt, over_26_dt, 59)
   } else {
-    phased_26_plus_counts <- data.table::data.table(phased_dist = 1, phased_num = 0L, phased_z = 0)
+    phased_26_plus_counts <- data.table::data.table(phased_dist =  c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
     phased_26_plus_counts <- data.table::setDT(dplyr::full_join(phased_26_plus_counts, all_table, by = "phased_dist", "phased_num")) %>%
       dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
-    phased_26_plus_counts[is.na(phased_26_plus_counts)] <- 0
+    #phased_26_plus_counts[is.na(phased_26_plus_counts)] <- -33
   }
 
 
@@ -307,25 +319,25 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   filter_r2_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
     dplyr::select(-c(first))
 
-  all_table <- data.table::data.table(phased_dist=seq(0,63), phased_num=rep(0, 64))
+  all_table <- data.table::data.table(phased_dist=seq(0,50), phased_num=rep(0, 51))
 
   cat(file = paste0(wkdir, logfile), paste0("Calculating minus strand phasing.", "\n"), append = TRUE)
   if(!nrow(filter_r1_dt) == 0) {
     phased_minus_counts <- calc_phasing(filter_r1_dt, filter_r2_dt, 59)
   } else {
-    phased_minus_counts <- data.table::data.table(phased_dist = 1, phased_num = 0L, phased_z = 0)
+    phased_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
     phased_minus_counts <- data.table::setDT(dplyr::full_join(phased_minus_counts, all_table, by = "phased_dist", "phased_num")) %>%
       dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
-    phased_minus_counts[is.na(phased_minus_counts)] <- 0
+    #phased_minus_counts[is.na(phased_minus_counts)] <- 0
   }
 
   if(!nrow(over_26_dt) == 0){
     phased_26_minus_counts <- calc_phasing(over_26_dt, over_26_dt, 59)
   } else {
-    phased_26_minus_counts <- data.table::data.table(phased_dist = 1, phased_num = 0L, phased_z = 0)
+    phased_26_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
     phased_26_minus_counts <- data.table::setDT(dplyr::full_join(phased_26_minus_counts, all_table, by = "phased_dist", "phased_num")) %>%
       dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
-    phased_26_minus_counts[is.na(phased_26_minus_counts)] <- 0
+    #phased_26_minus_counts[is.na(phased_26_minus_counts)] <- 0
   }
 
   #make the results data table
@@ -373,6 +385,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   ## calculate read density by size
   data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
+  z_df$Z_score[is.na(z_df$Z_score)] <- 0
 
   z <- plot_overlapz(z_df)
   dist_plot <- plot_sizes(read_dist)
@@ -387,6 +400,12 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   }
   data <- NULL
   dist_plot <- plot_sizes(read_dist)
+
+  plus_df$phased_z[is.na(plus_df$phased_z)] <- 0
+  plus_df$phased26_z[is.na(plus_df$phased26_z)] <- 0
+  minus_df$phased_z[is.na(minus_df$phased_z)] <- 0
+  minus_df$phased26_z[is.na(minus_df$phased26_z)] <- 0
+
   plus_phased_plot <- plot_phasedz(plus_df, "+")
   minus_phased_plot <- plot_phasedz(minus_df, "-")
 
@@ -418,14 +437,14 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     # get average zscore for first 4 distances (1-4nt)
     ave_plus_z <- mean(phased_plus_counts$phased_z[1:4])
   } else {
-    ave_plus_z <- -30
+    ave_plus_z <- -33
   }
 
 
   if(!is.na(sum(phased_26_plus_counts$phased26_z))){
     ave_plus_26z <- mean(phased_26_plus_counts$phased26_z[1:4])
   } else {
-    ave_plus_26z <- -30
+    ave_plus_26z <- -33
   }
 
 
@@ -433,20 +452,21 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
     ave_minus_z <- mean(phased_minus_counts$phased_z[1:4])
   } else {
-    ave_minus_z <- -30
+    ave_minus_z <- -33
   }
 
 
   if(!is.na(sum(phased_26_minus_counts$phased26_z))){
     ave_minus_26z <- mean(phased_26_minus_counts$phased26_z[1:4])
   } else {
-    ave_minus_26z <- -30
+    ave_minus_26z <- -33
   }
 
 
   #return(c(ave_z, ave_26z))
   cat(file = paste0(wkdir, logfile), paste0("Returning results for ML table.", "\n"), append = TRUE)
   #results for ML table
-  return(list(heat_results, z_df, ave_plus_z, ave_plus_26z, ave_minus_z, ave_minus_26z))
+  return(list(heat_results = heat_results, z_df = z_df, phased_plus_z = ave_plus_z, phased_26plus_z = ave_plus_26z,
+              phased_minus_z = ave_minus_z, phased_26minus_z = ave_minus_26z))
 }
 

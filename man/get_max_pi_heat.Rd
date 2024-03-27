@@ -5,7 +5,7 @@
 \title{function to find max_pi heatmap cell values
 takes a matrix created from piRNA function
 finds max row, column, and count of highest cell
-returns highest_pi_row, highest_pi_col, second_pi_row, second_pi_col, highest_pi_count, second_pi_count as a data frame}
+returns highest_pi_row, highest_pi_col}
 \usage{
 get_max_pi_heat(pi_res)
 }
@@ -19,5 +19,5 @@ max_pi_df
 function to find max_pi heatmap cell values
 takes a matrix created from piRNA function
 finds max row, column, and count of highest cell
-returns highest_pi_row, highest_pi_col, second_pi_row, second_pi_col, highest_pi_count, second_pi_count as a data frame
+returns highest_pi_row, highest_pi_col
 }

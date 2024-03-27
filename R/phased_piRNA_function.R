@@ -88,11 +88,11 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
 
    }
 
-   all_table <- data.table::data.table(phased_dist=seq(1,50), phased_num=rep(0, 50))
+   all_table <- data.table::data.table(phased_dist=seq(0,50), phased_num=rep(0, 51))
 
 
    if(!nrow(filter_r1_dt) == 0) {
-      phased_counts <- calc_phasing(filter_r1_dt, filter_r2_dt)
+      phased_counts <- calc_phasing(filter_r1_dt, filter_r2_dt,50)
    } else {
       phased_counts <- data.table::data.table(phased_dist = 1, phased_num = 0L, phased_z = 0)
       phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, all_table, by = "phased_dist", "phased_num")) %>%
@@ -101,7 +101,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
       }
 
    if(!nrow(over_26_dt) == 0){
-      phased_26_counts <- calc_phasing(over_26_dt, over_26_dt)
+      phased_26_counts <- calc_phasing(over_26_dt, over_26_dt, 50)
    } else {
       phased_26_counts <- data.table::data.table(phased_dist = 1, phased_num = 0L, phased_z = 0)
       phased_26_counts <- data.table::setDT(dplyr::full_join(phased_26_counts, all_table, by = "phased_dist", "phased_num")) %>%
