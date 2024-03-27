@@ -5,7 +5,7 @@
 \title{function to find max_si heatmap cell values
 takes a matrix created from siRNA function
 finds max row, column, and count of highest cell
-returns highest_si_row, highest_si_col, second_si_row, second_si_col, highest_si_count, second_si_count as a data frame}
+returns highest_si_row, highest_si_col}
 \usage{
 get_max_si_heat(si_res)
 }
@@ -19,5 +19,5 @@ max_si_df
 function to find max_si heatmap cell values
 takes a matrix created from siRNA function
 finds max row, column, and count of highest cell
-returns highest_si_row, highest_si_col, second_si_row, second_si_col, highest_si_count, second_si_count as a data frame
+returns highest_si_row, highest_si_col
 }

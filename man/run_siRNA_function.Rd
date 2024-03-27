@@ -18,9 +18,10 @@ run_siRNA_function(
   pal,
   plot_output,
   path_to_RNAfold,
-  annotate_bed,
+  annotate_region,
   weight_reads,
-  bed_file
+  gtf_file,
+  write_fastas
 )
 }
 \arguments{
@@ -48,11 +49,13 @@ run_siRNA_function(
 
 \item{path_to_RNAfold}{a string}
 
-\item{annotate_bed}{a string, "T" or "F"}
+\item{annotate_region}{a string, "T" or "F"}
 
-\item{weight_reads}{a string, "T" or "F"}
+\item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none. See MiSiPi documentation for descriptions of the weighting methods.}
 
-\item{bed_file}{a string}
+\item{gtf_file}{a string}
+
+\item{write_fastas}{Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected.}
 }
 \value{
 results

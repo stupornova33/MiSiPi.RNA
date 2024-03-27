@@ -6,7 +6,7 @@
 takes two data tables of reads with sequences
 returns GC percent}
 \usage{
-get_GC_content(dt1, dt2)
+get_GC_content(data)
 }
 \arguments{
 \item{dt1}{a data table of read data}

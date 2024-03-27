@@ -2,9 +2,9 @@
 % Please edit documentation in R/dual_strand_hairpin.R
 \name{dual_strand_hairpin}
 \alias{dual_strand_hairpin}
-\title{function to run the hairpin algorithm
-processes reads from bam object according to strand
-plots the arc plot and read dist}
+\title{Function to run the hairpin algorithm.
+Processes reads from bam object according to strand.
+Plots the arc plot and read distribution.}
 \usage{
 dual_strand_hairpin(
   chrom_name,
@@ -18,45 +18,45 @@ dual_strand_hairpin(
   wkdir,
   plot_output,
   path_to_RNAfold,
-  annotate_bed,
+  annotate_region,
   weight_reads,
-  bed_file
+  gtf_file
 )
 }
 \arguments{
-\item{chrom_name}{a string}
+\item{chrom_name}{A string corresponding to the chromosome.}
 
-\item{reg_start}{a whole number}
+\item{reg_start}{An integer corresponding to the start of a region of interest.}
 
-\item{reg_stop}{a whole number}
+\item{reg_stop}{An integer corresponding to the end of a region of interest.}
 
-\item{length}{a whole number}
+\item{length}{The length of the chromosome of interest.}
 
-\item{min_read_count}{a whole number}
+\item{min_read_count}{A whole number. Default is 1.}
 
-\item{genome_file}{a fasta file of chrom sequences}
+\item{genome_file}{The path to a genome fasta file.}
 
-\item{bam_file}{a BAM file}
+\item{bam_file}{The path to a BAM file. There must be a corresponding index ending in .bai in the same directory.}
 
-\item{logfile}{a string}
+\item{logfile}{The name of the file to which log information will be written.}
 
-\item{wkdir}{a string}
+\item{wkdir}{The path to the directory where all outputs will be written.}
 
-\item{plot_output}{a string, 'T' or 'F', default = 'T}
+\item{plot_output}{Determines whether PDF plots will be made. Expected values are "T" or "F".}
 
-\item{path_to_RNAfold}{a string}
+\item{path_to_RNAfold}{The full path to the RNAfold binary executable.}
 
-\item{annotate_bed}{a string, "T" or "F"}
+\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.}
 
-\item{weight_reads}{a string, "T" or "F"}
+\item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
 
-\item{bed_file}{a string}
+\item{gtf_file}{A string corresponding to the path of genome annotation in 9-column GTF format.}
 }
 \value{
-max_overhang
+a list of results
 }
 \description{
-function to run the hairpin algorithm
-processes reads from bam object according to strand
-plots the arc plot and read dist
+Function to run the hairpin algorithm.
+Processes reads from bam object according to strand.
+Plots the arc plot and read distribution.
 }

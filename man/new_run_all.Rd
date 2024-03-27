@@ -19,9 +19,10 @@ new_run_all(
   pi_pal,
   plot_output,
   path_to_RNAfold,
-  annotate_bed,
+  annotate_region,
   weight_reads,
-  bed_file
+  gtf_file,
+  write_fastas
 )
 }
 \arguments{
@@ -51,11 +52,13 @@ new_run_all(
 
 \item{path_to_RNAfold}{a string}
 
-\item{annotate_bed}{a string, "T" or "F"}
+\item{annotate_region}{a string, "T" or "F"}
 
 \item{weight_reads}{a string, "T", or "F"}
 
-\item{bed_file}{a string}
+\item{gtf_file}{a string}
+
+\item{wrie_fastas}{a string, "T" or "F"}
 }
 \value{
 results

@@ -2,9 +2,9 @@
 % Please edit documentation in R/run_piRNA_function.R
 \name{run_piRNA_function}
 \alias{run_piRNA_function}
-\title{run the piRNA function
-processes forward and reverse reads according to piRNA algorithm
-outputs plots, heat results, and zdf}
+\title{Run the piRNA function
+Finds overlapping ping-piRNAs, then performs single-strand phasing calculation
+Outputs a plot, a table of values for a heatmap, and a table of z-scores.}
 \usage{
 run_piRNA_function(
   chrom_name,
@@ -16,7 +16,9 @@ run_piRNA_function(
   logfile,
   wkdir,
   pal,
-  plot_output
+  plot_output,
+  weight_reads,
+  write_fastas
 )
 }
 \arguments{
@@ -39,12 +41,16 @@ run_piRNA_function(
 \item{pal}{a string}
 
 \item{plot_output}{a string, 'T' or 'F', default = 'T}
+
+\item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
+
+\item{write_fastas}{Determines whether piRNA pairs will be written to fasta. Expected values are "T" or "F".}
 }
 \value{
 plots, heat results, and zdf
 }
 \description{
-run the piRNA function
-processes forward and reverse reads according to piRNA algorithm
-outputs plots, heat results, and zdf
+Run the piRNA function
+Finds overlapping ping-piRNAs, then performs single-strand phasing calculation
+Outputs a plot, a table of values for a heatmap, and a table of z-scores.
 }

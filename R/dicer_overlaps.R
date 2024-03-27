@@ -11,8 +11,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    # convert helix positions to chromosome positions
    bin <- j <- X.End <- X.Start <- Y.Start <- Y.End <- paired_pos <- start <- width <- NULL
 
-   helix_df <- helix_df %>% dplyr::mutate(i = i + reg_start, j = j + reg_start)
-   print(helix_df)
+   helix_df <- helix_df %>% dplyr::mutate(i = i + (reg_start - 1), j = j + (reg_start - 1))
    ### paired bases are several nucleotides diff. than read starts... pad the ends of the helix
    if(nrow(helix_df) == 0){
      return(i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
@@ -23,35 +22,40 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    j_begin <- helix_df$j[1]
    j_end <- helix_df$j[nrow(helix_df)]
 
-   istartvals <- seq(i_begin - 8, i_begin - 1)
-   iendvals <- seq(i_end + 1, i_end + 8)
-   jstartvals <- seq(j_begin + 8,j_begin + 1 )
-   jendvals <- seq(j_end - 1,j_end - 8)
+   if(reg_start >= 8){
+     istartvals <- seq(i_begin - 8, i_begin - 1)
+     iendvals <- seq(i_end + 1, i_end + 8)
+     jstartvals <- seq(j_begin + 8,j_begin + 1 )
+     jendvals <- seq(j_end - 1,j_end - 8)
 
+     startdf <- data.frame(i = istartvals, j = jstartvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
+     enddf <- data.frame(i = iendvals, j = jendvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
+     #check to make sure start and end values are not the same. If they are, remove
 
+     new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
+     new_enddf <- data.frame(matrix(ncol = 4, nrow = 0))
 
-   startdf <- data.frame(i = istartvals, j = jstartvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
-   enddf <- data.frame(i = iendvals, j = jendvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
-   #check to make sure start and end values are not the same. If they are, remove
+     for(i in 1:nrow(startdf)){
+       if(startdf$i[i] != startdf$j[i])
+         new_startdf <- rbind(new_startdf, startdf[i,])
+     }
+     for(i in 1:nrow(enddf)){
+       if(enddf$i[i] != enddf$j[i])
+         new_enddf <- rbind(new_enddf, enddf[i,])
+     }
 
-   new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
-   new_enddf <- data.frame(matrix(ncol = 4, nrow = 0))
-   for(i in 1:nrow(startdf)){
-     if(startdf$i[i] != startdf$j[i])
-       new_startdf <- rbind(new_startdf, startdf[i,])
+     startdf <- new_startdf
+     enddf <- new_enddf
+
+     #add the new intervals to helix_df
+     tmp_df <- rbind(startdf, helix_df)
+
+     final_helix_df <- rbind(tmp_df, enddf)
+
+   } else {
+     final_helix_df <- helix_df
    }
-   for(i in 1:nrow(enddf)){
-     if(enddf$i[i] != enddf$j[i])
-       new_enddf <- rbind(new_enddf, enddf[i,])
-   }
 
-   startdf <- new_startdf
-   enddf <- new_enddf
-
-   #add the new intervals to helix_df
-   tmp_df <- rbind(startdf, helix_df)
-
-   final_helix_df <- rbind(tmp_df, enddf)
 
    #remove results where segment of paired bases is less than 15nt
    # for example the loop sequence
@@ -67,8 +71,8 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
    filter_helix <- grouped_helix %>% dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
    #write.table(grouped_helix, "grouped_helix.txt", sep = "\t", row.names = FALSE, quote = FALSE)
 
-   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_pos = numeric(0))
-   j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_pos = numeric(0))
+   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_start = numeric(0), paired_end = numeric(0), num_shifted = numeric(0))
+   j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_start = numeric(0), paired_end = numeric(0))
 
    #print('dicer_dt')
    #print(head(dicer_dt))
@@ -76,118 +80,164 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
      data.frame() %>%
      dplyr::select(c(start, end, rname))
 
-
-
-##################### OLD CODE #################
-# leaving for now JIC
-   #global_i_idx <- numeric()
-
-   #if(nrow(filter_helix) > 0){
-  #   for(i in 1:nrow(filter_helix)){
-
-       # Make a range of position numbers from x.start to x.end for each row
-       # If any of the dicer_dt start or end positions fall in that range, then store the index of which ones those are
-       # Take the dicer_dt rows that have positions that fall in the range, and append them to a table called i_dat
-       # Essentially filter dicer_dt for rows that have start or end positions withing the range of the current iteration of the helix range
-   #    x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
-  #     print("x_rng: ")
-  #     print(x_rng)
-       # Now do the exact same thing for y.start and y.end for each row and store those reads in j_dat
-       #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i]) # Seq doesn't need to be reversed here. if you're just searching for a match in the range, the range direction is irrelevent
-
-  #     y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
-  #     print("y_rng: ")
-  #     print(y_rng)
-  #     i_idx <- which(dicer_dt$start %in% x_rng)
-
-       #keep track of which reads are found in the helix rngs over all iterations
-       #for future use
-  #     global_i_idx <- append(global_i_idx, i_idx)
-  #     j_idx <- which(dicer_dt$start %in% y_rng)
-
-  #     i_dat <- rbind(i_dat, dicer_dt[i_idx,])
-  #     j_dat <- rbind(j_dat, dicer_dt[j_idx,])
-  #   }
-
+  #i = 13
    ## Start
    if(nrow(filter_helix) > 0){
       for(i in 1:nrow(filter_helix)){
+        print(paste0("i: ", i))
         #print(paste0("i: ", i))
         x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
 
-        #y_rng <- seq(filter_helix$Y.End[i], filter_helix$Y.Start[i])
         y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
 
-        #get i reads that start at a paired pos in helix_df
-        x_idx <- which(dicer_dt$start %in% x_rng)
-        x_dat <- dicer_dt[x_idx,] %>%
-          dplyr::arrange(start)
-        #get j reads that start at a paired pos in helix_df
-        y_idx <- which(dicer_dt$start %in% y_rng)
+
+        ############ testing #####################################
+        #get i & j reads that start or end at pos in helix_df
+        x_idx <- which(dicer_dt$start %in% x_rng | dicer_dt$end %in% x_rng)
+        x_dat <- dicer_dt[x_idx,]
+
+        #eliminate reads which extend to a highly unpaired region
+        x_dat <- x_dat %>% dplyr::filter(start >= filter_helix$X.Start[i])
+
+        y_idx <- which(dicer_dt$start %in% y_rng | dicer_dt$end %in% y_rng)
 
         #don't need to transform j reads, just extract
         y_dat <- dicer_dt[y_idx,]
 
-        paired_pos <- vector() # Possibly move above into i loop
-        prior_i_idx <- integer()
-
+        #paired_starts <- vector()
+        #paired_ends <- vector()
+        #shifts <- vector()
+        prior_end_idx <- integer()
+        prior_start_idx <- integer()
         if(nrow(x_dat) > 0){
-        for (j in 1:nrow(x_dat)) {
-          #print(paste0("j: ", j))
-          i_idx <- which(final_helix_df$i == x_dat$start[j])
-          #if no results returned
-          if(identical(i_idx, integer(0)) & !(j == 1)) {
-             #get the index of the last paired pos
-             i_idx <- prior_i_idx
-            #else if no results and this is the first iteration
-          } else if (identical(i_idx, integer(0)) & (j == 1)) {
+          for (j in 1:nrow(x_dat)) {
+            print(paste0("j: ", j))
+
+            #check if read start / read end in paired positions
+            #2/19 need to reverse this to get the ends of i that have paired pos
+            start_idx <- which(final_helix_df$i == x_dat$start[j])
+            end_idx <- which(final_helix_df$i == x_dat$end[j])
+            #print(paste0("start_idx: ", start_idx))
+            #print(paste0("end_idx: ", end_idx))
+            #if read starts at paired pos but ends at non-paired pos
+            if (identical(end_idx, integer(0)) & !identical(start_idx, integer(0))){
+              print("Read begins at paired pos but ends at unpaired pos")
               found <- FALSE
               current_start <- x_dat$start[j]
-              new_start <- current_start - 1
-
+              current_end <- x_dat$end[j]
+              #print(paste0("current_end: ", current_end))
+              new_end <- current_end - 1
+              #print(paste0("new_end: ", new_end))
               while (!found) {
+                #print("NOT FOUND")
                 #print("!found")
-                i_idx <- which(final_helix_df$i == new_start)
-                #print("while i_idx: ", i_idx)
-                if (identical(i_idx, integer(0))) {
-                  new_start <- new_start - 1
+                end_idx <- which(final_helix_df$i == new_end)
+                #print("while end_idx: ", end_idx)
+                if (identical(end_idx, integer(0))) {
+                  new_end <- new_end - 1
+                  shift <- new_end - current_end
+                  #print(paste0("new_end: ", new_end))
+                  #print(paste0("shift: ", shift))
                 } else {
                   found <- TRUE
-                  prior_i_idx <- i_idx
+                  #print("FOUND")
+                  prior_end_idx <- end_idx
+                  shift <- new_end - current_end
+                  #print(paste0("prior_end_idx: ", prior_end_idx))
+                  #print(paste0("shift: ", shift))
                 }
 
               }
-            #print(paste0("i_idx: ", i_idx))
-          } else {
+              paired_start <- final_helix_df$j[end_idx] + shift
+              paired_end <- final_helix_df$j[start_idx]
 
-            # Set prior i_idx if we have a valid one
-            prior_i_idx <- i_idx
-          }
-          paired_pos <- append(paired_pos, final_helix_df$j[i_idx])
-        } # End 'j' for loop
-        x_dat$paired_pos <- paired_pos
-        i_dat <- rbind(i_dat, x_dat)
-        j_dat <- rbind(j_dat, y_dat)
+            } else if(!identical(end_idx, integer(0)) & identical(start_idx, integer(0))){ #if read ends at paired pos but starts at unpaired pos
+              print("Read ends at paired pos but begins at unpaired pos")
+              #end idx is found but start is not
+              found <- FALSE
+              current_start <- x_dat$start[j]
+              current_end <- x_dat$end[j]
+              #print(paste0("current_end: ", current_end))
+              new_start <- current_start + 1
+              #print(paste0("new_start: ", new_start))
+              while (!found) {
+                #print("NOT FOUND")
+                #print("!found")
+                start_idx <- which(final_helix_df$i == new_start)
+                #print(paste0("start_idx: ", start_idx))
+                #print("while end_idx: ", end_idx)
+                if (identical(start_idx, integer(0))) {
+                  new_start <- new_start + 1
+                  shift <- new_start - current_start
+                  #print(paste0("new_start: ", new_start))
+                  #print(paste0("shift: ", shift))
+                } else {
+                  found <- TRUE
+                  #print("FOUND")
+                  prior_start_idx <- start_idx
+                  shift <- new_start - current_start
+                  #print(paste0("prior_start_idx: ", prior_start_idx))
+                  #print(paste0("shift: ", shift))
+                }
+
+              }
+
+
+              paired_end <- (final_helix_df$j[start_idx] + shift)
+              paired_start <- (final_helix_df$j[end_idx])
+
+            } else if(identical(start_idx, integer(0)) & identical(end_idx, integer(0))) { #if read begins and ends at unpaired pos
+              print("Read begins and ends at unpaired pos")
+              rng <- seq(x_dat$start[j], x_dat$end[j])
+              min_paired_idx <- min(which(rng %in% helix_df$i))
+              max_paired_idx <- max(which(rng %in% helix_df$i))
+              min_paired <- rng[min_paired_idx]
+              max_paired <- rng[max_paired_idx]
+              left_bulge <- min_paired_idx - 1
+              right_bulge <- length(rng) - max_paired_idx
+
+              min_paired_j_idx <- which(helix_df$i == min_paired)
+              max_paired_j_idx <- which(helix_df$i == max_paired)
+
+              paired_end <- helix_df$j[min_paired_j_idx] + left_bulge
+              paired_start <- helix_df$j[max_paired_j_idx] - right_bulge
+
+            } else { #if read has paired start pos and paired end pos
+              print("Read begins and ends at paired pos")
+              paired_start <- final_helix_df$j[end_idx]
+              paired_end <- final_helix_df$j[start_idx]
+
+            }
+
+             #paired_ends <- append(paired_ends, paired_end)
+             #paired_starts <- append(paired_starts, paired_start)
+             #shifts <- append(shifts, shift)
+             x_dat$paired_start[j] <- paired_start
+             x_dat$paired_end[j] <- paired_end
+             #x_dat$shift <- shift
+
+          } # End 'j' for loop
+
+          i_dat <- rbind(i_dat, x_dat)
+          j_dat <- rbind(j_dat, y_dat)
         } else { #end if(nrow(x_dat) > 0)
-            next
-      }
-     } # End 'i' for loop
+          next
+        }
+      } # End 'i' for loop
 
-   } # End if statement
-   ## END
-
-     i_dat <- i_dat %>%
-       dplyr::mutate(width = end - start + 1)
-
-     #since we're converting to the paired position, we should take $j for i_dat
+   }
 
      i_dat <- i_dat %>%
-       dplyr::mutate(paired_start = paired_pos - width + 1)
-     i_dat <- i_dat %>%
-       dplyr::select(rname, paired_pos, paired_start)
-     i_dat <- i_dat %>%
-       dplyr::rename(start = paired_start, end = paired_pos)
+       dplyr::mutate(width = end - start + 1, paired_width = paired_end - paired_start + 1)
 
+     i_dat <- i_dat %>%
+       dplyr::select(rname, paired_start, paired_end)
+
+
+     i_dat <- i_dat %>%
+       dplyr::rename(start = paired_start, end = paired_end)
+
+     print(head(i_dat))
      #write.table(i_dat, "i_dat_after_convert.txt", sep = "\t", row.names = FALSE, quote = FALSE)
      j_dat <- j_dat %>%
        dplyr::relocate(rname)
@@ -204,6 +254,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
       j_dat <- j_dat %>% stats::na.omit(j_dat)
 
       if(!nrow(i_dat) == 0 && !nrow(j_dat) == 0){
+        #i_j_overlaps <- find_overlaps(j_dat, i_dat)
         i_j_overlaps <- find_overlaps(i_dat, j_dat)
       } else {
         i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
