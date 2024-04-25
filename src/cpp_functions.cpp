@@ -393,7 +393,7 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
       }
 
       int r1_count_average, r2_count_average;
-      if (r1_running_total != 0) {
+      //if (r1_running_total != 0) {
          // This was added in to reduce the number of iterations which was approaching 1 billion
          // Used dplyr to group all the duplicate overlap reads and mutate in a count column to keep track of the number of duplicates
          // That way we only have to iterate through each read range once and multiply the results by the number of duplicates
@@ -402,14 +402,14 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
          res_start_r1.emplace_back(r1_start);
          res_end_r1.emplace_back(r1_end);
          res_r1_avg.emplace_back(r1_count_average);
-      }
-      if (r2_running_total != 0) {
+      //}
+      //if (r2_running_total != 0) {
          //r2_running_total *= duplicate_count;
          r2_count_average = r2_running_total / read_r2_length;
          res_start_r2.emplace_back(r2_start);
          res_end_r2.emplace_back(r2_end);
          res_r2_avg.emplace_back(r2_count_average);
-      }
+      //}
    }
 
    DataFrame df = DataFrame::create(Named("r1_start") = res_start_r1, Named("r1_end") = res_end_r1, Named("r1_count_avg") = res_r1_avg,

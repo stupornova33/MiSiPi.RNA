@@ -59,8 +59,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
   #RNAfold can't fold things longer than 10kb
-  print("Region greater than 10kb. Creating null_hp_res.")
+
   if(reg_stop - reg_start > 10000){
+    print("Region greater than 10kb. Creating null_hp_res.")
     res <- null_hp_res()
     return(res)
   }
@@ -158,8 +159,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     #transform reads and find dicer pairs
     print("Calculating dicer overlaps.")
-    all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
+    #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
+    r2_dt <- r2_dt %>% dplyr::group_by(rname, start, end, width, first) %>% dplyr::summarize(count = dplyr::n())
 
+    all_overlaps <- new_dcr_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
     # dicer_overlaps() returns zero values if there are no valid overlaps
     # so check to make sure the first values are not zero
     if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
@@ -200,7 +203,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
       plus_overhangz <- mean(plus_overhangs$zscore[1:4])
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
-                phased_tbl.zscore = plus_hp_phased_tbl$phased_z, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
+                phased_tbl.zscore = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
   }
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
@@ -262,13 +265,18 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     minus_hp_phasedz <- -33
   }
 
+  #i 9 j 1
   print("Beginning dicer stuff.")
   if(nrow(r2_dt) > 0){
     print("nrow r2_dt > 0.")
     print(paste0("fold_bool: ", fold_bool))
     if(fold_bool == 'TRUE'){
        print("Calculating dicer_overlaps.")
-       all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
+
+       # take unique reads for dicer overhang calculation, then replicate according to count later
+       r2_dt <- r2_dt %>% dplyr::group_by(rname, start, end,first, width) %>% dplyr::summarize(count = dplyr::n())
+       #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
+       all_overlaps <- new_dcr_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
        if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
          print("all_overlaps contains results. Computing overhangs.")
@@ -321,7 +329,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
       minus_overhangz <- mean(minus_overhangs$zscore[1:4])
       minus_res <- list(minusMFE = MFE, minus_hp_overhangz = minus_hp_overhangz, minus_hp_phasedz = minus_hp_phasedz, phased_tbl.dist = minus_hp_phased_tbl$phased_dist,
-                 phased_tbl.zscore = minus_hp_phased_tbl$phased_z, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)
+                 phased_tbl.zscore = minus_hp_phased_tbl$phased_z, dicer_tbl.shift = minus_overhangs$shift, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)
   }
 ################################################################ make plots #####################################################################
 

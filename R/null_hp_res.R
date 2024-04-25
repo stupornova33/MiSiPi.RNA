@@ -13,7 +13,7 @@ null_hp_res <- function(){
     minus_hp_phasedz <- -33
     minus_hp_overhangz <- -33
     return(list(minusMFE = MFE, minus_hp_overhangz = minus_hp_overhangz, perc_paired = 0, minus_hp_phasedz = minus_hp_phasedz,
-             dicer_tbl.zscore = dicer_tbl$zscore, phased_tbl.zscore = phased_tbl$zscore))
+             dicer_tbl.shift = dicer_tbl$shift, dicer_tbl.zscore = dicer_tbl$zscore, phased_tbl.zscore = phased_tbl$zscore))
   }
 
   pos_results <- function(){
@@ -23,7 +23,7 @@ null_hp_res <- function(){
     plus_hp_phasedz <- -33
     plus_hp_overhangz <- -33
     return(list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, perc_paired = 0, plus_hp_phasedz = plus_hp_phasedz,
-             dicer_tbl.zscore = dicer_tbl$zscore, phased_tbl.zscore = phased_tbl$zscore))
+             dicer_tbl.shift = dicer_tbl$shift, dicer_tbl.zscore = dicer_tbl$zscore, phased_tbl.zscore = phased_tbl$zscore))
   }
 
   neg_res <- neg_results()

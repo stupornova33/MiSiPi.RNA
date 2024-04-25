@@ -67,6 +67,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
       return(i_j_overlaps)
    }
 
+   # group together regions which are paired
    grouped_helix <- group_helix_res(final_helix_df$i, final_helix_df$j)
    filter_helix <- grouped_helix %>% dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
    #write.table(grouped_helix, "grouped_helix.txt", sep = "\t", row.names = FALSE, quote = FALSE)
@@ -104,9 +105,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
         #don't need to transform j reads, just extract
         y_dat <- dicer_dt[y_idx,]
 
-        #paired_starts <- vector()
-        #paired_ends <- vector()
-        #shifts <- vector()
+
         prior_end_idx <- integer()
         prior_start_idx <- integer()
         if(nrow(x_dat) > 0){
@@ -114,11 +113,15 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
             print(paste0("j: ", j))
 
             #check if read start / read end in paired positions
+            #this affects how the new paired position is determined
             #2/19 need to reverse this to get the ends of i that have paired pos
+
             start_idx <- which(final_helix_df$i == x_dat$start[j])
             end_idx <- which(final_helix_df$i == x_dat$end[j])
+
             #print(paste0("start_idx: ", start_idx))
             #print(paste0("end_idx: ", end_idx))
+
             #if read starts at paired pos but ends at non-paired pos
             if (identical(end_idx, integer(0)) & !identical(start_idx, integer(0))){
               print("Read begins at paired pos but ends at unpaired pos")
@@ -155,6 +158,8 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
               print("Read ends at paired pos but begins at unpaired pos")
               #end idx is found but start is not
               found <- FALSE
+
+              # coordinates of the read
               current_start <- x_dat$start[j]
               current_end <- x_dat$end[j]
               #print(paste0("current_end: ", current_end))
@@ -237,7 +242,7 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
      i_dat <- i_dat %>%
        dplyr::rename(start = paired_start, end = paired_end)
 
-     print(head(i_dat))
+     print(i_dat)
      #write.table(i_dat, "i_dat_after_convert.txt", sep = "\t", row.names = FALSE, quote = FALSE)
      j_dat <- j_dat %>%
        dplyr::relocate(rname)

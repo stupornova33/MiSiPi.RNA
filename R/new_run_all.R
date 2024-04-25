@@ -234,10 +234,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     local_ml$si_dicerz <- si_dicerz
   }
 
-
+  plus_perc_paired <- si_res[[3]][[2]]$perc_paired
+  minus_perc_paired <- si_res[[3]][[2]]$perc_paired
   # changed 3/25 to be RPM
   local_ml$num_si_dicer_reads <- (si_res[[2]]$proper_count[5]*1000000)/total_read_count
-  local_ml$hp_perc_paired <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
+  local_ml$hp_perc_paired <- max(plus_perc_paired, minus_perc_paired)
 
   perc_paired_file <- paste0(si_dir, "perc_paired.txt")
   col_status <- ifelse(exists_not_empty(perc_paired_file), FALSE, TRUE)
