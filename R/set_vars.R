@@ -24,15 +24,48 @@ set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to
   bam_header <- V2 <- V3 <- NULL
   test_list <- utils::read.csv(roi, sep = "\t", header = FALSE)
 
-  mut_table <- function(V1){
-    result <- which(chr_name == V1)
-    return(result)
+  # get the working directory to write the logfile
+  dir <- unlist(strsplit(roi, "\\/\\s*(?=[^\\/]+$)", perl=TRUE))[1]
+  # assign indexes to the chromosomes names from the bed file
+  # also checks to make sure the chromosome name from the bed file is actually in the genome
+  # prints to a file
+
+
+  #mut_table <- function(V1){
+  #  result <- which(chr_name == V1)
+  #  return(result)
+  #}
+
+  #test <- unlist(sapply(test_list$V1, mut_table))
+
+
+  res_list <- vector()
+  na_idx <- vector()
+  for(i in 1:nrow(test_list)){
+    res <- which(chr_name == test_list$V1[i])
+    if(identical(res, integer(0))){
+      na_idx <- append(na_idx, i)
+    } else {
+      res_list <- append(res_list, res)
+    }
   }
 
-  test <- unlist(sapply(test_list$V1, mut_table))
+  if(length(na_idx) > 0){
+    # remove any lines of bed file where chromosome was not in genome and print error to file.
+    test_list <- test_list[-c(na_idx),]
+    suppressWarnings(
+      if(!file.exists("Error.log")){
+        write(paste0("Chromosome at lines ", na_idx, " were not found in the genome. Please check.\n"), file = paste0(dir, "Error.log"), append = FALSE)
+      } else {
+        write(paste0("Chromosome at lines ", na_idx, " were not found in the genome. Please check.\n"), file = paste0(dir, "Error.log"), append = TRUE)
+      }
+    )
+  }
+
   test_list <- test_list %>% dplyr::mutate(V2 = V2 + 1, V3 = V3 + 1)
+
   test_list <- test_list %>%
-    dplyr::mutate(chromosome = test) %>%
+    dplyr::mutate(chromosome = res_list) %>%
     dplyr::mutate(length = chr_length[chromosome])
 
   length <- test_list$length
