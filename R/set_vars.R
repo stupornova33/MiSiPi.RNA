@@ -11,11 +11,11 @@
 #' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format.
 #' @param write_fastas A string, "T" or "F". Optional. If "T", read pairs from functions will be written to file.
-#'
+#' @param out_type The type of file for plots. Options are "png" or "pdf". Default is PDF.
 #' @return a list
 #' @export
 
-set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to_RNAfold, pi_pal, si_pal, annotate_region, weight_reads, gtf_file = NULL, write_fastas = NULL){
+set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to_RNAfold, pi_pal, si_pal, annotate_region, weight_reads, gtf_file = "F", write_fastas = "F", out_type = "pdf"){
 
   bam_obj <- OpenBamFile(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
@@ -29,15 +29,6 @@ set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to
   # assign indexes to the chromosomes names from the bed file
   # also checks to make sure the chromosome name from the bed file is actually in the genome
   # prints to a file
-
-
-  #mut_table <- function(V1){
-  #  result <- which(chr_name == V1)
-  #  return(result)
-  #}
-
-  #test <- unlist(sapply(test_list$V1, mut_table))
-
 
   res_list <- vector()
   na_idx <- vector()
@@ -91,6 +82,8 @@ set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to
                    annotate_region = annotate_region,
                    weight_reads = weight_reads,
                    gtf_file = gtf_file,
-                   write_fastas = write_fastas)
+                   write_fastas = write_fastas,
+                   out_type = out_type)
+
   return(var_list)
 }

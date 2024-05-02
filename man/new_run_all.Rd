@@ -22,7 +22,8 @@ new_run_all(
   annotate_region,
   weight_reads,
   gtf_file,
-  write_fastas
+  write_fastas,
+  out_type
 )
 }
 \arguments{
@@ -58,7 +59,9 @@ new_run_all(
 
 \item{gtf_file}{a string}
 
-\item{wrie_fastas}{a string, "T" or "F"}
+\item{write_fastas}{a string, "T" or "F". Default is "F"}
+
+\item{out_type}{Specifies whether file types for plots are png or pdf. Default is pdf.}
 }
 \value{
 results

@@ -16,7 +16,8 @@
 #' @param annotate_region a string, "T" or "F"
 #' @param weight_reads a string, "T", or "F"
 #' @param gtf_file a string
-#' @param wrie_fastas a string, "T" or "F"
+#' @param write_fastas a string, "T" or "F". Default is "F"
+#' @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
 #' @return results
 
 #' @export
@@ -24,7 +25,7 @@
 
 
 new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-                        plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas){
+                        plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
 
   width <- pos <- start <- end <- NULL
 
@@ -221,7 +222,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
 
   si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
-                           annotate_region, weight_reads, gtf_file, write_fastas)
+                           annotate_region, weight_reads, gtf_file, write_fastas, out_type)
 
   max_si_heat <- get_max_si_heat(si_res)
 
@@ -251,14 +252,16 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # hp_dicerz [ maximum value of plus_dicerz and minus_dicerz]
 
   plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
-  if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
+  #if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
+  if(!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)){
     plus_mean <- mean(plus_phasedz[1:4])
   } else {
     plus_mean <- -33
   }
 
    minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
-  if(!minus_phasedz[1] == "NaN" && !minus_phasedz[1] == -33){
+  #if(!minus_phasedz[1] == "NaN" && !minus_phasedz[1] == -33){
+   if(!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)){
     minus_mean <- mean(minus_phasedz[1:4])
   } else {
     minus_mean <- -33
@@ -299,7 +302,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   if(!dir.exists('run_all/miRNA_dir/')) dir.create('run_all/miRNA_dir/')
   miRNA_dir <- 'run_all/miRNA_dir/'
   mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
-  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
+  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads, write_fastas, out_type)
 
   #Look at first result
   mi_res <- mi_res[[1]]
@@ -314,7 +317,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     plus_overlapz <- NA
   }
 
-  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads)
+  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads, write_fastas, out_type)
 
   mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -367,7 +370,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   piRNA_dir <- 'run_all/piRNA_dir/'
   pi_log <- file.create(paste0(piRNA_dir, 'pi_logfile.txt'))
-  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, pi_log, piRNA_dir, pi_pal, plot_output = "F", weight_reads, write_fastas)
+  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, pi_log, piRNA_dir, pi_pal, plot_output = "F", weight_reads, write_fastas, out_type)
 
 
   #if(!is.na(pi_res[[1]])){
@@ -442,51 +445,6 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
 
   pi_res <- NULL
-########################################################################### run phased_piRNA function ################################################################
-  # calculate pi_phasedz [ max value of phasedz_plus & phasedz_minus ]
-  # pi_phased26_z [ max value of phasedz26_plus, phasedz26_minuts ]
-
-  #cat(file = logfile, "Begin phased_piRNA function\n", append = TRUE)
-
-  #if(!dir.exists('run_all/phased_dir/')) dir.create('run_all/phased_dir/')
-  #phased_dir <- 'run_all/phased_dir/'
-  #phased_log <- file.create(paste0(phased_dir, 'phased_logfile.txt'))
-  #phased_res <- phased_piRNA_function("+", chrom_name, reg_start, reg_stop, bam_file, phased_log, phased_dir, plot_output= "F")
-
-  #phasedz_plus <- phased_res[1]
-
-  #phasedz26_plus <- phased_res[2]
-
-  #phased_res <- phased_piRNA_function("-", chrom_name, reg_start, reg_stop, bam_file, phased_log, phased_dir, plot_output= "F")
-
-  #phasedz_minus <- phased_res[1]
-  #phasedz26_minus <- phased_res[2]
-
-
-  #if(is.na(phasedz_minus) && !is.na(phasedz_plus)){
-  #  local_ml$pi_phasedz <- phasedz_plus
-  #} else if(!is.na(phasedz_minus) && is.na(phasedz_plus)){
-  #  local_ml$pi_phasedz <- phasedz_minus
-  #} else if(is.na(phasedz_minus) && is.na(phasedz_plus)){
-  #  local_ml$pi_phasedz <- -33
-  #}  else {
-  #  local_ml$pi_phasedz <- max(phasedz_plus, phasedz_minus)
-  #}
-
-  #if(is.na(phasedz26_minus) && !is.na(phasedz26_plus)){
-  #  local_ml$pi_phased26z <- phasedz26_plus
-  #} else if(!is.na(phasedz26_minus) && is.na(phasedz26_plus)){
-  #  local_ml$pi_phased26z <- phasedz26_minus
-  #} else if(is.na(phasedz26_minus) && is.na(phasedz26_plus)){
-  #  local_ml$pi_phased26z <- -33
-  #}  else {
-  #  local_ml$pi_phased26z <- max(phasedz26_plus, phasedz26_minus)
-  #}
-
-  #pi_phasedz_file <- paste0(phased_dir, "pi_phasedz.txt")
-  #col_status <- ifelse(exists_not_empty(pi_phasedz_file), FALSE, TRUE)
-  #write.table(local_ml$pi_phasedz, pi_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
-
 
 ####################################################################### add results to table ########################################################################
 

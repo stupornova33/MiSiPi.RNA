@@ -20,7 +20,8 @@ dual_strand_hairpin(
   path_to_RNAfold,
   annotate_region,
   weight_reads,
-  gtf_file
+  gtf_file,
+  out_type
 )
 }
 \arguments{
@@ -51,6 +52,8 @@ dual_strand_hairpin(
 \item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
 
 \item{gtf_file}{A string corresponding to the path of genome annotation in 9-column GTF format.}
+
+\item{out_type}{The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.}
 }
 \value{
 a list of results

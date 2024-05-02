@@ -14,13 +14,13 @@ miRNA_function <- function(vars){
    if(!dir.exists(wkdir) == TRUE) dir.create(wkdir)
 
    if(!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
-                              #chromname reg_start reg_stop   chromosome  length   strand min)read genome bam_file logfile
-   mapply(run_miRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], "+", 1, vars[[9]], vars[[10]], logfile,
-          #wkdir plot_output rnafold  weight_reads write_fastas
-          wkdir, vars[[6]], vars[[7]], vars[[15]])
-   mapply(run_miRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], "-", 1, vars[[9]], vars[[10]], logfile,
-          wkdir, vars[[6]], vars[[7]], vars[[15]])
+
+
+   mapply(run_miRNA_function, vars$chrom_name, vars$reg_start, vars$reg_stop, vars$chromosome, vars$length, "+", 1, vars$genome,
+          vars$bam_file, logfile, wkdir, vars$plot_output, vars$path_to_RNAfold,vars$write_fastas, vars$weight_reads, vars$out_type)
+
+   mapply(run_miRNA_function, vars$chrom_name, vars$reg_start, vars$reg_stop, vars$chromosome, vars$length, "-", 1, vars$genome,
+          vars$bam_file, logfile, wkdir, vars$plot_output, vars$path_to_RNAfold, vars$write_fastas, vars$weight_reads, vars$out_type)
 
 
 }
-

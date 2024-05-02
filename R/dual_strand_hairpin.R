@@ -15,13 +15,14 @@
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
+#' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return a list of results
 
 #' @export
 
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                              min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
-                             weight_reads, gtf_file){
+                             weight_reads, gtf_file, out_type){
 
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 
@@ -255,7 +256,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else {
     print("r1_dt does not contain data. Setting null phasing results.")
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
-    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), zscore = rep(0,51))
+    minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
     minus_hp_phasedz <- -33
   }
@@ -391,7 +392,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   if(plot_output == 'T'){
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
+    plus_overhangs$zscore[is.na(plus_overhangs$zscore)] <- 0
+
     minus_overhangs <- data.frame(shift = minus_res$dicer_tbl.shift, zscore = minus_res$dicer_tbl.zscore)
+    minus_overhangs$zscore[is.na(minus_overhangs$zscore)] <- 0
 
     plus_overhang_plot <- plot_overhangz(plus_overhangs, "+")
     minus_overhang_plot <- plot_overhangz(minus_overhangs, "-")
@@ -402,7 +406,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     arc_plot <- plot_helix("helix.txt")
 
     plus_phasedz <- plot_hp_phasedz(plus_hp_phased_tbl, "+")
+
     minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
+
 
     ## plot genome annotations (optional)
     if(annotate_region == "T"){
@@ -421,9 +427,15 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
-    grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 8.5, width = 8.5)
-    print(final_plot)
-    grDevices::dev.off()
+    if(out_type == "png" || out_type == "PNG"){
+      grDevices::png(file = paste0(prefix, "_hairpin_fold.png"), height = 9, width = 9, units = "in", res = 300)
+      print(final_plot)
+      grDevices::dev.off()
+    } else {
+      grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 9, width = 9)
+      print(final_plot)
+      grDevices::dev.off()
+    }
   }
 
  #for machine learning / run_all

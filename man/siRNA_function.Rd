@@ -2,16 +2,18 @@
 % Please edit documentation in R/siRNA_function.R
 \name{siRNA_function}
 \alias{siRNA_function}
-\title{siRNA_function}
+\title{run siRNA function
+calls the siRNA function, creates siRNA logfile}
 \usage{
 siRNA_function(vars)
 }
 \arguments{
-\item{vars}{a list}
+\item{vars}{a list of variables provided by user}
 }
 \value{
 si_res
 }
 \description{
-siRNA_function
+run siRNA function
+calls the siRNA function, creates siRNA logfile
 }

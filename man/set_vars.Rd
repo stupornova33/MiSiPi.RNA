@@ -15,8 +15,9 @@ set_vars(
   si_pal,
   annotate_region,
   weight_reads,
-  gtf_file = NULL,
-  write_fastas = NULL
+  gtf_file = "F",
+  write_fastas = "F",
+  out_type = "pdf"
 )
 }
 \arguments{
@@ -43,6 +44,8 @@ set_vars(
 \item{gtf_file}{a string corresponding to the path of genome annotation in 9-column GTF format.}
 
 \item{write_fastas}{A string, "T" or "F". Optional. If "T", read pairs from functions will be written to file.}
+
+\item{out_type}{The type of file for plots. Options are "png" or "pdf". Default is PDF.}
 }
 \value{
 a list
