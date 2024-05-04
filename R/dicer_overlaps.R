@@ -110,7 +110,6 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
         prior_start_idx <- integer()
         if(nrow(x_dat) > 0){
           for (j in 1:nrow(x_dat)) {
-            print(paste0("j: ", j))
 
             #check if read start / read end in paired positions
             #this affects how the new paired position is determined
@@ -124,7 +123,6 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
 
             #if read starts at paired pos but ends at non-paired pos
             if (identical(end_idx, integer(0)) & !identical(start_idx, integer(0))){
-              print("Read begins at paired pos but ends at unpaired pos")
               found <- FALSE
               current_start <- x_dat$start[j]
               current_end <- x_dat$end[j]
@@ -155,7 +153,6 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
               paired_end <- final_helix_df$j[start_idx]
 
             } else if(!identical(end_idx, integer(0)) & identical(start_idx, integer(0))){ #if read ends at paired pos but starts at unpaired pos
-              print("Read ends at paired pos but begins at unpaired pos")
               #end idx is found but start is not
               found <- FALSE
 
@@ -192,7 +189,8 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
               paired_start <- (final_helix_df$j[end_idx])
 
             } else if(identical(start_idx, integer(0)) & identical(end_idx, integer(0))) { #if read begins and ends at unpaired pos
-              print("Read begins and ends at unpaired pos")
+              current_start <- x_dat$start[j]
+              current_end <- x_dat$end[j]
               rng <- seq(x_dat$start[j], x_dat$end[j])
               min_paired_idx <- min(which(rng %in% helix_df$i))
               max_paired_idx <- max(which(rng %in% helix_df$i))
@@ -229,19 +227,10 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
                 max_paired_j_idx <- which(helix_df$i == max_paired)
               }
 
-
-              #left_bulge <- min_paired_idx - 1
-              #right_bulge <- length(rng) - max_paired_idx
-
-              #min_paired_j_idx <- which(helix_df$i == min_paired)
-              #max_paired_j_idx <- which(helix_df$i == max_paired)
-
-
               paired_end <- helix_df$j[min_paired_j_idx] + left_bulge
               paired_start <- helix_df$j[max_paired_j_idx] - right_bulge
 
             } else { #if read has paired start pos and paired end pos
-              print("Read begins and ends at paired pos")
               paired_start <- final_helix_df$j[end_idx]
               paired_end <- final_helix_df$j[start_idx]
 
