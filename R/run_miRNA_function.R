@@ -97,8 +97,8 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
         locus_length <- reg_stop - reg_start
         locus_read_count <- sum(filter_r2_dt$count)
-        r2_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
-        r1_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
+        r2_dt <- locus_norm(filter_r2_dt, locus_read_count)
+        r1_dt <- locus_norm(filter_r2_dt, locus_read_count)
       } else {
         r2_dt <- no_weight(filter_r2_dt, chrom_name)
         r1_dt <- no_weight(filter_r2_dt, chrom_name)
