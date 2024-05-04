@@ -73,6 +73,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     seqnames = c(chrom_name),
     ranges = IRanges::IRanges(start=c(1), end=c(length)))
 
+  #mygranges <- GenomicRanges::GRanges(seqnames = c(chrom_name), ranges = IRanges::IRanges(start = c(reg_start),
+  #                                                                                        end = c(reg_stop)))
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
   geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
 

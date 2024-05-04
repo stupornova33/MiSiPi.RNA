@@ -503,32 +503,40 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
          zplot <- plot_overlapz(z_df)
 
-         if(reg_stop - reg_start <= 100){
+         if(reg_stop - reg_start <= 150){
            #if miRNA is long, use landscape orientation so the struct plot isn't squished.
            left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
            right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
            bottom <- cowplot::plot_grid(struct_plot)
            top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+
+
            all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
-           grDevices::pdf(file = paste0(prefix, "_combined.pdf"), height = 11, width = 8)
-           print(all_plot)
-           grDevices::dev.off()
+
+           if(out_type == "png" || out_type == "PNG"){
+             grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
+             print(all_plot)
+             grDevices::dev.off()
+           } else {
+             grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
+             print(all_plot)
+           }
 
           } else {
-           top <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
-           #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-           #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-           bottom <- cowplot::plot_grid(struct_plot)
-           #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-           all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
+            top <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
+            #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+             #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+             bottom <- cowplot::plot_grid(struct_plot)
+             #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+             all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
 
 
-           if(out_type == "png" || out_type == "PDF"){
-            grDevices::png(file = paste0(prefix, "_combined.png"), height = 7, width = 15, units = "in", res = 300)
+           if(out_type == "png" || out_type == "png"){
+            grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 7, width = 15, units = "in", res = 300)
             print(all_plot)
             grDevices::dev.off()
            } else {
-            grDevices::pdf(file = paste0(prefix, "_combined.pdf"), height = 7, width = 15)
+            grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 7, width = 15)
             print(all_plot)
             grDevices::dev.off()
            }

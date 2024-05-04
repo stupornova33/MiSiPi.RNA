@@ -198,11 +198,44 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
               max_paired_idx <- max(which(rng %in% helix_df$i))
               min_paired <- rng[min_paired_idx]
               max_paired <- rng[max_paired_idx]
-              left_bulge <- min_paired_idx - 1
-              right_bulge <- length(rng) - max_paired_idx
 
-              min_paired_j_idx <- which(helix_df$i == min_paired)
-              max_paired_j_idx <- which(helix_df$i == max_paired)
+              # determine whether the paired base before or after current_start is closer
+              # avoids pairing starts or ends where there is a large section of unpaired bases between.
+
+              alt_min_idx <- which(final_helix_df$i == min_paired)
+              alt_min <- final_helix_df$i[alt_min_idx - 1]
+              #alt max_idx?
+              diff_alt <- abs(alt_min - current_start)
+              diff_min <- abs(min_paired - current_start)
+
+              if(diff_alt < diff_min){ #then use the previous paired pos
+                left_bulge <- diff_alt
+                right_bulge <- length(rng) - max_paired_idx
+                min_paired <- alt_min
+                min_paired_idx <- which(final_helix_df$i == min_paired)
+                min_paired_j <- final_helix_df$j[min_paired_idx]
+                min_paired_j_idx <- min_paired_idx
+                max_paired_j_idx <- which(helix_df$i == max_paired)
+
+              } else if(diff_min < diff_alt){ #then use the next paired pos
+                left_bulge <- min_paired_idx - 1
+                right_bulge <- length(rng) - max_paired_idx
+                min_paired_j_idx <- which(helix_df$i == min_paired)
+                max_paired_j_idx <- which(helix_df$i == max_paired)
+              } else { #if the distance is equal use the min
+                left_bulge <- min_paired_idx - 1
+                right_bulge <- length(rng) - max_paired_idx
+                min_paired_j_idx <- which(helix_df$i == min_paired)
+                max_paired_j_idx <- which(helix_df$i == max_paired)
+              }
+
+
+              #left_bulge <- min_paired_idx - 1
+              #right_bulge <- length(rng) - max_paired_idx
+
+              #min_paired_j_idx <- which(helix_df$i == min_paired)
+              #max_paired_j_idx <- which(helix_df$i == max_paired)
+
 
               paired_end <- helix_df$j[min_paired_j_idx] + left_bulge
               paired_start <- helix_df$j[max_paired_j_idx] - right_bulge
@@ -214,12 +247,8 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
 
             }
 
-             #paired_ends <- append(paired_ends, paired_end)
-             #paired_starts <- append(paired_starts, paired_start)
-             #shifts <- append(shifts, shift)
              x_dat$paired_start[j] <- paired_start
              x_dat$paired_end[j] <- paired_end
-             #x_dat$shift <- shift
 
           } # End 'j' for loop
 
@@ -236,14 +265,15 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
        dplyr::mutate(width = end - start + 1, paired_width = paired_end - paired_start + 1)
 
      i_dat <- i_dat %>%
-       dplyr::select(rname, paired_start, paired_end)
+       dplyr::select(rname, paired_start, paired_end, paired_width)
 
 
      i_dat <- i_dat %>%
-       dplyr::rename(start = paired_start, end = paired_end)
+       dplyr::rename(start = paired_start, end = paired_end, width = paired_width)
 
-     print(i_dat)
-     #write.table(i_dat, "i_dat_after_convert.txt", sep = "\t", row.names = FALSE, quote = FALSE)
+     # filter out transformed reads that are shorter than 18 and longer than 32
+     # testing whether this improves dcr sig.
+     i_dat <- i_dat %>% dplyr::filter(width >= 18 & width <= 32) %>% dplyr::select(-c(width))
      j_dat <- j_dat %>%
        dplyr::relocate(rname)
 
