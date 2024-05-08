@@ -6,39 +6,74 @@ For more details about the package or to cite, please visit https://www.biorxiv.
 ## MiSiPi.RNA
 Characterization of small RNA pathways
 
-after installing devtools and BiocManager run 
+### Installation
+In order to install MiSiPi.RNA, you must first install devtools and BiocManager:
 
 ```
+install.packages("devtools")
+
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+  
 devtools::install_github("stupornova33/MiSiPi.RNA")
 
 library(MiSiPi.RNA)
 
-`%>%` <- magrittr::`%>%`
-
-setwd("desired/working/directory")
 ```
 
-## Modify these variables.
-Bed_file is your list of regions of interest in BED format. Input file is the BAM file of aligned reads (must be indexed). Path to genome is the path to your genome fasta file (this must have the same chromosome names that are found in the BED file). Min read count filters out loci with low reads mapping; default is 1. 
-RNA fold must be installed on your system, but path_to_RNAfold is only the path to the RNAfold binary .exe.
+### RNAfold
+In order for this package to work, you must also have RNAfold from the ViennaRNA
+package installed. You will need the path to the RNAfold executable.
+See https://www.tbi.univie.ac.at/RNA/ for installation.
+
+### Input
+The input for any of MiSiPi.RNA's main functions is an object created by the
+set_vars() function. Running set_vars will always be the first step in using
+this package. Below is a description of each of the parameters that will be
+passed to set_vars(). These should be changed based on your needs.
+
+- **roi**             - A bed file listing your regions of interest
+- **bam_file**        - A BAM file of aligned reads. Index file must also be present
+- **genome**          - A genome fasta file. Chromosome names must match the bed file
+- **min_read_count**  - This filters out loci with low mapping reads. Defaults to 1
+- **plot_output**     - ("T" or "F") If "T", MiSiPi.RNA will output plots as pdfs
+- **path_to_RNAfold** - Full path to RNAfold executable
+- **pi_pal**          - Palette option for the generated piRNA heatmap (see below)
+- **si_pal**          - Palette option for the generated siRNA heatmap (see below)
+- **annotate_region** - ("T" or "F") Plots annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci
+- **weight_reads**    - Determines if read counts will be weighted. ("Top", "locus_norm", or "None") 
+- **gtf_file**        - Full path to a 9 column GTF file or "F" if not plotting gene annotation features. Default is "F"
+- **write_fastas**    - ("T" or "F") If "T", MiSiPi.RNA will write read pairs from functions to a file. Default is "F"
+- **out_type**        - Specifies the output type. Default is "pdf"
+
 
 ```
-ROI <- set_vars(roi = "path/to/bed", bam_file = "path/to/bamfile", 
-                genome = "path/to/genome", min_read_count = 1, plot_output = "T", 
-                path_to_RNAfold = "path/to/ViennaRNA/RNAfold.exe", pi_pal = "BlYel", si_pal = "RdYlBl", annotate_bed = "T",
-                bed_file = "extdata/processed_dmel_annot.txt", weight_reads = "F") #sample BED is included in misipi extdata
+vars <- set_vars(roi = "path/to/bed",
+                bam_file = "path/to/bamfile", 
+                genome = "path/to/genome",
+                min_read_count = 1,
+                plot_output = "T", 
+                path_to_RNAfold = "path/to/ViennaRNA/RNAfold.exe",
+                pi_pal = "BlYel",
+                si_pal = "RdYlBl",
+                annotate_region = "T",
+                weight_reads = "F",
+                gtf_file = "F",
+                write_fastas = "F",
+                out_type = "pdf")
 
 ```
 
 ### Palettes:
-Pi_pal is the piRNA heatmap plot, Si_pal is the siRNA heatmap plot. 
-Palette options are: "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens". 
+Palette options are:
+- "RdYlBl"
+- "BlYel"
+- "yelOrRed"
+- "MagYel"
+- "Greens"
 
-### Locus annotation: 
-If annotate_bed = "T", a BED file must be supplied to the bed_file argument. This will plot annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci. 
 
-
-## to run all lines of bed file
+## To run all lines of bed file:
 
 ```
 miRNA_function(vars)
@@ -48,5 +83,8 @@ piRNA_function(vars)
 
 
 siRNA_function(vars)
+
+# To run the above functions all at once
+misipi_rna(vars)
 
 ```
