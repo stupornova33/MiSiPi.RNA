@@ -6,10 +6,9 @@
 
 misipi_rna <- function(vars){
 
-                   #chrom name start       stop       chrom      length    input       bed file   genome    min read count
-mapply(new_run_all, vars[[1]], vars[[2]], vars[[3]], vars[[5]], vars[[4]], vars[[10]], vars[[11]],vars[[9]], vars[[8]],
-       # si pal       pi pal      plot output RNA fold   annotatebed weight      gtf file   annot file
-          vars[[13]], vars[[12]], vars[[6]], vars[[7]], vars[[14]], vars[[15]], vars[[16]], vars[[17]])
+
+mapply(new_run_all, vars$chrom_name, vars$reg_start, vars$reg_stop, vars$chromosome, vars$length, vars$bam_file,
+       vars$roi,vars$genome, 1, vars$si_pal, vars$pi_pal, vars$plot_output, vars$path_to_RNAfold, vars$annotate_region,
+       vars$weight_reads, vars$gtf_file, vars$write_fastas, vars$out_type)
 
 }
-

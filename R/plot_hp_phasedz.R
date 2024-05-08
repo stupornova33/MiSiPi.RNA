@@ -15,10 +15,10 @@ plot_hp_phasedz <- function(df1, strand) {
   phased_num <- phased_dist <- value <- phased_z <- phased26_dist <- phased26_z <- phased_dist1 <- phased_z1 <- phased_dist2 <- phased_z2 <- NULL
 
   if(strand == "+"){
-    title <- "Phasing Prob (plus_strand)"
+    title <- "Phasing Prob. (plus_strand)"
     col <- "red"
   } else {
-    title <- "Phasing Prob (minus strand)"
+    title <- "Phasing Prob. (minus strand)"
     col <- "blue"
   }
 

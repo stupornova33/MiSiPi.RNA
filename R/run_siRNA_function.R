@@ -15,13 +15,13 @@
 #' @param annotate_region a string, "T" or "F"
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none. See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file a string
-#' @param write_fastas Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected.
+#' @param write_fastas Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected. Default: "F"
+#' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return results
-
 #' @export
 
 run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, logfile, wkdir,
-                           pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas){
+                           pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
    print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
    prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
    width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
@@ -68,8 +68,6 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       print("f_dt and r_dt are not empty")
       cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
-      #include "T" argument to return read sequences
-
       if(weight_reads == "None" | weight_reads == "none"){
         print("No weighting of reads applied.")
         forward_dt <- no_weight(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
@@ -98,27 +96,27 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       # have to keep doing this at each step otherwise errors will happen
       if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
 
-      # get overlapping reads
-      overlaps <- find_overlaps(forward_dt, reverse_dt) %>% dplyr::mutate(p5_overhang = r2_end - r1_end, p3_overhang = r2_start - r1_start) %>%
-        dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
+        # get overlapping reads
+        overlaps <- find_overlaps(forward_dt, reverse_dt) %>% dplyr::mutate(p5_overhang = r2_end - r1_end, p3_overhang = r2_start - r1_start) %>%
+         dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
 
-      proper_overlaps <- overlaps %>% dplyr::filter(r2_start - r1_start == 2 & r2_end - r1_end == 2)
+        proper_overlaps <- overlaps %>% dplyr::filter(r2_start - r1_start == 2 & r2_end - r1_end == 2)
 
-      forw <- proper_overlaps %>% dplyr::select(r1_start, r1_end, r1_width)
-      rev <- proper_overlaps %>% dplyr::select(r2_start, r2_end, r2_width)
+        forw <- proper_overlaps %>% dplyr::select(r1_start, r1_end, r1_width)
+        rev <- proper_overlaps %>% dplyr::select(r2_start, r2_end, r2_width)
 
-      tmp <- rbind(forward_dt, reverse_dt)
+        tmp <- rbind(forward_dt, reverse_dt)
 
-      rreads <- data.frame()
-      freads <- data.frame()
-      for(i in 1:nrow(proper_overlaps)){
-        tmp_r <- tmp[which(tmp$start == proper_overlaps$r1_start[i] & tmp$end == proper_overlaps$r1_end[i]), ] %>%
-          dplyr::distinct(start, end, .keep_all = TRUE)
-        tmp_f <- tmp[which(tmp$start == proper_overlaps$r2_start[i] & tmp$end == proper_overlaps$r2_end[i]), ] %>%
-          dplyr::distinct(start, end, .keep_all = TRUE)
-        rreads <- rbind(rreads, tmp_r)
-        freads <- rbind(freads, tmp_f)
-      }
+        rreads <- data.frame()
+        freads <- data.frame()
+        for(i in 1:nrow(proper_overlaps)){
+          tmp_r <- tmp[which(tmp$start == proper_overlaps$r1_start[i] & tmp$end == proper_overlaps$r1_end[i]), ] %>%
+           dplyr::distinct(start, end, .keep_all = TRUE)
+          tmp_f <- tmp[which(tmp$start == proper_overlaps$r2_start[i] & tmp$end == proper_overlaps$r2_end[i]), ] %>%
+           dplyr::distinct(start, end, .keep_all = TRUE)
+         rreads <- rbind(rreads, tmp_r)
+         freads <- rbind(freads, tmp_f)
+       }
 
 
       proper_overlaps <- NULL
@@ -131,20 +129,20 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       rreads <- NULL
       freads <- NULL
 
-      paired_seqs <- paired_seqs %>%
-        dplyr::mutate(read1_seq = paste0(">",chrom_name, ":", paired_seqs$r1_start, "-", paired_seqs$r1_end, " ", paired_seqs$r1_seq), read2_seq = paste0(">",chrom_name, ":", paired_seqs$r2_start, "-", paired_seqs$r2_end, " " , paired_seqs$r2_seq))
-
-      fastas <- paired_seqs %>% dplyr::select(c(read1_seq, read2_seq)) %>%
-        dplyr::transmute(col1 = paste0(read1_seq, ",", read2_seq)) %>%
-        tidyr::separate_rows(col1, sep = ",")
-
-      fastas <- stringi::stri_split_regex(fastas$col1, " ")
 
       if(write_fastas == "T"){
+        paired_seqs <- paired_seqs %>%
+          dplyr::mutate(read1_seq = paste0(">",chrom_name, ":", paired_seqs$r1_start, "-", paired_seqs$r1_end, " ", paired_seqs$r1_seq), read2_seq = paste0(">",chrom_name, ":", paired_seqs$r2_start, "-", paired_seqs$r2_end, " " , paired_seqs$r2_seq))
+
+        fastas <- paired_seqs %>% dplyr::select(c(read1_seq, read2_seq)) %>%
+          dplyr::transmute(col1 = paste0(read1_seq, ",", read2_seq)) %>%
+          tidyr::separate_rows(col1, sep = ",")
+
+        fastas <- stringi::stri_split_regex(fastas$col1, " ")
         write.table(unlist(fastas), file = paste0(wkdir, prefix, "_siRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
+        paired_seqs <- NULL
+        fastas <- NULL
       }
-      paired_seqs <- NULL
-      fastas <- NULL
 
 
       #calculate the number of dicer pairs for the zscore
@@ -154,8 +152,6 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
       # calculate the siRNA pairs for the heatmap
-      #results <- get_si_overlaps(forward_dt$start, forward_dt$end, forward_dt$width,
-      #                        reverse_dt$start, reverse_dt$end, reverse_dt$width)
 
       results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
                                 forward_dt$start, forward_dt$end, forward_dt$width)
@@ -209,16 +205,14 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       }
    )
 
- #run the hairpin function on each strand separately
-   dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
-                              path_to_RNAfold, annotate_region, weight_reads, gtf_file)
- #if there are results then do the hairpin functions and plots
- if(!sum(results) == 0){
-   ### hairpin function
+
    print("Beginning hairpin function.")
 
-
-
+ #run the hairpin function on each strand separately
+   dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
+                              path_to_RNAfold, annotate_region, weight_reads, gtf_file, out_type)
+ #if there are results then do the hairpin functions and plots
+ if(!sum(results) == 0){
 
    #user provides argument plot = T or plot = F
    if(plot_output == "T"){
@@ -245,11 +239,19 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       all_plot <- cowplot::plot_grid(top, bottom, ncol = 1, rel_widths = c(1, 1), rel_heights = c(1,1))
 
-      cat(file = paste0(wkdir, logfile), "Making PDF\n", append = TRUE)
-      grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 9, width = 9)
-      print(all_plot)
-      grDevices::dev.off()
-     }
+
+      if(out_type == "png" || out_type == "PNG"){
+        cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
+        grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 9, width = 9, units = "in", res = 300)
+        print(all_plot)
+        grDevices::dev.off()
+      } else {
+        cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
+        grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 9, width = 9)
+        print(all_plot)
+        grDevices::dev.off()
+      }
+   }
 
    } else {
 

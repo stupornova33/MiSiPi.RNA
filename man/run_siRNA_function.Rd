@@ -21,7 +21,8 @@ run_siRNA_function(
   annotate_region,
   weight_reads,
   gtf_file,
-  write_fastas
+  write_fastas,
+  out_type
 )
 }
 \arguments{
@@ -55,7 +56,9 @@ run_siRNA_function(
 
 \item{gtf_file}{a string}
 
-\item{write_fastas}{Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected.}
+\item{write_fastas}{Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected. Default: "F"}
+
+\item{out_type}{The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.}
 }
 \value{
 results

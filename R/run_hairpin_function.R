@@ -16,6 +16,7 @@ run_hairpin_function <- function(vars){
    logfile = "hairpin_logfile.txt"
    if(!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
 
-   mapply(dual_strand_hairpin, vars[[1]], vars[[2]], vars[[3]], vars[[4]], 1, vars[[9]], vars[[10]], logfile, wkdir, vars[[6]], vars[[7]], vars[[14]], vars[[15]])
+   mapply(dual_strand_hairpin, vars[[1]], vars[[2]], vars[[3]], vars[[4]], 1, vars[[9]], vars[[10]], logfile, wkdir, vars[[6]],
+          vars[[7]], vars[[14]], vars[[15]], vars[[18]])
 
 }

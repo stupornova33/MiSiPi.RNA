@@ -15,13 +15,14 @@
 #' @param wkdir a string
 #' @param plot_output a string, default = TRUE
 #' @param path_to_RNAfold a string
+#' @param write_fastas a string, "T" or "F"
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
-
+#' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return plots
 #' @export
 
 run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
-                           strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, weight_reads){
+                           strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, write_fastas, weight_reads, out_type){
    print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
    cat(file = paste0(wkdir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
    pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
@@ -72,12 +73,6 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       bam_scan <- Rsamtools::ScanBamParam(what=c('rname', 'pos', 'strand','qwidth'), which=which)
    }
 
-   #pileups <- get_read_pileups(reg_start, reg_stop, bam_scan, bam_file)
-
-   #empty_table <- data.frame(pos = c(seq(reg_start, reg_stop)), count = c(0))
-
-   #dt_table <- merge(empty_table, dt, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
-   #dt_table[is.na(dt_table)] = 0
 
    ########################################################## main logic ################################################################
    ## make the read data tables
@@ -102,8 +97,8 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
         locus_length <- reg_stop - reg_start
         locus_read_count <- sum(filter_r2_dt$count)
-        r2_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
-        r1_dt <- locus_norm(filter_r2_dt, locus_read_count, locus_length)
+        r2_dt <- locus_norm(filter_r2_dt, locus_read_count)
+        r1_dt <- locus_norm(filter_r2_dt, locus_read_count)
       } else {
         r2_dt <- no_weight(filter_r2_dt, chrom_name)
         r1_dt <- no_weight(filter_r2_dt, chrom_name)
@@ -133,9 +128,6 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    dt_table <- merge(empty_table, pileups, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
    dt_table[is.na(dt_table)] = 0
 
-   #if(nrow(dt) == 0){
-   #    return(null_mi_res())
-   #}
 
    # returns overlaps
    # using find_overlaps instead of find_hp_overlaps
@@ -332,6 +324,8 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       # summarize the counts by the # overlapping nucleotides
       z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
 
+      # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
+      z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
       # create empty z_df
       z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
 
@@ -509,28 +503,45 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
          zplot <- plot_overlapz(z_df)
 
-         if(reg_stop - reg_start <= 100){
+         if(reg_stop - reg_start <= 150){
            #if miRNA is long, use landscape orientation so the struct plot isn't squished.
            left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
            right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
            bottom <- cowplot::plot_grid(struct_plot)
            top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+
+
            all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
-           grDevices::pdf(file = paste0(prefix, "_combined.pdf"), height = 11, width = 8)
-           print(all_plot)
-           grDevices::dev.off()
+
+           if(out_type == "png" || out_type == "PNG"){
+             grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
+             print(all_plot)
+             grDevices::dev.off()
+           } else {
+             grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
+             print(all_plot)
+           }
 
           } else {
-           top <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
-           #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-           #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-           bottom <- cowplot::plot_grid(struct_plot)
-           #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-           all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
-           grDevices::pdf(file = paste0(prefix, "_combined.pdf"), height = 7, width = 15)
-           print(all_plot)
-           grDevices::dev.off()
-          }
+            top <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
+            #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+             #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+             bottom <- cowplot::plot_grid(struct_plot)
+             #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+             all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
+
+
+           if(out_type == "png" || out_type == "png"){
+            grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 7, width = 15, units = "in", res = 300)
+            print(all_plot)
+            grDevices::dev.off()
+           } else {
+            grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 7, width = 15)
+            print(all_plot)
+            grDevices::dev.off()
+           }
+
+         }
 
       }
       return(list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs,z_df)))
