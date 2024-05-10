@@ -11,12 +11,12 @@
 #' @param min_read_count an integer
 #' @param si_pal a string
 #' @param pi_pal a string
-#' @param plot_output a string, "T" or "F"
+#' @param plot_output a bool, TRUE or FALSE
 #' @param path_to_RNAfold a string
-#' @param annotate_region a string, "T" or "F"
-#' @param weight_reads a string, "T", or "F"
+#' @param annotate_region a bool, TRUE or FALSE
+#' @param weight_reads a bool, TRUE or FALSE
 #' @param gtf_file a string
-#' @param write_fastas a string, "T" or "F". Default is "F"
+#' @param write_fastas a bool, TRUE or FALSE. Default is FALSE
 #' @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
 #' @return results
 
@@ -196,7 +196,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   if(!dir.exists('run_all/size_plots/')) dir.create('run_all/size_plots/')
 
-  if(plot_output == 'T'){
+  if(plot_output == TRUE){
     size_dir <- 'run_all/size_plots/'
     size_plots <- plot_sizes(read_dist)
   }
@@ -370,7 +370,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   piRNA_dir <- 'run_all/piRNA_dir/'
   pi_log <- file.create(paste0(piRNA_dir, 'pi_logfile.txt'))
-  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, pi_log, piRNA_dir, pi_pal, plot_output = "F", weight_reads, write_fastas, out_type)
+  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, pi_log, piRNA_dir, pi_pal, plot_output = FALSE, weight_reads, write_fastas, out_type)
 
 
   #if(!is.na(pi_res[[1]])){

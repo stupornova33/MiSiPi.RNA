@@ -12,7 +12,7 @@
 #' @param logfile a string
 #' @param wkdir a string
 #' @param pal a string
-#' @param plot_output a string, 'T' or 'F', default is 'T'
+#' @param plot_output a bool, TRUE or FALSE, default is TRUE
 #' @return max_zscore, plots
 
 #' @export
@@ -143,7 +143,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
       }
    )
 
-   if(plot_output == 'T'){
+   if(plot_output == TRUE){
       dist_plot <- plot_sizes(read_dist)
       phased_plot <- plot_phasedz(df)
       all_plot <- cowplot::plot_grid(phased_plot, dist_plot, rel_widths = c(1, 0.7), rel_heights = c(1,1), ncol = 2)

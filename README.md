@@ -39,30 +39,30 @@ passed to set_vars(). These should be changed based on your needs.
 - **bam_file**        - A BAM file of aligned reads. Index file must also be present
 - **genome**          - A genome fasta file. Chromosome names must match the bed file
 - **min_read_count**  - This filters out loci with low mapping reads. Defaults to 1
-- **plot_output**     - ("T" or "F") If "T", MiSiPi.RNA will output plots as pdfs
+- **plot_output**     - (TRUE or FALSE) If TRUE, MiSiPi.RNA will output plots as pdfs
 - **path_to_RNAfold** - Full path to RNAfold executable
 - **pi_pal**          - Palette option for the generated piRNA heatmap (see below)
 - **si_pal**          - Palette option for the generated siRNA heatmap (see below)
-- **annotate_region** - ("T" or "F") Plots annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci
+- **annotate_region** - (TRUE or FALSE) Plots annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci
 - **weight_reads**    - Determines if read counts will be weighted. ("Top", "locus_norm", or "None") 
-- **gtf_file**        - Full path to a 9 column GTF file or "F" if not plotting gene annotation features. Default is "F"
-- **write_fastas**    - ("T" or "F") If "T", MiSiPi.RNA will write read pairs from functions to a file. Default is "F"
-- **out_type**        - Specifies the output type. Default is "pdf"
+- **gtf_file**        - Full path to a 9 column GTF file. Required only if annotate_region is TRUE
+- **write_fastas**    - (TRUE or FALSE) If TRUE, MiSiPi.RNA will write read pairs from functions to a file. Default is FALSE
+- **out_type**        - ("pdf" or "png") Specifies the output type. Default is "pdf"
 
 
 ```
 vars <- set_vars(roi = "path/to/bed",
-                bam_file = "path/to/bamfile", 
+                bam_file = "path/to/bam", 
                 genome = "path/to/genome",
                 min_read_count = 1,
-                plot_output = "T", 
+                plot_output = TRUE, 
                 path_to_RNAfold = "path/to/ViennaRNA/RNAfold.exe",
                 pi_pal = "BlYel",
                 si_pal = "RdYlBl",
-                annotate_region = "T",
-                weight_reads = "F",
-                gtf_file = "F",
-                write_fastas = "F",
+                annotate_region = TRUE,
+                weight_reads = "None",
+                gtf_file = "path/to/gtf",
+                write_fastas = FALSE,
                 out_type = "pdf")
 
 ```

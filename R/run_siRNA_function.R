@@ -10,12 +10,12 @@
 #' @param logfile a string
 #' @param wkdir a string
 #' @param pal a string
-#' @param plot_output a string, 'T' or 'F'. Default is 'T'
+#' @param plot_output a bool, TRUE or FALSE. Default is TRUE
 #' @param path_to_RNAfold a string
-#' @param annotate_region a string, "T" or "F"
+#' @param annotate_region a bool, TRUE or FALSE
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none. See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file a string
-#' @param write_fastas Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected. Default: "F"
+#' @param write_fastas a bool, Determines whether siRNA pairs will be written to a fasta file. TRUE or FALSE expected. Default: FALSE
 #' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return results
 #' @export
@@ -130,7 +130,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       freads <- NULL
 
 
-      if(write_fastas == "T"){
+      if(write_fastas == TRUE){
         paired_seqs <- paired_seqs %>%
           dplyr::mutate(read1_seq = paste0(">",chrom_name, ":", paired_seqs$r1_start, "-", paired_seqs$r1_end, " ", paired_seqs$r1_seq), read2_seq = paste0(">",chrom_name, ":", paired_seqs$r2_start, "-", paired_seqs$r2_end, " " , paired_seqs$r2_seq))
 
@@ -215,7 +215,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
  if(!sum(results) == 0){
 
    #user provides argument plot = T or plot = F
-   if(plot_output == "T"){
+   if(plot_output == TRUE){
       cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
 
       heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
