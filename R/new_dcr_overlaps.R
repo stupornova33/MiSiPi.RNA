@@ -6,7 +6,6 @@
 #' @return all_overlaps
 
 #' @export
-#if this all works we can get rid of dicer_overlaps and its associated Rcpp functions
 
 new_dcr_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
   r2_dt <- dicer_dt
