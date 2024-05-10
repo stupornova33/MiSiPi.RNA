@@ -376,6 +376,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   print("Completed calculations. Making plots.")
+  print(paste0("sum heat results: ", sum(heat_results)))
 #################################################################################################
 ### make plots
   if(!sum(heat_results) == 0 && plot_output == TRUE){
@@ -429,7 +430,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
 
 
-    if(out_type == "png" || "PNG"){
+    if(out_type == "png" || out_type == "PNG"){
       grDevices::png(file=paste0(wkdir, chrom_name, "_", reg_start, "-", reg_stop, "_pi-zscore.png"), width = 10, height = 11, bg = "white", units = "in", res = 300)
       print(all_plot)
       grDevices::dev.off()
