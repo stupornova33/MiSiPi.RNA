@@ -41,7 +41,9 @@ fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold){
    }
 
    ct <- RRNA::makeCt(vien_struct, fold[1])
-   coord <- RRNA::ct2coord(ct)
+   
+   # Using capture.output to silence the excessive console output from ct2coord
+   utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
    #RRNA::RNAPlot(coord, nt = TRUE)
    #split the string to get mfe
    #Split based on space and remove parentheses
