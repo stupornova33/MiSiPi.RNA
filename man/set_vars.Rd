@@ -15,7 +15,7 @@ set_vars(
   si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
   annotate_region = FALSE,
   weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"),
-  gtf_file,
+  gtf_file = FALSE,
   write_fastas = FALSE,
   out_type = c("pdf", "png", "PDF", "PNG")
 )
@@ -41,7 +41,7 @@ set_vars(
 
 \item{weight_reads}{Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.}
 
-\item{gtf_file}{a string corresponding to the path of genome annotation in 9-column GTF format.}
+\item{gtf_file}{a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.}
 
 \item{write_fastas}{TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.}
 
