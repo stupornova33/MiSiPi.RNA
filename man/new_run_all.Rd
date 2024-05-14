@@ -49,17 +49,17 @@ new_run_all(
 
 \item{pi_pal}{a string}
 
-\item{plot_output}{a string, "T" or "F"}
+\item{plot_output}{a bool, TRUE or FALSE}
 
 \item{path_to_RNAfold}{a string}
 
-\item{annotate_region}{a string, "T" or "F"}
+\item{annotate_region}{a bool, TRUE or FALSE}
 
-\item{weight_reads}{a string, "T", or "F"}
+\item{weight_reads}{a bool, TRUE or FALSE}
 
 \item{gtf_file}{a string}
 
-\item{write_fastas}{a string, "T" or "F". Default is "F"}
+\item{write_fastas}{a bool, TRUE or FALSE. Default is FALSE}
 
 \item{out_type}{Specifies whether file types for plots are png or pdf. Default is pdf.}
 }

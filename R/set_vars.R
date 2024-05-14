@@ -15,13 +15,13 @@
 #' @return a list
 #' @export
 
-set_vars <- function(roi, bam_file, genome, min_read_count = 1, 
+set_vars <- function(roi, bam_file, genome, min_read_count = 1,
                      plot_output = TRUE, path_to_RNAfold,
                      pi_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      annotate_region = FALSE,
-                     weight_reads = c("None", "top", "locus_norm"), gtf_file,
-                     write_fastas = FALSE, out_type = c("pdf", "png")) {
+                     weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), gtf_file,
+                     write_fastas = FALSE, out_type = c("pdf", "png", "PDF", "PNG")) {
 
   ## Parameter Validation
   # roi
@@ -29,7 +29,7 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
   bed_columns_vector <- utils::count.fields(roi, sep = "\t")
   stopifnot("Bed file (roi) must have the same number of columns in each line." = length(unique(bed_columns_vector)) == 1)
   number_of_bed_columns <- bed_columns_vector[1]
-  stopifnot("Bed file (roi) must have 3 columns and be tab separated." = number_of_bed_columns == 3)
+  stopifnot("Bed file (roi) must have 3 columns and be tab separated." = number_of_bed_columns >= 3)
   # bam_file
   stopifnot("Parameter `bam_file` must have a .bam extension." = tools::file_ext(bam_file) == "bam")
   stopifnot("Parameter `bam_file` must be a valid filepath to a BAM file." = file.exists(bam_file))
@@ -68,7 +68,7 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
   # out_type
   out_type <- match.arg(out_type)
   ## End Parameter Validation
-                       
+
   bam_obj <- MiSiPi.RNA::OpenBamFile(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
