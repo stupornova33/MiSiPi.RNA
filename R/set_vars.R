@@ -9,15 +9,66 @@
 #' @param si_pal The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.
-#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format.
+#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.
 #' @param write_fastas TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.
 #' @param out_type The type of file for plots. Options are "png" or "pdf". Default is PDF.
 #' @return a list
 #' @export
 
-set_vars <- function(roi, bam_file, genome, min_read_count, plot_output, path_to_RNAfold, pi_pal, si_pal, annotate_region, weight_reads, gtf_file = FALSE, write_fastas = FALSE, out_type = "pdf"){
+set_vars <- function(roi, bam_file, genome, min_read_count = 1,
+                     plot_output = TRUE, path_to_RNAfold,
+                     pi_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
+                     si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
+                     annotate_region = FALSE,
+                     weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), gtf_file = FALSE,
+                     write_fastas = FALSE, out_type = c("pdf", "png", "PDF", "PNG")) {
+  ## Parameter Validation
+  # roi
+  stopifnot("Parameter `roi` must be a valid filepath to a BED file." = file.exists(roi))
+  bed_columns_vector <- utils::count.fields(roi, sep = "\t")
+  stopifnot("Bed file (roi) must have the same number of columns in each line." = length(unique(bed_columns_vector)) == 1)
+  number_of_bed_columns <- bed_columns_vector[1]
+  stopifnot("Bed file (roi) must have 3 columns and be tab separated." = number_of_bed_columns >= 3)
+  # bam_file
+  stopifnot("Parameter `bam_file` must have a .bam extension." = tools::file_ext(bam_file) == "bam")
+  stopifnot("Parameter `bam_file` must be a valid filepath to a BAM file." = file.exists(bam_file))
+  bai_file <- paste0(bam_file, ".bai")
+  stopifnot("A corresponding .bai index file must be present in the same directory as the .bam file" = file.exists(bai_file))
+  # genome
+  stopifnot("Parameter `genome` must be a valid filepath to a genome Fasta file." = file.exists(genome))
+  # min_read_count
+  # TODO If this gets reimplemented anywhere else, consider adding it to a separate file
+  is.wholenumber <- function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
+  stopifnot("Parameter `min_read_count` must be an whole number." = is.wholenumber(min_read_count))
+  # plot_output
+  stopifnot("Parameter `plot_output` only accepts TRUE or FALSE." = is.logical(plot_output))
+  # path_to_RNAfold
+  stopifnot("Parameter `path_to_RNAfold` must be a valid filepath to RNAfold." = file.exists(path_to_RNAfold))
+  # pi_pal - Dependent on plot_output
+  pi_pal <- match.arg(pi_pal)
+  # si_pal - Dependent on plot_output
+  si_pal <- match.arg(si_pal)
+  # annotate_region
+  stopifnot("Parameter `annotate_region` only accepts TRUE or FALSE." = is.logical(annotate_region))
+  # weight_reads
+  weight_reads <- match.arg(weight_reads)
+  # gtf_file - Dependent on annotate_region
+  if (annotate_region == TRUE) {
+    stopifnot("Parameter `gtf_file` must be provided when `annotate_region` is TRUE." = !missing(gtf_file))
+    stopifnot("Parameter `gtf_file` must be a valid filepath to a 9 column gtf file." = file.exists(gtf_file))
+    gtf_columns_vector <- utils::count.fields(gtf_file, sep = "\t")
+    stopifnot("gtf_file must have the same number of columns in each line." = length(unique(gtf_columns_vector)) == 1)
+    #waiting to include the number of column check
+    #number_of_gtf_columns <- gtf_columns_vector[1]
+    #stopifnot("gtf_file must have 9 columns and be tab separated." = number_of_gtf_columns == 9)
+  }
+  # write_fastas
+  stopifnot("Parameter `write_fastas` only accepts TRUE or FALSE." = is.logical(write_fastas))
+  # out_type
+  out_type <- match.arg(out_type)
+  ## End Parameter Validation
 
-  bam_obj <- OpenBamFile(bam_file)
+  bam_obj <- MiSiPi.RNA::OpenBamFile(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])
