@@ -131,14 +131,14 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   # calculate phasing signatures
   print("Calculating plus phasing signature.")
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
-    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
+    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 50)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
     # if read dfs are empty set results to null. Still need to create the empty tables for plots/ML
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     # creating an empty table with "null" values
-    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), zscore = rep(0,51))
+    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     # -33 is an arbitrary value
     plus_hp_phased_z <- -33
@@ -206,7 +206,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
       plus_overhangz <- mean(plus_overhangs$zscore[1:4])
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
-                phased_tbl.zscore = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
+                phased_tbl.phased_z = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
   }
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
@@ -249,7 +249,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #calculate phasing
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
      print("r1_dt contains data. Calculating phasing.")
-     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
+     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 50)
      print("summing minus_hp phased_num.")
      minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
      print("getting mean of minus_hp phased_num.")
@@ -332,7 +332,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
       minus_overhangz <- mean(minus_overhangs$zscore[1:4])
       minus_res <- list(minusMFE = MFE, minus_hp_overhangz = minus_hp_overhangz, minus_hp_phasedz = minus_hp_phasedz, phased_tbl.dist = minus_hp_phased_tbl$phased_dist,
-                 phased_tbl.zscore = minus_hp_phased_tbl$phased_z, dicer_tbl.shift = minus_overhangs$shift, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)
+                 phased_tbl.phased_z = minus_hp_phased_tbl$phased_z, dicer_tbl.shift = minus_overhangs$shift, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)
   }
 ################################################################ make plots #####################################################################
 
@@ -371,8 +371,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
-  plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.zscore)))
-  minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.zscore)))
+  plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.phased_z)))
+  minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.phased_z)))
 
 
   suppressWarnings(

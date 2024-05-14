@@ -37,7 +37,7 @@ phased_piRNA_function(
 
 \item{pal}{a string}
 
-\item{plot_output}{a string, 'T' or 'F', default is 'T'}
+\item{plot_output}{a bool, TRUE or FALSE, default is TRUE}
 }
 \value{
 max_zscore, plots

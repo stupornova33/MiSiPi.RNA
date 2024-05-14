@@ -45,7 +45,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    mygranges <- GenomicRanges::GRanges(
       seqnames = c(chrom_name),
       ranges = IRanges::IRanges(start=c(1), end=c(length)))
-   print(paste0("mygranges: ", mygranges))
+   #print(paste0("mygranges: ", mygranges))
 
    geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
    geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
@@ -261,13 +261,13 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    #for the coverage plot
    apply_outer <- function(i) {
       cov_vec <- vector(length = 0L)
-      print(paste0("start: ", reduced_df$start[i], " stop: ", reduced_df$stop[i]))
+      #print(paste0("start: ", reduced_df$start[i], " stop: ", reduced_df$stop[i]))
       seq_rng <- seq(reduced_df$start[i], reduced_df$stop[i])
-      print(paste0("length seq_rng: ", length(seq_rng)))
+      #print(paste0("length seq_rng: ", length(seq_rng)))
 
       # Define the inner loop vector to iterate over
       cov_vec <- sapply(seq_rng, apply_inner)
-      print(paste0("length cov_vec: ", length(cov_vec)))
+      #print(paste0("length cov_vec: ", length(cov_vec)))
 
       list(seq_rng, cov_vec)
    }

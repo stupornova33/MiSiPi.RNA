@@ -15,8 +15,8 @@ set_vars(
   si_pal,
   annotate_region,
   weight_reads,
-  gtf_file = "F",
-  write_fastas = "F",
+  gtf_file = FALSE,
+  write_fastas = FALSE,
   out_type = "pdf"
 )
 }
@@ -29,7 +29,7 @@ set_vars(
 
 \item{min_read_count}{An integer. Default is 1}
 
-\item{plot_output}{Determines whether the program will output plots as PDFs. Expected input is "T" or "F".}
+\item{plot_output}{Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.}
 
 \item{path_to_RNAfold}{The full path to the RNAfold binary executable.}
 
@@ -37,13 +37,13 @@ set_vars(
 
 \item{si_pal}{The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
 
-\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.}
+\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.}
 
 \item{weight_reads}{Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.}
 
 \item{gtf_file}{a string corresponding to the path of genome annotation in 9-column GTF format.}
 
-\item{write_fastas}{A string, "T" or "F". Optional. If "T", read pairs from functions will be written to file.}
+\item{write_fastas}{TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.}
 
 \item{out_type}{The type of file for plots. Options are "png" or "pdf". Default is PDF.}
 }
