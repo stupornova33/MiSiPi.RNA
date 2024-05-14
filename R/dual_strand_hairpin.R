@@ -10,9 +10,9 @@
 #' @param bam_file The path to a BAM file. There must be a corresponding index ending in .bai in the same directory.
 #' @param logfile The name of the file to which log information will be written.
 #' @param wkdir The path to the directory where all outputs will be written.
-#' @param plot_output Determines whether PDF plots will be made. Expected values are "T" or "F".
+#' @param plot_output Determines whether PDF plots will be made. Expected values are TRUE or FALSE
 #' @param path_to_RNAfold The full path to the RNAfold binary executable.
-#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.
+#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
 #' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
@@ -392,7 +392,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   )
 
 
-  if(plot_output == 'T'){
+  if(plot_output == TRUE){
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
     plus_overhangs$zscore[is.na(plus_overhangs$zscore)] <- 0
 
@@ -413,7 +413,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
     ## plot genome annotations (optional)
-    if(annotate_region == "T"){
+    if(annotate_region == TRUE){
       gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
       left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 

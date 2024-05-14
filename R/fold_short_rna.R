@@ -29,7 +29,8 @@ fold_short_rna <- function(start, stop, converted, path_to_RNAfold){
       vien_split <- test[[x]][[1]]
       print(vien_split)
       ct <- RRNA::makeCt(vien_struct, fold[[1]])
-      coord <- RRNA::ct2coord(ct)
+      # Using capture.output to silence the excessive console output from ct2coord
+      utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
 
       #split the string to get mfe
       mfe <- gsub(' ', '', gsub('[)]','', gsub('[(]', '', vien_split)))
