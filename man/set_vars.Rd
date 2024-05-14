@@ -15,7 +15,7 @@ set_vars(
   si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
   annotate_region = FALSE,
   weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"),
-  gtf_file = FALSE,
+  gtf_file,
   write_fastas = FALSE,
   out_type = c("pdf", "png", "PDF", "PNG")
 )
