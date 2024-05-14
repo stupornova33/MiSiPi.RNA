@@ -22,7 +22,6 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
                      annotate_region = FALSE,
                      weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), gtf_file = FALSE,
                      write_fastas = FALSE, out_type = c("pdf", "png", "PDF", "PNG")) {
-
   ## Parameter Validation
   # roi
   stopifnot("Parameter `roi` must be a valid filepath to a BED file." = file.exists(roi))
