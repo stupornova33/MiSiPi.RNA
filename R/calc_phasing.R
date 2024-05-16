@@ -12,9 +12,16 @@
 
 
 calc_phasing <- function(df1, df2, n){
-phased <- find_hp_overlaps(df1, df2, n)
+
 
 dist <- start_r1 <- widthx <- start_r2 <- widthy <- num.y <- num.x <- Zscore <- num <- NULL
+
+# check if number of reads is > 3000 and if so, subsample
+df1 <- df1[sample(1:nrow(df1)),]
+df2 <- df2[sample(1:nrow(df2)),]
+df1 <- utils::head(df1, 4000)
+df2 <- utils::head(df2, 4000)
+phased <- find_hp_overlaps(df1, df2, n)
 
 phased <- phased %>%
   dplyr::filter(dist >= 0) %>%
