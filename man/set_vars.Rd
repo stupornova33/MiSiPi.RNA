@@ -18,7 +18,6 @@ set_vars(
   gtf_file = FALSE,
   write_fastas = FALSE,
   out_type = c("pdf", "png", "PDF", "PNG")
-
 )
 }
 \arguments{
