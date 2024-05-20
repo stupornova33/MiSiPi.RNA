@@ -163,12 +163,14 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     #transform reads and find dicer pairs
     print("Calculating dicer overlaps.")
     #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
-    r2_dt <- r2_dt %>% dplyr::group_by(rname, start, end, width, first) %>% dplyr::summarize(count = dplyr::n())
+    dicer_dt <- r2_dt %>% dplyr::group_by(rname, start, end, width, first) %>% dplyr::summarize(count = dplyr::n())
 
-    all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
+    all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
     # dicer_overlaps() returns zero values if there are no valid overlaps
     # so check to make sure the first values are not zero
     if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
+      #if(write_fastas == TRUE) write_proper_overhangs(r2_dt, r2_dt, wkdir, prefix, all_overlaps, "_hairpin")
+
       print("all_overlaps contains data. Calculating overhangs.")
       plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                   all_overlaps$r2_start, all_overlaps$r2_width))
@@ -277,11 +279,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
        print("Calculating dicer_overlaps.")
 
        # take unique reads for dicer overhang calculation, then replicate according to count later
-       r2_dt <- r2_dt %>% dplyr::group_by(rname, start, end,first, width) %>% dplyr::summarize(count = dplyr::n())
+       dicer_dt <- r2_dt %>% dplyr::group_by(rname, start, end,first, width) %>% dplyr::summarize(count = dplyr::n())
        #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
-       all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
+       all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
 
        if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
+         #if(write_fastas == TRUE) write_proper_overhangs(r2_dt, r2_dt,wkdir, prefix, all_overlaps, "_hairpin")
+
          print("all_overlaps contains results. Computing overhangs.")
          minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                      all_overlaps$r2_start, all_overlaps$r2_width))
@@ -303,6 +307,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
         all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
       if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
+        if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, all_overlaps, "_hairpin")
+
          minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                       all_overlaps$r2_start, all_overlaps$r2_width))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
