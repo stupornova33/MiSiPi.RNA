@@ -5,18 +5,15 @@
 #' @param logfile a string
 #' @return bam_obj
 
-
-
 #' @export
 
 OpenBamFile <- function(bamfile, logfile){
    bam_obj <- Rsamtools::BamFile(bamfile)
-   Rsamtools::open.BamFile(bam_obj)
-   if(Rsamtools::isOpen(bam_obj) == FALSE) {
-      warning_msg <- paste("Warning", bamfile, "cannot be opened. Halting", sep = " ")
-      cat(logfile, warning_msg, append = TRUE)
-      return()
-   } else {
-      return(bam_obj)
-   }
+   tryCatch(Rsamtools::open.BamFile(bam_obj), error = function(e) {
+     msg <- conditionMessage(e)
+     cat(msg, file = logfile, sep = "\n", append = TRUE)
+     message("Could not open Bamfile provided")
+     stop(e)
+   })
+   return(bam_obj)
 }

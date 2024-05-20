@@ -43,11 +43,11 @@ dual_strand_hairpin(
 
 \item{wkdir}{The path to the directory where all outputs will be written.}
 
-\item{plot_output}{Determines whether PDF plots will be made. Expected values are "T" or "F".}
+\item{plot_output}{Determines whether PDF plots will be made. Expected values are TRUE or FALSE}
 
 \item{path_to_RNAfold}{The full path to the RNAfold binary executable.}
 
-\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.}
+\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.}
 
 \item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
 

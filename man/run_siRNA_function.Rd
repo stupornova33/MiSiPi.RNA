@@ -46,17 +46,17 @@ run_siRNA_function(
 
 \item{pal}{a string}
 
-\item{plot_output}{a string, 'T' or 'F'. Default is 'T'}
+\item{plot_output}{a bool, TRUE or FALSE. Default is TRUE}
 
 \item{path_to_RNAfold}{a string}
 
-\item{annotate_region}{a string, "T" or "F"}
+\item{annotate_region}{a bool, TRUE or FALSE}
 
 \item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none. See MiSiPi documentation for descriptions of the weighting methods.}
 
 \item{gtf_file}{a string}
 
-\item{write_fastas}{Determines whether siRNA pairs will be written to a fasta file. "T" or "F" expected. Default: "F"}
+\item{write_fastas}{a bool, Determines whether siRNA pairs will be written to a fasta file. TRUE or FALSE expected. Default: FALSE}
 
 \item{out_type}{The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.}
 }

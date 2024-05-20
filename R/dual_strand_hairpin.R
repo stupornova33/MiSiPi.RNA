@@ -10,9 +10,9 @@
 #' @param bam_file The path to a BAM file. There must be a corresponding index ending in .bai in the same directory.
 #' @param logfile The name of the file to which log information will be written.
 #' @param wkdir The path to the directory where all outputs will be written.
-#' @param plot_output Determines whether PDF plots will be made. Expected values are "T" or "F".
+#' @param plot_output Determines whether PDF plots will be made. Expected values are TRUE or FALSE
 #' @param path_to_RNAfold The full path to the RNAfold binary executable.
-#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If "T", a GTF file must be provided as the "gtf_file" argument.
+#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
 #' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
@@ -131,14 +131,14 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   # calculate phasing signatures
   print("Calculating plus phasing signature.")
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
-    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
+    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 50)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
     # if read dfs are empty set results to null. Still need to create the empty tables for plots/ML
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     # creating an empty table with "null" values
-    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), zscore = rep(0,51))
+    plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     # -33 is an arbitrary value
     plus_hp_phased_z <- -33
@@ -206,7 +206,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
       plus_overhangz <- mean(plus_overhangs$zscore[1:4])
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
-                phased_tbl.zscore = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
+                phased_tbl.phased_z = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
   }
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
@@ -249,7 +249,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #calculate phasing
   if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
      print("r1_dt contains data. Calculating phasing.")
-     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 30)
+     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 50)
      print("summing minus_hp phased_num.")
      minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
      print("getting mean of minus_hp phased_num.")
@@ -332,7 +332,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
       minus_overhangz <- mean(minus_overhangs$zscore[1:4])
       minus_res <- list(minusMFE = MFE, minus_hp_overhangz = minus_hp_overhangz, minus_hp_phasedz = minus_hp_phasedz, phased_tbl.dist = minus_hp_phased_tbl$phased_dist,
-                 phased_tbl.zscore = minus_hp_phased_tbl$phased_z, dicer_tbl.shift = minus_overhangs$shift, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)
+                 phased_tbl.phased_z = minus_hp_phased_tbl$phased_z, dicer_tbl.shift = minus_overhangs$shift, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)
   }
 ################################################################ make plots #####################################################################
 
@@ -371,8 +371,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
-  plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.zscore)))
-  minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.zscore)))
+  plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.phased_z)))
+  minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.phased_z)))
 
 
   suppressWarnings(
@@ -392,7 +392,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   )
 
 
-  if(plot_output == 'T'){
+  if(plot_output == TRUE){
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
     plus_overhangs$zscore[is.na(plus_overhangs$zscore)] <- 0
 
@@ -413,7 +413,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
     ## plot genome annotations (optional)
-    if(annotate_region == "T"){
+    if(annotate_region == TRUE){
       gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
       left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 

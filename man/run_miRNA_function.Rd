@@ -49,11 +49,11 @@ run_miRNA_function(
 
 \item{wkdir}{a string}
 
-\item{plot_output}{a string, default = TRUE}
+\item{plot_output}{a bool, default = TRUE}
 
 \item{path_to_RNAfold}{a string}
 
-\item{write_fastas}{a string, "T" or "F"}
+\item{write_fastas}{a bool, TRUE or FALSE}
 
 \item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
 

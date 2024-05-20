@@ -10,9 +10,9 @@
 #' @param logfile a string
 #' @param wkdir a string
 #' @param pal a string
-#' @param plot_output a string, 'T' or 'F', default = 'T
-#' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
-#' @param write_fastas Determines whether piRNA pairs will be written to fasta. Expected values are "T" or "F".
+#' @param plot_output a bool, TRUE or FALSE, default = TRUE
+#' @param weight_reads a string, Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
+#' @param write_fastas a bool, Determines whether piRNA pairs will be written to fasta. Expected values are TRUE or FALSE
 #' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return plots, heat results, and zdf
 #' @export
@@ -103,7 +103,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     # ignoring reads with same start/stop but internal mismatches from output fasta
 
 
-    if(write_fastas == "T"){
+    if(write_fastas == TRUE){
       proper_overlaps <- overlaps %>% dplyr::filter(r1_end - r2_start == 10)
       overlaps <- NULL
 
@@ -379,7 +379,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   print(paste0("sum heat results: ", sum(heat_results)))
 #################################################################################################
 ### make plots
-  if(!sum(heat_results) == 0 && plot_output == 'T'){
+  if(!sum(heat_results) == 0 && plot_output == TRUE){
     cat(file = paste0(wkdir, logfile), paste0("Generating plots.", "\n"), append = TRUE)
   ### ping pong plots
     read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)

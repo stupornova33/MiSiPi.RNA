@@ -13,9 +13,9 @@
 #' @param bam_file a BAM file
 #' @param logfile a string
 #' @param wkdir a string
-#' @param plot_output a string, default = TRUE
+#' @param plot_output a bool, default = TRUE
 #' @param path_to_RNAfold a string
-#' @param write_fastas a string, "T" or "F"
+#' @param write_fastas a bool, TRUE or FALSE
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return plots
@@ -45,7 +45,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    mygranges <- GenomicRanges::GRanges(
       seqnames = c(chrom_name),
       ranges = IRanges::IRanges(start=c(1), end=c(length)))
-   print(paste0("mygranges: ", mygranges))
+   #print(paste0("mygranges: ", mygranges))
 
    geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
    geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
@@ -91,7 +91,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    if(nrow(filter_r2_dt) == 0){
       return(null_mi_res())
    } else {
-      if(weight_reads == "T"){
+      if(weight_reads == "weight_by_prop"){
         r2_dt <- weight_by_prop(filter_r2_dt, chrom_name)
         r1_dt <- weight_by_prop(filter_r2_dt, chrom_name)
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
@@ -261,13 +261,13 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    #for the coverage plot
    apply_outer <- function(i) {
       cov_vec <- vector(length = 0L)
-      print(paste0("start: ", reduced_df$start[i], " stop: ", reduced_df$stop[i]))
+      #print(paste0("start: ", reduced_df$start[i], " stop: ", reduced_df$stop[i]))
       seq_rng <- seq(reduced_df$start[i], reduced_df$stop[i])
-      print(paste0("length seq_rng: ", length(seq_rng)))
+      #print(paste0("length seq_rng: ", length(seq_rng)))
 
       # Define the inner loop vector to iterate over
       cov_vec <- sapply(seq_rng, apply_inner)
-      print(paste0("length cov_vec: ", length(cov_vec)))
+      #print(paste0("length cov_vec: ", length(cov_vec)))
 
       list(seq_rng, cov_vec)
    }
@@ -357,7 +357,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       )
 
 
-      if(plot_output == "T"){
+      if(plot_output == TRUE){
          #make the plots
          dicer_sig <- plot_overhangz(overhangs, "+")
          print(overhangs)
