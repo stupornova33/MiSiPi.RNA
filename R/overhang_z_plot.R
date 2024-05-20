@@ -1,5 +1,5 @@
-#' plots the zscore for the 2nt overhang
-#' takes a table of overhang zscores
+#' plots the z_score for the 2nt overhang
+#' takes a table of overhang z_scores
 #' only output is overhang plots
 #' 
 #' @param overhangs a table
@@ -19,6 +19,4 @@ overhang_z_plot <- function(overhangs){
       
    p
    return(p)
-   
-   
 }

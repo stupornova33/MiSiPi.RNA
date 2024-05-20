@@ -232,7 +232,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
      out <- longest_seqs %>% dplyr::mutate(chrom = chrom_name) %>%
         dplyr::select(c(chrom, start, stop, ave_count))
      write.table(out, file = paste0(wkdir, "alt_miRNAs_coord.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
-     cat(file = paste0(wkdir,logfile), "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
+     cat(file = paste0(wkdir,logfile), "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.\n", append = TRUE)
    }
 
    # select the result with the highest read abundance
@@ -327,22 +327,22 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
       z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
       # create empty z_df
-      z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
+      z_df <- data.frame("Overlap" = z_res[ ,1], "z_score" = calc_zscore(z_res$count))
 
-      # calculate the zscores, if there are results
+      # calculate the z_scores, if there are results
       if(is.na(dicer_overlaps[1,1]) | dicer_overlaps[1,1] == 0) {
-         overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-         overhangs$zscore <- calc_zscore(overhangs$proper_count)
+         overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0), )
+         overhangs$z_score <- calc_zscore(overhangs$proper_count)
       } else {
 
          print('making overhangs')
          overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
                                      dicer_overlaps$r2_start, dicer_overlaps$r2_width))
-         overhangs$zscore <- calc_zscore(overhangs$proper_count)
+         overhangs$z_score <- calc_zscore(overhangs$proper_count)
       }
 
       # transform data frame from table to row
-      overhang_output <- data.frame(t(overhangs$zscore))
+      overhang_output <- data.frame(t(overhangs$z_score))
       colnames(overhang_output) <- overhangs$shift
       overhang_output$locus <- paste0(chrom_name, "_", reduced_list[[x]]$start, "_", reduced_list[[x]]$stop)
       overhang_output <- overhang_output[, c(10, 1:9)]

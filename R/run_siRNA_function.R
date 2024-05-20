@@ -145,10 +145,10 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       }
 
 
-      #calculate the number of dicer pairs for the zscore
+      #calculate the number of dicer pairs for the z_score
       dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
 
-      dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
+      dicer_overhangs$z_score <- calc_zscore(dicer_overhangs$proper_count)
 
       cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
       # calculate the siRNA pairs for the heatmap
@@ -164,22 +164,22 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         # results are being stored also in case the run_all function is being used, at the end they will be written to a table
         cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
         #the data.frame should be modified if using calc_expand_overhangs
-        dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
-        #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+        dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), z_score = c(rep(-33, times = 9)))
+        #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), z_score = c(rep(-33, times = 17)))
         results <- 0
       }
 
    } else {
       cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
-      #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
-      dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
+      #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), z_score = c(rep(-33, times = 17)))
+      dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), z_score = c(rep(-33, times = 9)))
       results <- 0
    }
 
 
    # transform the data frame for writing to table by row
-   # output is the locus followed by all zscores
-   overhang_output <- data.frame(t(dicer_overhangs$Z_score))
+   # output is the locus followed by all z_scores
+   overhang_output <- data.frame(t(dicer_overhangs$z_score))
    colnames(overhang_output) <- dicer_overhangs$shift
    print(overhang_output)
    overhang_output <- overhang_output %>% dplyr::mutate(locus = prefix)
@@ -227,7 +227,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       size_plot <- plot_sizes(dist)
       cat(file = paste0(wkdir, logfile), "plot_overhangz\n", append = TRUE)
 
-      dicer_overhangs$zscore <- calc_zscore(dicer_overhangs$proper_count)
+      dicer_overhangs$z_score <- calc_zscore(dicer_overhangs$proper_count)
       dicer_plot <- plot_overhangz(dicer_overhangs, "none")
 
 

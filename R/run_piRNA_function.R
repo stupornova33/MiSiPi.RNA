@@ -175,13 +175,13 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     output <- NULL
 
     # Put results into table
-    z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
+    z_df <- data.frame("Overlap" = z_res[ ,1], "z_score" = calc_zscore(z_res$count))
     z_res <- NULL
 
 
 
   } else {
-    z_df <- data.frame("Overlap" = c(seq(4,30), Z_score = c(rep(NA, times = 26))))
+    z_df <- data.frame("Overlap" = c(seq(4,30), z_score = c(rep(NA, times = 26))))
     heat_results <- matrix(data = 0, nrow = 18, ncol = 18)
     row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
     colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
@@ -387,7 +387,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     ## calculate read density by size
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
-    z_df$Z_score[is.na(z_df$Z_score)] <- 0
+    z_df$z_score[is.na(z_df$z_score)] <- 0
 
     z <- plot_overlapz(z_df)
     dist_plot <- plot_sizes(read_dist)
@@ -445,7 +445,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   if(!is.na(sum(phased_plus_counts$phased_z))){
 
-    # get average zscore for first 4 distances (1-4nt)
+    # get average z_score for first 4 distances (1-4nt)
     ave_plus_z <- mean(phased_plus_counts$phased_z[1:4])
   } else {
     ave_plus_z <- -33

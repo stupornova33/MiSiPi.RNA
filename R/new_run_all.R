@@ -227,7 +227,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   max_si_heat <- get_max_si_heat(si_res)
 
   local_ml$highest_si_col <- max_si_heat$highest_si_col
-  si_dicerz <- si_res$si_dicer$Z_score[9]
+  si_dicerz <- si_res$si_dicer$z_score[9]
 
   if(is.na(si_dicerz)){
     local_ml$si_dicerz <- -33
@@ -309,10 +309,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   mirnaMFE_plus <- mi_res$mfe
 
   pp_plus <- mi_res$perc_paired
-  mirna_dicerz_plus <- mi_res$overhangs$zscore[5]
+  mirna_dicerz_plus <- mi_res$overhangs$z_score[5]
 
-  if(mi_res$overhangs$zscore[1] != "NaN"){
-    plus_overlapz <- mean(mi_res$overhangs$Z_score[17:19])
+  # Change this to check if the z_score isn't -33 as we're removing NaN's earlier now
+  if(mi_res$overhangs$z_score[1] != -33){
+    plus_overlapz <- mean(mi_res$overhangs$z_score[17:19])
   } else {
     plus_overlapz <- NA
   }
@@ -322,10 +323,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
   pp_minus <- mi_res$perc_paired
-  mirna_dicerz_minus <- mi_res$overhangs$zscore[5]
+  mirna_dicerz_minus <- mi_res$overhangs$z_score[5]
 
-  if(mi_res$overhangs$zscore[1] != "NaN"){
-    minus_overlapz <- mean(mi_res$overhangs$Z_score[17:19])
+  # Changing this to check if the z_score isn't -33 as we're removing NaN's earlier now
+  if(mi_res$overhangs$z_score[1] != -33){
+    minus_overlapz <- mean(mi_res$overhangs$z_score[17:19])
   } else {
     minus_overlapz <- NA
   }
@@ -380,7 +382,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   #  local_ml$max_pi_count <- max_pi_heat$highest_pi_count/total_read_count
 
-  #  local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
+  #  local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$z_score), unlist(pi_res[[2]]$Overlap))[[1]]
   #  piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
   #  col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
   #  write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
@@ -397,7 +399,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     local_ml$pingpong_col <- max_pi_heat$highest_pi_col
     # changed pi_count to CPM
     local_ml$max_pi_count <- ((max_pi_heat$highest_pi_count)*1000000)/total_read_count
-    local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res$z_df$Z_score), unlist(pi_res$z_df$Overlap))[[1]]
+    local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res$z_df$z_score), unlist(pi_res$z_df$Overlap))[[1]]
     piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
     col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
     write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)

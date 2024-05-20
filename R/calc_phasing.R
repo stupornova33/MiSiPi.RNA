@@ -14,7 +14,7 @@
 calc_phasing <- function(df1, df2, n){
 
 
-dist <- start_r1 <- widthx <- start_r2 <- widthy <- num.y <- num.x <- Zscore <- num <- NULL
+dist <- start_r1 <- widthx <- start_r2 <- widthy <- num.y <- num.x <- z_score <- num <- NULL
 
 # check if number of reads is > 3000 and if so, subsample
 df1 <- df1[sample(1:nrow(df1)),]
@@ -54,12 +54,12 @@ if(nrow(phased_counts) >= 1){
   phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, all_table, by = "dist", "num"))
   phased_counts[is.na(phased_counts)] <- 0
   phased_counts <- phased_counts %>% dplyr::select(-c(num.y))
-  phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
-  phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
+  phased_counts$z_score <- calc_zscore(phased_counts$num.x)
+  phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = z_score)
 } else {
   phased_counts <- data.table::data.table(dist=seq(0,50), num=rep(0, 51))
-  phased_counts$Zscore <- calc_zscore(phased_counts$num)
-  phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num, phased_z = Zscore)
+  phased_counts$z_score <- calc_zscore(phased_counts$num)
+  phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num, phased_z = z_score)
 }
 
 return(phased_counts)

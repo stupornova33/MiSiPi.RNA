@@ -1,4 +1,4 @@
-#' function to plot the zscore for Dicer overhangs
+#' function to plot the z_score for Dicer overhangs
 #' @param overhang1 a dataframe
 #' @param strand a string, "+", "-", or "none"
 #' @return plot
@@ -23,11 +23,11 @@ plot_overhangz <- function(overhang1, strand){
      title <- "Dicer Overhang Prob (siRNA)."
    }
 
-   p <- ggplot2::ggplot(overhang1, ggplot2::aes(x = shift, y = zscore)) +
-      ggplot2::geom_line(color= col, linewidth = 2)+
-      ggplot2::ggtitle(title)+
-      ggplot2::scale_x_continuous("Shift")+
-      ggplot2::scale_y_continuous("Z-score")+
+   p <- ggplot2::ggplot(overhang1, ggplot2::aes(x = shift, y = z_score)) +
+      ggplot2::geom_line(color= col, linewidth = 2) +
+      ggplot2::ggtitle(title) +
+      ggplot2::scale_x_continuous("Shift") +
+      ggplot2::scale_y_continuous("Z-score") +
 
       ggplot2::theme_classic() +
       ggplot2::theme(text = ggplot2::element_text(size = 15), plot.title = ggplot2::element_text(hjust = 0.5, size = 14)) +
