@@ -9,7 +9,7 @@
 #' @param si_pal The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.
-#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.
+#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format. Required if annotate_region is TRUE
 #' @param write_fastas TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.
 #' @param out_type The type of file for plots. Options are "png" or "pdf". Default is PDF.
 #' @return a list
@@ -20,13 +20,15 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
                      pi_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      annotate_region = FALSE,
-                     weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), gtf_file = FALSE,
+                     weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), gtf_file,
                      write_fastas = FALSE, out_type = c("pdf", "png", "PDF", "PNG")) {
   ## Parameter Validation
   # roi
   stopifnot("Parameter `roi` must be a valid filepath to a BED file." = file.exists(roi))
   bed_columns_vector <- utils::count.fields(roi, sep = "\t")
-  stopifnot("Bed file (roi) must have the same number of columns in each line." = length(unique(bed_columns_vector)) == 1)
+  # Commenting out the line below that checks for the same number of columns in each line of the bed file
+  # Currently allowing variable number of columns as long as there are at least 3
+  # stopifnot("Bed file (roi) must have the same number of columns in each line." = length(unique(bed_columns_vector)) == 1)
   number_of_bed_columns <- bed_columns_vector[1]
   stopifnot("Bed file (roi) must have 3 columns and be tab separated." = number_of_bed_columns >= 3)
   # bam_file
@@ -132,9 +134,11 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
                    si_pal = si_pal,
                    annotate_region = annotate_region,
                    weight_reads = weight_reads,
-                   gtf_file = gtf_file,
                    write_fastas = write_fastas,
                    out_type = out_type)
+  if(!missing(gtf_file) && annotate_region == TRUE) {
+    var_list$gtf_file <- gtf_file
+  }
 
   return(var_list)
 }
