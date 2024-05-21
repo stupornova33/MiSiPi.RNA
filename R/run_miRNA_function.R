@@ -243,7 +243,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
      most_abundant <- most_abundant[1]
    }
 
-   # this nomenclature and it's related apply function should be changed in the future
+   # this nomenclature and its related apply function should be changed in the future
    # used to iterate over multiple rows of df, but changed to select most abundant read pair
    reduced_df <- longest_seqs[most_abundant,]
 
@@ -320,8 +320,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       # transforms reads from one arm of hairpin to their paired position
       # makes a table of reads which are overlapping
       dicer_overlaps <- dicer_overlaps(r2_dt, reduced_list[[x]]$helix, chrom_name, reduced_list[[x]]$start)
-
-      # summarize the counts by the # overlapping nucleotides
+       # summarize the counts by the # overlapping nucleotides
       z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
 
       # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
@@ -338,7 +337,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          overhangs$z_score <- -33
          
       } else {
-
+        if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
          print('making overhangs')
          overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
                                      dicer_overlaps$r2_start, dicer_overlaps$r2_width))
