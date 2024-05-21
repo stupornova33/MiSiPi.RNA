@@ -136,7 +136,7 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
                    weight_reads = weight_reads,
                    write_fastas = write_fastas,
                    out_type = out_type)
-  if(!missing(gtf_file) && annotate_region == TRUE) {
+  if(!missing(gtf_file) & annotate_region == TRUE) {
     var_list$gtf_file <- gtf_file
   }
 

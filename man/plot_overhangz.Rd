@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_overhangz.R
 \name{plot_overhangz}
 \alias{plot_overhangz}
-\title{function to plot the zscore for Dicer overhangs}
+\title{function to plot the z_score for Dicer overhangs}
 \usage{
 plot_overhangz(overhang1, strand)
 }
@@ -15,5 +15,5 @@ plot_overhangz(overhang1, strand)
 plot
 }
 \description{
-function to plot the zscore for Dicer overhangs
+function to plot the z_score for Dicer overhangs
 }

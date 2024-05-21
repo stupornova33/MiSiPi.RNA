@@ -2,8 +2,8 @@
 % Please edit documentation in R/overhang_z_plot.R
 \name{overhang_z_plot}
 \alias{overhang_z_plot}
-\title{plots the zscore for the 2nt overhang
-takes a table of overhang zscores
+\title{plots the z_score for the 2nt overhang
+takes a table of overhang z_scores
 only output is overhang plots}
 \usage{
 overhang_z_plot(overhangs)
@@ -15,7 +15,7 @@ overhang_z_plot(overhangs)
 plot
 }
 \description{
-plots the zscore for the 2nt overhang
-takes a table of overhang zscores
+plots the z_score for the 2nt overhang
+takes a table of overhang z_scores
 only output is overhang plots
 }

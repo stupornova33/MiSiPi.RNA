@@ -2,9 +2,9 @@
 % Please edit documentation in R/calc_zscore.R
 \name{calc_zscore}
 \alias{calc_zscore}
-\title{calc zscore
+\title{calc z_score
 takes a data frame
-returns zscore}
+returns z_score}
 \usage{
 calc_zscore(allCounts)
 }
@@ -15,7 +15,7 @@ calc_zscore(allCounts)
 z_score
 }
 \description{
-calc zscore
+calc z_score
 takes a data frame
-returns zscore
+returns z_score
 }
