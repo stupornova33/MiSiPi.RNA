@@ -27,6 +27,10 @@
 new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
                         plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
 
+
+  wrapped <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
+                      plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
+
   width <- pos <- start <- end <- NULL
 
   # create empty data table for results
@@ -465,4 +469,15 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 
   print("file has been written.")
+  }
+
+  tryCatch(
+    wrapped(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
+            plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type),
+    error = function(e) {
+      message(conditionMessage(e))
+    }
+  )
+
+
 }
