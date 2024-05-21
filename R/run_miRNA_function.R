@@ -331,8 +331,12 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
       # calculate the z_scores, if there are results
       if(is.na(dicer_overlaps[1,1]) | dicer_overlaps[1,1] == 0) {
-         overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0), )
-         overhangs$z_score <- calc_zscore(overhangs$proper_count)
+         overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
+         # Trying to calculate the z_score with 0 proper counts is returning NaNs and causing downstream errors
+         # Set to -33 instead
+         # overhangs$z_score <- calc_zscore(overhangs$proper_count)
+         overhangs$z_score <- -33
+         
       } else {
 
          print('making overhangs')
@@ -393,6 +397,12 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          graphics::par(mar = c(1,1,1,1))
          #print(reduced_list)
 
+         # first make sure there are a minimum number of paired bases in the vienna object
+         MINIMUM_PAIRS <- 7
+         number_of_pairs <- nrow(stringi::stri_locate_all_regex(test2, '\\(')[[1]])
+         # Wrap the plotting in this if statement
+         # Generate an empty plot for the else statement?
+         if (number_of_pairs >= MINIMUM_PAIRS) {}
          # assign the color values to each nucloeotide in the predicted structure
          # this function is obscenely complicated
          # creates a 5-line text output for plotting similar to miRBase plots

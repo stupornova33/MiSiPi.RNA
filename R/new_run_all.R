@@ -332,6 +332,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     minus_overlapz <- NA
   }
 
+  # Shouldn't need these any more
+  # Leaving for now
   if(mirna_dicerz_plus == "NaN"){
     mirna_dicerz_plus <- -33
   }
