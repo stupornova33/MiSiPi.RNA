@@ -400,118 +400,131 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          # first make sure there are a minimum number of paired bases in the vienna object
          MINIMUM_PAIRS <- 7
          number_of_pairs <- nrow(stringi::stri_locate_all_regex(test2, '\\(')[[1]])
-         # Wrap the plotting in this if statement
-         # Generate an empty plot for the else statement?
-         if (number_of_pairs >= MINIMUM_PAIRS) {}
-         # assign the color values to each nucloeotide in the predicted structure
-         # this function is obscenely complicated
-         # creates a 5-line text output for plotting similar to miRBase plots
-         miRNA_list <- process_miRNA_struct(reduced_list[[x]]$vienna, reduced_list[[x]]$converted)
-
-
-         # function to place dashes in the correct place
-         insert_vector <- function(input, position, values) {
-            options(warn=-1)
-            #Create result vector
-            res <- numeric(length(input) + length(values))
-            res[position] <- values
-            #Create an index of input vector
-            inds1 <- seq_along(res)
-            inds2 <- !(inds1 %in% position)
-
-            #Insert input vector
-            res[inds2] <- input
-            return(res)
-         }
-
-         ### replace paired bases with their respective nucleotide and unpaired bases with "-"
-         ### get positions where there is only a space
-         ### combine color values with this data
-
-         top <- unname(unlist(miRNA_list$top[3]))
-         mid_top <- unname(unlist(miRNA_list$mid_top[3]))
-         mid_bottom <- unname(unlist(miRNA_list$mid_bottom[3]))
-         bottom <- unname(unlist(miRNA_list$bottom[3]))
-         char <- unname(unlist(miRNA_list$char_df[3]))
-
-         #get the positions of paired bases on each line
-         top_pos <- which(top == "U" | top == "C" | top == "G" | top == "A")
-
-         mid_top_pos <- which(mid_top == "U" | mid_top == "C" | mid_top == "G" | mid_top == "A")
-
-         char_pos <- which(char == "U" | char == "C" | char == "G" | char == "A")
-
-         bottom_pos <- which(bottom == "U" | bottom == "C" | bottom == "G" | bottom == "A")
-
-         mid_bottom_pos <- which(mid_bottom == "U" | mid_bottom == "C" | mid_bottom == "G" | mid_bottom == "A")
-
-         # get the position of unpaired bases on each line that has them
-         top_dash_pos <- which(top == "-")
-         bottom_dash_pos <- which(bottom == "-")
-
-         # reverse the bottom half of the data because they will be reversed!
-         rev_color_dat <- rev(dat_with_colorvals$bin)
-         # this is the top half
-         color_half1 <- dat_with_colorvals$bin[1:(length(mid_top_pos) + length(top_pos))]
-         # this is the bottom half
-         color_half2 <- rev_color_dat[1:(length(mid_bottom_pos) + length(bottom_pos))]
-
-         # put the dashes in their place
-         color_half1 <- insert_vector(color_half1, top_dash_pos, rep("-", length(top_dash_pos)))
-         color_half2 <- insert_vector(color_half2, bottom_dash_pos, rep("-", length(bottom_dash_pos)))
-
-         # get the number of unique expression values so we know how many colors to use
-         num_uniq <- length(unique(dat_with_colorvals$bin)) + 1
-
-         # use the positions gotten earler to create a vector containing the color by position
-         mid_color_vec <- dat_with_colorvals$bin[char_pos]
-
-         top_vec <- numeric(length(top))
-         top_vec[top_pos] <- color_half1[top_pos]
-         top_vec[(top_vec == 0)] <- num_uniq
-
-         mid_top_vec <- numeric(length(mid_top))
-         mid_top_vec[mid_top_pos] <- color_half1[mid_top_pos]
-         mid_top_vec[(mid_top_vec == 0)] <- num_uniq
-
-         char_vec <- numeric(length(char))
-         char_vec[char_pos] <- mid_color_vec
-         char_vec[(char_vec == 0)] <- num_uniq
-
-         mid_bottom_vec <- numeric(length(mid_bottom))
-         mid_bottom_vec[mid_bottom_pos] <- color_half2[mid_bottom_pos]
-         mid_bottom_vec[(mid_bottom_vec == 0)] <- num_uniq
-
-         bottom_vec <- numeric(length(bottom))
-         bottom_vec[bottom_pos] <- color_half2[bottom_pos]
-         bottom_vec[(bottom_vec == 0)] <- num_uniq
-
-
-         # now put them all together in the correct order into a data frame for plotting
-         top_df <- data.frame(x = unname(unlist(miRNA_list$top[1])), y = unname(unlist(miRNA_list$top[2])), text = unname(unlist(miRNA_list$top[3])),
-                              color_bins = top_vec)
-
-         mid_top_df <- data.frame(x = unname(unlist(miRNA_list$mid_top[1])), y = unname(unlist(miRNA_list$mid_top[2])), text = unname(unlist(miRNA_list$mid_top[3])),
-                              color_bins = mid_top_vec)
-         char_df <- data.frame(x = unname(unlist(miRNA_list$char[1])), y = unname(unlist(miRNA_list$char[2])), text = unname(unlist(miRNA_list$char[3])),
-                              color_bins = char_vec)
-         mid_bottom_df <- data.frame(x = unname(unlist(miRNA_list$mid_bottom[1])), y = unname(unlist(miRNA_list$mid_bottom[2])), text = unname(unlist(miRNA_list$mid_bottom[3])),
-                              color_bins = mid_bottom_vec)
-         bottom_df <- data.frame(x = unname(unlist(miRNA_list$bottom[1])), y = unname(unlist(miRNA_list$bottom[2])), text = unname(unlist(miRNA_list$bottom[3])),
-                              color_bins = bottom_vec)
-
-         # rbind the results
-         # this results in a 4-column df with x-coordinate, y-coordinate (chosen by me), the text character to use, and the color bin
-         miRNA_df <- rbind(top_df, mid_top_df, char_df, mid_bottom_df, bottom_df)
-         ########################################################################################
-         struct_plot <- plot_miRNA_struct(miRNA_df)
-
+         # Only generate the struct plot if there are enough paired bases
+         if (number_of_pairs < MINIMUM_PAIRS) {
+           struct_plot <- NA
+         } else {
+           # assign the color values to each nucloeotide in the predicted structure
+           # this function is obscenely complicated
+           # creates a 5-line text output for plotting similar to miRBase plots
+           miRNA_list <- process_miRNA_struct(reduced_list[[x]]$vienna, reduced_list[[x]]$converted)
+           
+           
+           # function to place dashes in the correct place
+           insert_vector <- function(input, position, values) {
+             options(warn=-1)
+             #Create result vector
+             res <- numeric(length(input) + length(values))
+             res[position] <- values
+             #Create an index of input vector
+             inds1 <- seq_along(res)
+             inds2 <- !(inds1 %in% position)
+             
+             #Insert input vector
+             res[inds2] <- input
+             return(res)
+           }
+           
+           ### replace paired bases with their respective nucleotide and unpaired bases with "-"
+           ### get positions where there is only a space
+           ### combine color values with this data
+           
+           top <- unname(unlist(miRNA_list$top[3]))
+           mid_top <- unname(unlist(miRNA_list$mid_top[3]))
+           mid_bottom <- unname(unlist(miRNA_list$mid_bottom[3]))
+           bottom <- unname(unlist(miRNA_list$bottom[3]))
+           char <- unname(unlist(miRNA_list$char_df[3]))
+           
+           #get the positions of paired bases on each line
+           top_pos <- which(top == "U" | top == "C" | top == "G" | top == "A")
+           
+           mid_top_pos <- which(mid_top == "U" | mid_top == "C" | mid_top == "G" | mid_top == "A")
+           
+           char_pos <- which(char == "U" | char == "C" | char == "G" | char == "A")
+           
+           bottom_pos <- which(bottom == "U" | bottom == "C" | bottom == "G" | bottom == "A")
+           
+           mid_bottom_pos <- which(mid_bottom == "U" | mid_bottom == "C" | mid_bottom == "G" | mid_bottom == "A")
+           
+           # get the position of unpaired bases on each line that has them
+           top_dash_pos <- which(top == "-")
+           bottom_dash_pos <- which(bottom == "-")
+           
+           # reverse the bottom half of the data because they will be reversed!
+           rev_color_dat <- rev(dat_with_colorvals$bin)
+           # this is the top half
+           color_half1 <- dat_with_colorvals$bin[1:(length(mid_top_pos) + length(top_pos))]
+           # this is the bottom half
+           color_half2 <- rev_color_dat[1:(length(mid_bottom_pos) + length(bottom_pos))]
+           
+           # put the dashes in their place
+           color_half1 <- insert_vector(color_half1, top_dash_pos, rep("-", length(top_dash_pos)))
+           color_half2 <- insert_vector(color_half2, bottom_dash_pos, rep("-", length(bottom_dash_pos)))
+           
+           # get the number of unique expression values so we know how many colors to use
+           num_uniq <- length(unique(dat_with_colorvals$bin)) + 1
+           
+           # use the positions gotten earler to create a vector containing the color by position
+           mid_color_vec <- dat_with_colorvals$bin[char_pos]
+           
+           top_vec <- numeric(length(top))
+           top_vec[top_pos] <- color_half1[top_pos]
+           top_vec[(top_vec == 0)] <- num_uniq
+           
+           mid_top_vec <- numeric(length(mid_top))
+           mid_top_vec[mid_top_pos] <- color_half1[mid_top_pos]
+           mid_top_vec[(mid_top_vec == 0)] <- num_uniq
+           
+           char_vec <- numeric(length(char))
+           char_vec[char_pos] <- mid_color_vec
+           char_vec[(char_vec == 0)] <- num_uniq
+           
+           mid_bottom_vec <- numeric(length(mid_bottom))
+           mid_bottom_vec[mid_bottom_pos] <- color_half2[mid_bottom_pos]
+           mid_bottom_vec[(mid_bottom_vec == 0)] <- num_uniq
+           
+           bottom_vec <- numeric(length(bottom))
+           bottom_vec[bottom_pos] <- color_half2[bottom_pos]
+           bottom_vec[(bottom_vec == 0)] <- num_uniq
+           
+           
+           # now put them all together in the correct order into a data frame for plotting
+           top_df <- data.frame(x = unname(unlist(miRNA_list$top[1])), y = unname(unlist(miRNA_list$top[2])), text = unname(unlist(miRNA_list$top[3])),
+                                color_bins = top_vec)
+           
+           mid_top_df <- data.frame(x = unname(unlist(miRNA_list$mid_top[1])), y = unname(unlist(miRNA_list$mid_top[2])), text = unname(unlist(miRNA_list$mid_top[3])),
+                                    color_bins = mid_top_vec)
+           char_df <- data.frame(x = unname(unlist(miRNA_list$char[1])), y = unname(unlist(miRNA_list$char[2])), text = unname(unlist(miRNA_list$char[3])),
+                                 color_bins = char_vec)
+           mid_bottom_df <- data.frame(x = unname(unlist(miRNA_list$mid_bottom[1])), y = unname(unlist(miRNA_list$mid_bottom[2])), text = unname(unlist(miRNA_list$mid_bottom[3])),
+                                       color_bins = mid_bottom_vec)
+           bottom_df <- data.frame(x = unname(unlist(miRNA_list$bottom[1])), y = unname(unlist(miRNA_list$bottom[2])), text = unname(unlist(miRNA_list$bottom[3])),
+                                   color_bins = bottom_vec)
+           
+           # rbind the results
+           # this results in a 4-column df with x-coordinate, y-coordinate (chosen by me), the text character to use, and the color bin
+           miRNA_df <- rbind(top_df, mid_top_df, char_df, mid_bottom_df, bottom_df)
+           ########################################################################################
+           struct_plot <- plot_miRNA_struct(miRNA_df)
+         } 
+         
          density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
          density_plot <- plot_density(density, reg_start, reg_stop)
 
          dist_plot <- plot_sizes(read_dist)
 
          zplot <- plot_overlapz(z_df)
+         
+         if (is.na(struct_plot)) {
+           # TODO
+           # Add in a new layout for plotting just the dist_plot, dicer_sig, density_plot, and zplot
+           
+           
+           
+           
+           
+           
+         }
 
          if(reg_stop - reg_start <= 150){
            #if miRNA is long, use landscape orientation so the struct plot isn't squished.
