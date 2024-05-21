@@ -12,11 +12,17 @@
 #' @export
 
 find_overlaps <- function(r1_dt, r2_dt = NULL){
-   if(!is.null(r2_dt)){
-   gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
-   gr2_obj <- makeGRobj(r2_dt, "rname", "start", "end")
 
-   res <- GenomicRanges::findOverlaps(gr1_obj, gr2_obj,
+  r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
+  r1_dt <- utils::head(r1_dt, 4000)
+
+   if(!is.null(r2_dt)){
+    r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
+    r2_dt <- utils::head(r2_dt, 4000)
+    gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
+    gr2_obj <- makeGRobj(r2_dt, "rname", "start", "end")
+
+    res <- GenomicRanges::findOverlaps(gr1_obj, gr2_obj,
                                       maxgap=-1L, minoverlap=2L,
                                       type=c("any"),
                                       select=c("all"),
