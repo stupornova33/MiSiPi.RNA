@@ -337,11 +337,12 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          overhangs$z_score <- -33
          
       } else {
-        if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
-         print('making overhangs')
-         overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
-                                     dicer_overlaps$r2_start, dicer_overlaps$r2_width))
-         overhangs$z_score <- calc_zscore(overhangs$proper_count)
+        # Disabling for now
+        # if(write_fastas == TRUE) write_proper_overhangs(r2_dt, r2_dt, wkdir, prefix, dicer_overlaps, "_miRNA")
+        print('making overhangs')
+        overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
+                                dicer_overlaps$r2_start, dicer_overlaps$r2_width))
+        overhangs$z_score <- calc_zscore(overhangs$proper_count)
       }
 
       # transform data frame from table to row
@@ -398,10 +399,10 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
          # first make sure there are a minimum number of paired bases in the vienna object
          MINIMUM_PAIRS <- 7
-         number_of_pairs <- nrow(stringi::stri_locate_all_regex(test2, '\\(')[[1]])
+         number_of_pairs <- nrow(stringi::stri_locate_all_regex(reduced_list[[x]]$vienna, '\\(')[[1]])
          # Only generate the struct plot if there are enough paired bases
          if (number_of_pairs < MINIMUM_PAIRS) {
-           struct_plot <- NA
+           struct_plot <- NULL
          } else {
            # assign the color values to each nucloeotide in the predicted structure
            # this function is obscenely complicated
@@ -514,13 +515,30 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
          zplot <- plot_overlapz(z_df)
          
-         if (is.na(struct_plot)) {
-           # TODO
-           # Add in a new layout for plotting just the dist_plot, dicer_sig, density_plot, and zplot
-           
-           
-           
-           
+         if (is.null(struct_plot)) {
+           # This plot is just the dist_plot, dicer_sig, density_plot, and zplot
+           # Not enough paired bases existed in vienna to generate a struct_plot
+           left_plot <-
+             cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1,
+                                rel_widths = c(1,1), rel_heights = c(1,1),
+                                align = "vh", axis = "lrtb")
+           right_plot <-
+             cowplot::plot_grid(NULL, density_plot, zplot, ncol = 1,
+                                rel_widths = c(1,1,1), rel_heights = c(0.4,1,1),
+                                align = "vh", axis = "lrtb")
+           all_plot <-
+             cowplot::plot_grid(left_plot, right_plot,
+                                rel_widths = c(1,1), rel_heights = c(1,1),
+                                align = "vh", axis = "lrtb")
+           if (out_type == "png" | out_type == "PNG") {
+             grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
+             print(all_plot)
+             grDevices::dev.off()
+           } else {
+             grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
+             print(all_plot)
+             grDevices::dev.off()
+           }
            
            
          } else {
@@ -541,6 +559,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
              } else {
                grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
                print(all_plot)
+               grDevices::dev.off()
              }
              
            } else {
