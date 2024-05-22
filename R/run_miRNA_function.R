@@ -518,24 +518,25 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
          if (is.null(struct_plot)) {
            # This plot is just the dist_plot, dicer_sig, density_plot, and zplot
            # Not enough paired bases existed in vienna to generate a struct_plot
-           left_plot <-
-             cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1,
-                                rel_widths = c(1,1), rel_heights = c(1,1),
-                                align = "vh", axis = "lrtb")
-           right_plot <-
-             cowplot::plot_grid(NULL, density_plot, zplot, ncol = 1,
-                                rel_widths = c(1,1,1), rel_heights = c(0.4,1,1),
-                                align = "vh", axis = "lrtb")
+           
+           # Add a slight left margin to the dicer_sig plot
+           # If this seems needed in other all_plots, then add this line to plot_overhangz.R
+           dicer_sig <- dicer_sig +
+             ggplot2::theme(plot.margin = ggplot2::margin(l = 15))
+           
            all_plot <-
-             cowplot::plot_grid(left_plot, right_plot,
-                                rel_widths = c(1,1), rel_heights = c(1,1),
-                                align = "vh", axis = "lrtb")
+             cowplot::plot_grid(dist_plot, density_plot, dicer_sig, zplot,
+                                ncol = 2, nrow = 2,
+                                rel_widths = c(1,1,1,1), rel_heights = c(1,1,1,1),
+                                align="vh", axis = "lrtb")
+           
+           
            if (out_type == "png" | out_type == "PNG") {
-             grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
+             grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 8, width = 10, units = "in", res = 300)
              print(all_plot)
              grDevices::dev.off()
            } else {
-             grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
+             grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 8, width = 10)
              print(all_plot)
              grDevices::dev.off()
            }
