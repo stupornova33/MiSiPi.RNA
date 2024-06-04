@@ -231,7 +231,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   max_si_heat <- get_max_si_heat(si_res)
 
   local_ml$highest_si_col <- max_si_heat$highest_si_col
-  si_dicerz <- si_res$si_dicer$Z_score[9]
+  si_dicerz <- si_res$si_dicer$Z_score[5]
 
   if(is.na(si_dicerz)){
     local_ml$si_dicerz <- -33
@@ -255,7 +255,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # MFE change to hp_mfe
   # hp_dicerz [ maximum value of plus_dicerz and minus_dicerz]
 
-  plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
+  #plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
+  plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
   #if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
   if(!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)){
     plus_mean <- mean(plus_phasedz[1:4])
@@ -263,7 +264,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     plus_mean <- -33
   }
 
-   minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
+   #minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
+  minus_phasedz <- si_res[[3]][[1]]$phased_tbl.phased_z
   #if(!minus_phasedz[1] == "NaN" && !minus_phasedz[1] == -33){
    if(!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)){
     minus_mean <- mean(minus_phasedz[1:4])
