@@ -60,8 +60,8 @@ plot_sizes_only <- function(wkdir,geno, bam_file, bed_file){
    ###########################################################################################################################
 
    # plot histogram with AUC
-   forward_dt <- no_weight(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
-   reverse_dt <- no_weight(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+   forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+   reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
 
    all_data <- rbind(forward_dt, reverse_dt)
 

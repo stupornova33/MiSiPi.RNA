@@ -59,8 +59,8 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   print("Getting weighted data.frames.")
   #include "T" argument to return read sequences
   if(weight_reads == "weight_by_prop"){
-    forward_dt <- weight_by_prop(forward_dt, chrom_name)
-    reverse_dt <- weight_by_prop(reverse_dt, chrom_name)
+    forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name))
+    reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name))
    print("weight reads by proportion")
 
   } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
@@ -74,8 +74,8 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     reverse_dt <- weight_by_uservalue(reverse_dt, norm, (reg_stop - reg_start))
   } else {
     print("weight_reads == 'none")
-    forward_dt <- no_weight(forward_dt, chrom_name)
-    reverse_dt <- no_weight(reverse_dt, chrom_name)
+    forward_dt <- no_weight(forward_dt, as.character(chrom_name))
+    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
   }
 
   chromP <- NULL
