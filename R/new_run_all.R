@@ -138,8 +138,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   local_ml$unique_read_bias <- unique_read_count/total_read_count
 
 
-  forward_dt <- no_weight(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
-  reverse_dt <- no_weight(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+  forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+  reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
   all_data <- rbind(forward_dt, reverse_dt)
 
 
