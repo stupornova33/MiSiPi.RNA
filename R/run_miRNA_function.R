@@ -92,16 +92,16 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       return(null_mi_res())
    } else {
       if(weight_reads == "weight_by_prop"){
-        r2_dt <- weight_by_prop(filter_r2_dt, chrom_name)
-        r1_dt <- weight_by_prop(filter_r2_dt, chrom_name)
+        r2_dt <- weight_by_prop(filter_r2_dt, as.character(chrom_name))
+        r1_dt <- weight_by_prop(filter_r2_dt, as.character(chrom_name))
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
         locus_length <- reg_stop - reg_start
         locus_read_count <- sum(filter_r2_dt$count)
         r2_dt <- locus_norm(filter_r2_dt, locus_read_count)
         r1_dt <- locus_norm(filter_r2_dt, locus_read_count)
       } else {
-        r2_dt <- no_weight(filter_r2_dt, chrom_name)
-        r1_dt <- no_weight(filter_r2_dt, chrom_name)
+        r2_dt <- no_weight(filter_r2_dt, as.character(chrom_name))
+        r1_dt <- no_weight(filter_r2_dt, as.character(chrom_name))
       }
       #transform ends of one set of reads
       r1_dt <- r1_dt %>% dplyr::mutate(end = end + 59)
