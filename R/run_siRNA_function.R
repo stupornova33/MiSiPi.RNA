@@ -171,17 +171,13 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
 
  #if there are results then use the heat plot
- if(!sum(results) == 0){
-   cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
-   heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
- } else {
-   heat_plot <- NULL
 
- }
    #user provides argument plot = T or plot = F
  if(plot_output == TRUE){
-
-
+    if(!sum(results) == 0){
+      cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
+      heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+    }
     #heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
 
@@ -210,33 +206,35 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       plus_phasedz <- dsh[[8]]
       minus_phasedz <- dsh[[9]]
 
-      if(!is.null(heat_plot)){
-        heat <- ggplotify::as.grob(heat_plot)
+      gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+
+      #if there are results for the heatmap, plot, otherwise omit
+      if(!sum(results) == 0){
+        left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, ggplotify::as.grob(heat_plot), rel_widths = c(0.6,1.1,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+        right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+      } else {
+        left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, rel_widths = c(0.6,1.1,0.9,0.9), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+        right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+
       }
-                                 #1         #2       #3             #4         #5
-      left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, heat, rel_widths = c(0.6,1.1,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
-      right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
 
     } else {
-        plus_phasedz<- dsh[[7]]
-        minus_phasedz <- dsh[[8]]
+          plus_phasedz<- dsh[[7]]
+          minus_phasedz <- dsh[[8]]
 
-        if(!is.null(heat_plot)){
-          heat <- ggplotify::as.grob(heat_plot)
-        }
-        left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, heat, rel_widths = c(0.7,1.2,1,1,0.4), rel_heights = c(0.8,0.8,0.8,0.8,1.5), ncol = 1, align = "vh", axis = "lrtb")
-        right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1,  rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1),align = "vh", axis = "lrtb")
-    }
+          if(!sum(results) == 0){
+            left <- cowplot::plot_grid(arc_plot, density_plot, size_plot, ggplotify::as.grob(heat_plot), rel_widths = c(0.6,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+            right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+          } else {
+            left <- cowplot::plot_grid(arc_plot, density_plot, size_plot, rel_widths = c(0.6,0.9,0.9), rel_heights = c(0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+            right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
 
-    #hp_plot <- cowplot::plot_grid(hp_left, NULL, hp_right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))
+          }
+     }
 
-    #si_top <- cowplot::plot_grid(size_plot, NULL, ncol = 3,dicer_plot, rel_widths = c(1,0.2,1), align = "vh", axis = "lrtb")
-
-    #si_bottom <- cowplot::plot_grid(NULL, ggplotify::as.grob(heat_plot), NULL, ncol = 3, align = "vh", axis = "lrtb", rel_widths = c(0.2, 1,1))
-
-
-
-    #si_plot <- cowplot::plot_grid(si_top, si_bottom, ncol = 1, rel_widths = c(1, 1), rel_heights = c(1,1))
+                                 #1         #2       #3             #4         #5
+      #left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, heat, rel_widths = c(0.6,1.1,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+      #right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
 
     all_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_widths = c(0.9, 0.01,0.7), align = "vh", axis = "lrtb")
 
