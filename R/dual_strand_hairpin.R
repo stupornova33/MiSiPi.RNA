@@ -113,7 +113,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else if(is.integer(weight_reads)){
     r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
   } else {
-    r2_dt <- no_weight(dt, chrom_name)
+    r2_dt <- no_weight(dt, as.character(chrom_name))
   }
 
   #transform end of reads in one df
@@ -243,7 +243,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else if(is.integer(weight_reads)){
     r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
   } else {
-    r2_dt <- no_weight(dt, chrom_name)
+    r2_dt <- no_weight(dt, as.character(chrom_name))
   }
   #transform ends of reads for phasing/finding overlaps
   print("Transforming ends of reads.")

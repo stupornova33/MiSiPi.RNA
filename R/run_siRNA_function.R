@@ -70,12 +70,12 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       if(weight_reads == "None" | weight_reads == "none"){
         print("No weighting of reads applied.")
-        forward_dt <- no_weight(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- no_weight(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+        forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
 
       } else if(weight_reads == "weight_by_prop"){
-        forward_dt <- weight_by_prop(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- weight_by_prop(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+        forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
 
 
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
