@@ -397,6 +397,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     }
   )
 
+  ### 7/4/24 refactor to combine siRNA and hairpin functions
+
 
   if(plot_output == TRUE){
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
@@ -405,6 +407,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     minus_overhangs <- data.frame(shift = minus_res$dicer_tbl.shift, zscore = minus_res$dicer_tbl.zscore)
     minus_overhangs$zscore[is.na(minus_overhangs$zscore)] <- 0
 
+    ## return these as plot objects
     plus_overhang_plot <- plot_overhangz(plus_overhangs, "+")
     minus_overhang_plot <- plot_overhangz(minus_overhangs, "-")
 
@@ -417,35 +420,56 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
 
+    print("Outputting arc plot only with grDevices.")
+
+    grDevices::png(file = paste0(prefix, "_grDevice_arc.png"), height = 9, width = 9, units = "in", res = 300)
+    print(arc_plot)
+    grDevices::dev.off()
+
+    print("Outputting arc plot with png()")
+
+    png(paste0(prefix, "_std.png"))
+    print(arc_plot)
+    dev.off()
 
     ## plot genome annotations (optional)
     if(annotate_region == TRUE){
       gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
-      left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
-
-      # Draw combined plot
-      right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1, 1))
-   } else {
-      left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(0.9,1,1), rel_heights = c(1,0.1,1), ncol = 1, align = "vh", axis = "lrtb")
-      # Draw combined plot
-      right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot,plus_phasedz, minus_phasedz, ncol = 1, rel_heights = c(1,1,1,1), rel_widths = c(1,1,1,1), align = "vh", axis = "l")
-    }
-
-    final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))
-
-    prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
-
-    if(out_type == "png" || out_type == "PNG"){
-      grDevices::png(file = paste0(prefix, "_hairpin_fold.png"), height = 9, width = 9, units = "in", res = 300)
-      print(final_plot)
-      grDevices::dev.off()
+      return(list(minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
+                  arc_plot, gtf_plot, plus_phasedz, minus_phasedz))
     } else {
-      grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 9, width = 9)
-      print(final_plot)
-      grDevices::dev.off()
+
+      return(list(minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
+                  arc_plot, plus_phasedz, minus_phasedz))
+
     }
+      #left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
+
+      # Draw combined plot
+      #right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1, 1))
+      #} else {
+      #left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(0.9,1,1), rel_heights = c(1,0.1,1), ncol = 1, align = "vh", axis = "lrtb")
+      # Draw combined plot
+      #right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot,plus_phasedz, minus_phasedz, ncol = 1, rel_heights = c(1,1,1,1), rel_widths = c(1,1,1,1), align = "vh", axis = "l")
+      #}
+
+      #final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))
+
+      #prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
+
+      #if(out_type == "png" || out_type == "PNG"){
+      #  grDevices::png(file = paste0(prefix, "_hairpin_fold.png"), height = 9, width = 9, units = "in", res = 300)
+      #  print(final_plot)
+      #  grDevices::dev.off()
+      #} else {
+      #  grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 9, width = 9)
+      #  print(final_plot)
+      #  grDevices::dev.off()
+      #}
+  } else {
+     #if plot == FALSE just return ML res
+
+    return(list(minus_res, plus_res))
   }
 
- #for machine learning / run_all
- return(list(minus_res, plus_res))
 }
