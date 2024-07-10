@@ -153,13 +153,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   # This bool is later checked during processing of minus strand to see if
   # the dna has already been folded or not
   is_folded <- FALSE
-  
+
   if(nrow(r2_dt) > 0){
     print("r2_dt contains data. Proceeding with fold and overlap calc.")
     print("Folding the RNA.")
     # don't want to fold the dna twice. So once it's been folded so toggling is_folded
     is_folded <- TRUE
-    
+
     fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold)
     MFE <- fold_list$MFE
     perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
@@ -212,7 +212,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     plus_res <- plus_null_res
   } else {
     print("plus_null_res does not exist. Creating final plus_res object.")
-    # This line below has already be done above. No need to duplicate 
+    # This line below has already be done above. No need to duplicate
     # plus_overhangs$z_score <- calc_zscore(plus_overhangs$proper_count)
     plus_overhangz <- mean(plus_overhangs$z_score[1:4])
     plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
@@ -435,7 +435,17 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
 
+    print("Plotting arc plot separately")
 
+    grDevices::png(file = paste0(prefix, "_test_arc_grDev.png"), height = 5, width = 5, units = "in", res = 300)
+    print(arc_plot)
+    grDevices::dev.off()
+
+
+    print("Plotting arc plot with normal png()")
+    png(paste0(prefix, "_test_arc_png.png"))
+    print(arc_plot)
+    dev.off()
     ## plot genome annotations (optional)
     if(annotate_region == TRUE){
       gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
