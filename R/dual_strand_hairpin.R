@@ -420,6 +420,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
 
+    #### linux arc plot bug testing
     print("Outputting arc plot only with grDevices.")
 
     grDevices::png(file = paste0(prefix, "_grDevice_arc.png"), height = 9, width = 9, units = "in", res = 300)
