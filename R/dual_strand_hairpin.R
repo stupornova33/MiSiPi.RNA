@@ -424,13 +424,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     print("Outputting arc plot only with grDevices.")
 
     grDevices::png(file = paste0(prefix, "_grDevice_arc.png"), height = 9, width = 9, units = "in", res = 300)
-    print(ggplotify::as.grob(arc_plot))
+    print(arc_plot)
     grDevices::dev.off()
 
     print("Outputting arc plot with png()")
 
     png(paste0(prefix, "_std.png"))
-    print(ggplotify::as.grob(arc_plot))
+    print(arc_plot)
     dev.off()
 
     ## plot genome annotations (optional)
