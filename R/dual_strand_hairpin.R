@@ -416,6 +416,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     density_plot <- plot_density(data, reg_start, reg_stop)
     arc_plot <- plot_helix("helix.txt")
 
+    grDevices::dev.control("enable")
+    R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+
+    arc_plot <- grDevices::recordPlot()
+
+    ## why? No one knows
+
     plus_phasedz <- plot_hp_phasedz(plus_hp_phased_tbl, "+")
 
     minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
