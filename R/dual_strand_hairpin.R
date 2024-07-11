@@ -421,6 +421,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     arc_plot <- grDevices::recordPlot()
 
+
     ## why? No one knows
 
     plus_phasedz <- plot_hp_phasedz(plus_hp_phased_tbl, "+")
