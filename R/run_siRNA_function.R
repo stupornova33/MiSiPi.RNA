@@ -217,7 +217,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
         #if there are results for the heatmap, plot, otherwise omit
         if(!sum(results) == 0){
-          print("Heat map contains no results")
+          print("Heat map contains results")
           left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, ggplotify::as.grob(heat_plot), rel_widths = c(0.6,1.1,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
           right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
         } else {
