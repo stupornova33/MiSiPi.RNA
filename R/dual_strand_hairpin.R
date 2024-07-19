@@ -15,6 +15,7 @@
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
+#' @param write_fastas TRUE or FALSE. Default is FALSE
 #' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return a list of results
 
@@ -22,7 +23,7 @@
 
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                              min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
-                             weight_reads, gtf_file, out_type){
+                             weight_reads, gtf_file, write_fastas, out_type){
 
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 

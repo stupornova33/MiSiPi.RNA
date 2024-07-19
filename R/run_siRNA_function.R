@@ -167,7 +167,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
  #run the hairpin function on each strand separately
    dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
-                              path_to_RNAfold, annotate_region, weight_reads, gtf_file, out_type)
+                              path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type)
 
 
  #if there are results then use the heat plot
