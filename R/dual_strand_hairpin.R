@@ -52,7 +52,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
      prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
      helix <- R4RNA::viennaToHelix(unlist(fold_list[,5]))
-     R4RNA::writeHelix(helix, file = "helix.txt")
+
+     filepath = "helix.txt"
+     R4RNA::writeHelix(helix, file = filepath)
      return(list(MFE = MFE, vienna = vienna, extracted_df = extracted_df, helix = helix))
   }
 
@@ -415,12 +417,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- plot_density(data, reg_start, reg_stop)
+
+
+    #grDevices::dev.control("enable")
+    #R4RNA::plotHelix(helix = R4RNA::readHelix(paste0(wkdir, "helix.txt")), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+
     arc_plot <- plot_helix("helix.txt")
-
-    grDevices::dev.control("enable")
-    R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-
-    arc_plot <- grDevices::recordPlot()
+    #arc_plot <- grDevices::recordPlot()
 
 
     ## why? No one knows
