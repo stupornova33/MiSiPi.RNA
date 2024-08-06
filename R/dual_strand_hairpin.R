@@ -417,10 +417,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- plot_density(data, reg_start, reg_stop)
+    #arc_plot <- plot_helix("helix.txt")
 
 
-    #grDevices::dev.control("enable")
-    #R4RNA::plotHelix(helix = R4RNA::readHelix(paste0(wkdir, "helix.txt")), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+    arc_plot <- grDevices::recordPlot("helix.txt")
 
     arc_plot <- plot_helix("helix.txt")
     #arc_plot <- grDevices::recordPlot()
