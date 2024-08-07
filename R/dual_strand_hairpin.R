@@ -419,11 +419,23 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     density_plot <- plot_density(data, reg_start, reg_stop)
 
     if(!Sys.info()['sysname'] == "Windows"){
+      #grDevices::dev.control("enable")
+      #R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+      #arc_plot <- grDevices::recordPlot()
+
+      arc_plot <- plot_helix("helix.txt")
       grDevices::dev.control("enable")
       R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
 
-      #arc_plot <- plot_helix("helix.txt")
       arc_plot <- grDevices::recordPlot()
+
+      #print("Outputting arc plot only with grDevices.")
+
+      #grDevices::png(file = "helix_grDevice_arc.png", height = 10, width = 10, units = "in", res = 200)
+      #print(arc_plot)
+      #grDevices::dev.off()
+
+
     } else {
       R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
 
