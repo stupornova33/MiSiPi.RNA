@@ -418,13 +418,18 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     density_plot <- plot_density(data, reg_start, reg_stop)
 
+    if(!Sys.info()['sysname'] == "Windows"){
+      grDevices::dev.control("enable")
+      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
 
-    grDevices::dev.control("enable")
-    R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+      #arc_plot <- plot_helix("helix.txt")
+      arc_plot <- grDevices::recordPlot()
+    } else {
+      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
 
-    #arc_plot <- plot_helix("helix.txt")
-    arc_plot <- grDevices::recordPlot()
-
+      #arc_plot <- plot_helix("helix.txt")
+      arc_plot <- grDevices::recordPlot()
+    }
 
     ## why? No one knows
 
