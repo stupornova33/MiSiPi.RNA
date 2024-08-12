@@ -176,12 +176,12 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
     # Put results into table
     z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
-    z_res <- NULL
+    #z_res <- NULL
 
 
 
   } else {
-    z_df <- data.frame("Overlap" = c(seq(4,30), Z_score = c(rep(NA, times = 26))))
+    z_df <- data.frame(Overlap = c(seq(4,30)), Z_score = c(rep(0, times = 27)))
     heat_results <- matrix(data = 0, nrow = 18, ncol = 18)
     row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
     colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
@@ -379,9 +379,11 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   print(paste0("sum heat results: ", sum(heat_results)))
 #################################################################################################
 ### make plots
-  if(!sum(heat_results) == 0 && plot_output == TRUE){
+#  if(!sum(heat_results) == 0 && plot_output == TRUE){
+
+   if(plot_output == TRUE){
     cat(file = paste0(wkdir, logfile), paste0("Generating plots.", "\n"), append = TRUE)
-  ### ping pong plots
+    ### ping pong plots
     read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
     ## calculate read density by size
@@ -392,7 +394,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     z <- plot_overlapz(z_df)
     dist_plot <- plot_sizes(read_dist)
 
-    heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+
 
     if((reg_stop - reg_start) > 7000){
       print("TRUE")
@@ -412,24 +414,41 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     minus_phased_plot <- plot_phasedz(minus_df, "-")
 
 
-    #top <- cowplot::plot_grid(dist_plot, NULL, density_plot, ncol = 3, rel_widths = c(1,0.1,1), align = "vh", axis = "lrtb")
-    #middle <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), NULL, z, rel_widths = c(1,0.1,0.8), nrow = 1, ncol = 3, align = "vh", axis = "lrtb")
-    #bottom <- cowplot::plot_grid(plus_phased_plot, NULL, minus_phased_plot, rel_widths = c(1,0.1,1), nrow = 1, ncol = 3, align = "vh", axis = "lrtb")
-    top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot), ncol = 1, rel_widths = c(0.8,1,1),
+    if(sum(heat_results) > 0){
+      heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+
+      top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot), ncol = 1, rel_widths = c(0.8,1,1),
+                                     rel_heights = c(0.8,0.1,1), align = "vh", axis = "lrtb")
+      top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
+                                      rel_heights = c(1,0.1,1,0.1,1), align = "vh", axis = "lrtb")
+
+      top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
+
+      bottom <- cowplot::plot_grid(density_plot)
+      ## phased plots
+      #left null right null bottom
+      all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
+                                     rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
+      #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
+
+
+
+    } else {
+       top_left <- cowplot::plot_grid(dist_plot, ncol = 1, rel_widths = c(1),
                                    rel_heights = c(0.8,0.1,1), align = "vh", axis = "lrtb")
-    top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
+       top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
                                    rel_heights = c(1,0.1,1,0.1,1), align = "vh", axis = "lrtb")
 
-    top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
+       top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
 
-    bottom <- cowplot::plot_grid(density_plot)
-    ## phased plots
+       bottom <- cowplot::plot_grid(density_plot)
+      ## phased plots
                                                                                                                      #left null right null bottom
-    all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
+       all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
                                    rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
-    #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
+     #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
 
-
+    }
     if(out_type == "png" || out_type == "PNG"){
       grDevices::png(file=paste0(wkdir, chrom_name, "_", reg_start, "-", reg_stop, "_pi-zscore.png"), width = 10, height = 11, bg = "white", units = "in", res = 300)
       print(all_plot)
