@@ -70,12 +70,12 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       if(weight_reads == "None" | weight_reads == "none"){
         print("No weighting of reads applied.")
-        forward_dt <- no_weight(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- no_weight(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+        forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
 
       } else if(weight_reads == "weight_by_prop"){
-        forward_dt <- weight_by_prop(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- weight_by_prop(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+        forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+        reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
 
 
       } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
@@ -167,58 +167,180 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
  #run the hairpin function on each strand separately
    dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
-                              path_to_RNAfold, annotate_region, weight_reads, gtf_file, out_type)
- #if there are results then do the hairpin functions and plots
- if(!sum(results) == 0){
+                              path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type)
+
+
+ #if there are results then use the heat plot
 
    #user provides argument plot = T or plot = F
-   if(plot_output == TRUE){
+ if(plot_output == TRUE){
+    if(!sum(results) == 0){
       cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
-
+      print("Making heatmap.")
       heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
-      cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
+    }
+    #heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+    cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
+    print("Making size_dist plot")
+    dist <- get_weighted_read_dist(forward_dt, reverse_dt)
 
-      dist <- get_weighted_read_dist(forward_dt, reverse_dt)
+    cat(file = paste0(wkdir, logfile), "plot_sizes\n", append = TRUE)
+    size_plot <- plot_sizes(dist)
+    cat(file = paste0(wkdir, logfile), "plot_overhangz\n", append = TRUE)
 
-      cat(file = paste0(wkdir, logfile), "plot_sizes\n", append = TRUE)
-      size_plot <- plot_sizes(dist)
-      cat(file = paste0(wkdir, logfile), "plot_overhangz\n", append = TRUE)
+    dicer_overhangs$zscore <- calc_zscore(dicer_overhangs$proper_count)
+    print("Making dicer plot")
+    dicer_plot <- plot_overhangz(dicer_overhangs, "none")
 
-      dicer_overhangs$zscore <- calc_zscore(dicer_overhangs$proper_count)
-      dicer_plot <- plot_overhangz(dicer_overhangs, "none")
+    #order of results in dsh obj =
+    #plus_res, minus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
+    #arc_plot, gtf_plot, plus_phasedz, minus_phasedz
+
+    ### combine siRNA and hpRNA plots
+
+    if(reg_stop - reg_start < 10000){
+      print("Region is less than 10kb in length")
+
+      plus_hp_overhangs <- dsh[[3]]
+      minus_hp_overhangs <- dsh[[4]]
+
+      density_plot <- dsh[[5]]
+      arc_plot <- dsh[[6]]
+
+      if(annotate_region == TRUE){
+        print("Annotate_region == TRUE")
+        gtf_plot <- dsh[[7]]
+        plus_phasedz <- dsh[[8]]
+        minus_phasedz <- dsh[[9]]
+
+        gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+
+        #if there are results for the heatmap, plot, otherwise omit
+        if(!sum(results) == 0){
+          print("Heat map contains results")
+          left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, ggplotify::as.grob(heat_plot), rel_widths = c(0.6,1.1,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+          right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+        } else {
+          left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, rel_widths = c(0.6,1.1,0.9,0.9), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+          right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+
+        }
+          all_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_widths = c(0.9, 0.01,0.7), align = "vh", axis = "lrtb")
 
 
-      ### make siRNA plots
+      } else { #if annotate_region == FALSE
+        print("Annotate_region == FALSE")
+            plus_phasedz<- dsh[[7]]
+            minus_phasedz <- dsh[[8]]
 
-      top <- cowplot::plot_grid(size_plot, NULL, ncol = 3,dicer_plot, rel_widths = c(1,0.2,1), align = "vh", axis = "lrtb")
+            if(!sum(results) == 0){
+              left <- cowplot::plot_grid(arc_plot, density_plot, size_plot, ggplotify::as.grob(heat_plot), ncol = 1, rel_widths = c(0.6,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,1.4), align = "vh", axis = "lrtb")
+              right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+            } else {
+              left <- cowplot::plot_grid(arc_plot, density_plot, size_plot, rel_widths = c(0.6,0.9,0.9), rel_heights = c(0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+              right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+            }
 
-      bottom <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), NULL, ncol = 2, align = "vh", axis = "lrtb", rel_widths = c(1,1))
+            all_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_widths = c(0.9, 0.01,0.7), align = "vh", axis = "lrtb")
 
-      all_plot <- cowplot::plot_grid(top, bottom, ncol = 1, rel_widths = c(1, 1), rel_heights = c(1,1))
-
+      }
 
       if(out_type == "png" || out_type == "PNG"){
         cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
-        grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 9, width = 9, units = "in", res = 300)
+        grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 16, width = 14, units = "in", res = 300)
         print(all_plot)
         grDevices::dev.off()
       } else {
         cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
-        grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 9, width = 9)
+        grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 16, width = 14)
         print(all_plot)
         grDevices::dev.off()
       }
-   }
 
-   } else {
+    } else { #none of the hairpin plots were made because the region > 10kb
+      print("Region is greater than 10kb in length")
+      if(annotate_region == TRUE){
+        print("Annotate_region == TRUE")
+        #gtf_plot <- dsh[[7]]
+        #plus_phasedz <- dsh[[8]]
+        #minus_phasedz <- dsh[[9]]
 
-      dsh <- null_hp_res()
-      forward_dt <- NULL
-      reverse_dt <- NULL
-      cat(file = paste0(wkdir, logfile), "Zero overlapping reads found.\n", append = TRUE)
-      results <- NA
-   }
+        # things are broken here
+        gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
 
-     return(list(heat = results, si_dicer = dicer_overhangs, dsh))
+
+        if(!sum(results) == 0){
+          print("Heatplot results are not empty")
+          data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+
+          #density_plot <- plot_density(data, reg_start, reg_stop)
+          density_plot <- plot_large_density(data, reg_start, reg_stop)
+          top <- cowplot::plot_grid(density_plot, size_plot, ncol = 2,  rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+          bottom <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), dicer_plot, ncol = 2, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+          all_plot <- cowplot::plot_grid(top, NULL, bottom, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(1,0.1,1), align = "vh", axis = "lrtb")
+
+        } else { #if no heat plot
+           print("Heat plot results are empty")
+           data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+
+           density_plot <- plot_large_density(data, reg_start, reg_stop)
+           top <- cowplot::plot_grid(density_plot, size_plot, ncol = 2, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+           bottom <- cowplot::plot_grid(dicer_plot, rel_widths = c(1), rel_heights = c(1), align = "vh", axis = "lrtb")
+           all_plot <- cowplot::plot_grid(top, NULL, bottom, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(1,0.1,1), align = "vh", axis = "lrtb")
+       }
+
+       if(out_type == "png" || out_type == "PNG"){
+         cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
+         grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 9, width = 14, units = "in", res = 300)
+         print(all_plot)
+         grDevices::dev.off()
+       } else {
+          cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
+          grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 9, width = 14)
+          print(all_plot)
+          grDevices::dev.off()
+       }
+
+      } else { # if annotate_region == FALSE
+        #plus_phasedz<- dsh[[7]]
+        #minus_phasedz <- dsh[[8]]
+        data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+        density_plot <- plot_large_density(data, reg_start, reg_stop)
+
+        if(!sum(results) == 0){
+          left <- cowplot::plot_grid(density_plot, size_plot, dicer_plot, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+          right <- cowplot::plot_grid(NULL, ggplotify::as.grob(heat_plot), NULL, ncol = 1, align = "vh", axis = "l", rel_widths = c(0.4,1,0.4), rel_heights = c(1,1))
+          all_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_widths = c(1,0.1,0.8), rel_heights = c(1,1,1), align = "vh", axis = "lrtb")
+
+        } else {
+          bottom <- cowplot::plot_grid(dicer_plot, size_plot, rel_widths = c(1,1), rel_heights = c(1,1), ncol = 2, align = "vh", axis = "lrtb")
+          top <- cowplot::plot_grid(density_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1), rel_heights = c(1))
+          all_plot <- cowplot::plot_grid(top, NULL, bottom, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,0.1,1), align = "vh", axis = "lrtb")
+        }
+
+
+      }
+
+      if(out_type == "png" || out_type == "PNG"){
+        cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
+        grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 13, width = 13, units = "in", res = 300)
+        print(all_plot)
+        grDevices::dev.off()
+      } else {
+        cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
+        grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 13, width = 13)
+        print(all_plot)
+        grDevices::dev.off()
+      }
+
+      }
+
+    }
+
+                                 #1         #2       #3             #4         #5
+      #left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, size_plot, heat, rel_widths = c(0.6,1.1,0.9,0.9,0.4), rel_heights = c(0.7,0.7,0.7,0.7,1.4), ncol = 1, align = "vh", axis = "lrtb")
+      #right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
+
+   return(list(heat = results, si_dicer = dicer_overhangs, dsh))
 }
 

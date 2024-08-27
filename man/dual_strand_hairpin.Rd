@@ -21,6 +21,7 @@ dual_strand_hairpin(
   annotate_region,
   weight_reads,
   gtf_file,
+  write_fastas,
   out_type
 )
 }
@@ -52,6 +53,8 @@ dual_strand_hairpin(
 \item{weight_reads}{Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.}
 
 \item{gtf_file}{A string corresponding to the path of genome annotation in 9-column GTF format.}
+
+\item{write_fastas}{TRUE or FALSE. Default is FALSE}
 
 \item{out_type}{The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.}
 }

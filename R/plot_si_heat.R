@@ -23,10 +23,10 @@ plot_si_heat <- function(results, chrom_name, reg_start, reg_stop, wkdir, pal = 
                       'Greens' = c('#003333','#006666', '#009966', '#00CC33', '#CCFF99', '#FFFF99', '#FFFF00'))
 
 
-      p <- pheatmap::pheatmap(results, main = "Reads With Proper Overlap By Size", cluster_cols = FALSE, cluster_rows = FALSE, fontsize = 12, color = m_pal)
+      p <- pheatmap::pheatmap(results, main = "Reads With Proper Overhangs By Size", cluster_cols = FALSE, cluster_rows = FALSE, fontsize = 12, color = m_pal)
 
    } else {
-      p <- pheatmap::pheatmap(results, main = "Reads With Proper Overlap By Size", cluster_cols = FALSE, cluster_rows = FALSE, fontsize = 12, color = grDevices::colorRampPalette('RdYlBl')(length('RdYlBl')))
+      p <- pheatmap::pheatmap(results, main = "Reads With Proper Overhangs By Size", cluster_cols = FALSE, cluster_rows = FALSE, fontsize = 12, color = grDevices::colorRampPalette('RdYlBl')(length('RdYlBl')))
 
     }
    return(p)

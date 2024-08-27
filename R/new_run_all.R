@@ -27,6 +27,10 @@
 new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
                         plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
 
+
+  wrapped <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
+                      plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
+
   width <- pos <- start <- end <- NULL
 
   # create empty data table for results
@@ -134,8 +138,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   local_ml$unique_read_bias <- unique_read_count/total_read_count
 
 
-  forward_dt <- no_weight(forward_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
-  reverse_dt <- no_weight(reverse_dt, chrom_name) %>% dplyr::mutate(width = end - start + 1)
+  forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+  reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
   all_data <- rbind(forward_dt, reverse_dt)
 
 
@@ -227,7 +231,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   max_si_heat <- get_max_si_heat(si_res)
 
   local_ml$highest_si_col <- max_si_heat$highest_si_col
-  si_dicerz <- si_res$si_dicer$Z_score[9]
+  si_dicerz <- si_res$si_dicer$Z_score[5]
 
   if(is.na(si_dicerz)){
     local_ml$si_dicerz <- -33
@@ -251,7 +255,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # MFE change to hp_mfe
   # hp_dicerz [ maximum value of plus_dicerz and minus_dicerz]
 
-  plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
+  #plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
+  plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
   #if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
   if(!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)){
     plus_mean <- mean(plus_phasedz[1:4])
@@ -259,7 +264,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     plus_mean <- -33
   }
 
-   minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
+   #minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
+  minus_phasedz <- si_res[[3]][[1]]$phased_tbl.phased_z
   #if(!minus_phasedz[1] == "NaN" && !minus_phasedz[1] == -33){
    if(!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)){
     minus_mean <- mean(minus_phasedz[1:4])
@@ -465,4 +471,15 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 
   print("file has been written.")
+  }
+
+  tryCatch(
+    wrapped(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
+            plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type),
+    error = function(e) {
+      message(conditionMessage(e))
+    }
+  )
+
+
 }

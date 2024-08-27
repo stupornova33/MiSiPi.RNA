@@ -15,6 +15,7 @@
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 #' @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
+#' @param write_fastas TRUE or FALSE. Default is FALSE
 #' @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 #' @return a list of results
 
@@ -22,7 +23,7 @@
 
 dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                              min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
-                             weight_reads, gtf_file, out_type){
+                             weight_reads, gtf_file, write_fastas, out_type){
 
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 
@@ -51,7 +52,9 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
      prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
      helix <- R4RNA::viennaToHelix(unlist(fold_list[,5]))
-     R4RNA::writeHelix(helix, file = "helix.txt")
+
+     filepath = "helix.txt"
+     R4RNA::writeHelix(helix, file = filepath)
      return(list(MFE = MFE, vienna = vienna, extracted_df = extracted_df, helix = helix))
   }
 
@@ -113,7 +116,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else if(is.integer(weight_reads)){
     r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
   } else {
-    r2_dt <- no_weight(dt, chrom_name)
+    r2_dt <- no_weight(dt, as.character(chrom_name))
   }
 
   #transform end of reads in one df
@@ -235,7 +238,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else if(is.integer(weight_reads)){
     r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
   } else {
-    r2_dt <- no_weight(dt, chrom_name)
+    r2_dt <- no_weight(dt, as.character(chrom_name))
   }
   #transform ends of reads for phasing/finding overlaps
   print("Transforming ends of reads.")
@@ -397,6 +400,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     }
   )
 
+  ### 7/4/24 refactor to combine siRNA and hairpin functions
+
 
   if(plot_output == TRUE){
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
@@ -405,13 +410,40 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     minus_overhangs <- data.frame(shift = minus_res$dicer_tbl.shift, zscore = minus_res$dicer_tbl.zscore)
     minus_overhangs$zscore[is.na(minus_overhangs$zscore)] <- 0
 
+    ## return these as plot objects
     plus_overhang_plot <- plot_overhangz(plus_overhangs, "+")
     minus_overhang_plot <- plot_overhangz(minus_overhangs, "-")
 
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- plot_density(data, reg_start, reg_stop)
-    arc_plot <- plot_helix("helix.txt")
+
+    if(!Sys.info()['sysname'] == "Windows"){
+      #grDevices::dev.control("enable")
+      #R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+      #arc_plot <- grDevices::recordPlot()
+
+      arc_plot <- plot_helix("helix.txt")
+      grDevices::dev.control("enable")
+      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+
+      arc_plot <- grDevices::recordPlot()
+
+      #print("Outputting arc plot only with grDevices.")
+
+      #grDevices::png(file = "helix_grDevice_arc.png", height = 10, width = 10, units = "in", res = 200)
+      #print(arc_plot)
+      #grDevices::dev.off()
+
+
+    } else {
+      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+
+      #arc_plot <- plot_helix("helix.txt")
+      arc_plot <- grDevices::recordPlot()
+    }
+
+    ## why? No one knows
 
     plus_phasedz <- plot_hp_phasedz(plus_hp_phased_tbl, "+")
 
@@ -421,31 +453,41 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     ## plot genome annotations (optional)
     if(annotate_region == TRUE){
       gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
-      left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
-
-      # Draw combined plot
-      right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1, 1))
-   } else {
-      left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(0.9,1,1), rel_heights = c(1,0.1,1), ncol = 1, align = "vh", axis = "lrtb")
-      # Draw combined plot
-      right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot,plus_phasedz, minus_phasedz, ncol = 1, rel_heights = c(1,1,1,1), rel_widths = c(1,1,1,1), align = "vh", axis = "l")
-    }
-
-    final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))
-
-    prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
-
-    if(out_type == "png" || out_type == "PNG"){
-      grDevices::png(file = paste0(prefix, "_hairpin_fold.png"), height = 9, width = 9, units = "in", res = 300)
-      print(final_plot)
-      grDevices::dev.off()
+      return(list(minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
+                  arc_plot, gtf_plot, plus_phasedz, minus_phasedz))
     } else {
-      grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 9, width = 9)
-      print(final_plot)
-      grDevices::dev.off()
+
+      return(list(minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
+                  arc_plot, plus_phasedz, minus_phasedz))
+
     }
+      #left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
+
+      # Draw combined plot
+      #right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1, 1))
+      #} else {
+      #left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(0.9,1,1), rel_heights = c(1,0.1,1), ncol = 1, align = "vh", axis = "lrtb")
+      # Draw combined plot
+      #right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot,plus_phasedz, minus_phasedz, ncol = 1, rel_heights = c(1,1,1,1), rel_widths = c(1,1,1,1), align = "vh", axis = "l")
+      #}
+
+      #final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))
+
+      #prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
+
+      #if(out_type == "png" || out_type == "PNG"){
+      #  grDevices::png(file = paste0(prefix, "_hairpin_fold.png"), height = 9, width = 9, units = "in", res = 300)
+      #  print(final_plot)
+      #  grDevices::dev.off()
+      #} else {
+      #  grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 9, width = 9)
+      #  print(final_plot)
+      #  grDevices::dev.off()
+      #}
+  } else {
+     #if plot == FALSE just return ML res
+
+    return(list(minus_res, plus_res))
   }
 
- #for machine learning / run_all
- return(list(minus_res, plus_res))
 }
