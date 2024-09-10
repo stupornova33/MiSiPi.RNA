@@ -105,6 +105,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
+  size_dist <- rbind(forward_dt, reverse_dt) %>%
+    dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
+
+  output_readsize_dist(size_dist, prefix, wkdir, strand = NULL)
+
   chromP <- NULL
   chromM <- NULL
 ############################################################################ get extra metrics for ML ###################################################################

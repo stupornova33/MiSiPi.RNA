@@ -224,6 +224,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// map_and_count
+int map_and_count(std::vector<int> fstart, int fstart_size, std::vector<int> rend, int proper_overlap);
+RcppExport SEXP _MiSiPi_RNA_map_and_count(SEXP fstartSEXP, SEXP fstart_sizeSEXP, SEXP rendSEXP, SEXP proper_overlapSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type fstart(fstartSEXP);
+    Rcpp::traits::input_parameter< int >::type fstart_size(fstart_sizeSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type rend(rendSEXP);
+    Rcpp::traits::input_parameter< int >::type proper_overlap(proper_overlapSEXP);
+    rcpp_result_gen = Rcpp::wrap(map_and_count(fstart, fstart_size, rend, proper_overlap));
+    return rcpp_result_gen;
+END_RCPP
+}
 // get_pi_overlaps
 NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth);
 RcppExport SEXP _MiSiPi_RNA_get_pi_overlaps(SEXP fdt_startSEXP, SEXP fdt_endSEXP, SEXP fwidthSEXP, SEXP rdt_endSEXP, SEXP rdt_startSEXP, SEXP rwidthSEXP) {
@@ -237,6 +251,23 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<int> >::type rdt_start(rdt_startSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type rwidth(rwidthSEXP);
     rcpp_result_gen = Rcpp::wrap(get_pi_overlaps(fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_overlap_counts
+NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth, bool check_pi);
+RcppExport SEXP _MiSiPi_RNA_get_overlap_counts(SEXP fdt_startSEXP, SEXP fdt_endSEXP, SEXP fwidthSEXP, SEXP rdt_endSEXP, SEXP rdt_startSEXP, SEXP rwidthSEXP, SEXP check_piSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type fdt_start(fdt_startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type fdt_end(fdt_endSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type fwidth(fwidthSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type rdt_end(rdt_endSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type rdt_start(rdt_startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type rwidth(rwidthSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_pi(check_piSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_overlap_counts(fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth, check_pi));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -290,6 +321,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// new_get_si_overlaps
+NumericMatrix new_get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth);
+RcppExport SEXP _MiSiPi_RNA_new_get_si_overlaps(SEXP fdt_startSEXP, SEXP fdt_endSEXP, SEXP fwidthSEXP, SEXP rdt_startSEXP, SEXP rdt_endSEXP, SEXP rwidthSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int> >::type fdt_start(fdt_startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type fdt_end(fdt_endSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type fwidth(fwidthSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type rdt_start(rdt_startSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type rdt_end(rdt_endSEXP);
+    Rcpp::traits::input_parameter< std::vector<int> >::type rwidth(rwidthSEXP);
+    rcpp_result_gen = Rcpp::wrap(new_get_si_overlaps(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MiSiPi_RNA_mergePileups", (DL_FUNC) &_MiSiPi_RNA_mergePileups, 4},
@@ -307,10 +354,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MiSiPi_RNA_get_si_overlaps", (DL_FUNC) &_MiSiPi_RNA_get_si_overlaps, 6},
     {"_MiSiPi_RNA_get_phased_dist", (DL_FUNC) &_MiSiPi_RNA_get_phased_dist, 5},
     {"_MiSiPi_RNA_make_count_table", (DL_FUNC) &_MiSiPi_RNA_make_count_table, 6},
+    {"_MiSiPi_RNA_map_and_count", (DL_FUNC) &_MiSiPi_RNA_map_and_count, 4},
     {"_MiSiPi_RNA_get_pi_overlaps", (DL_FUNC) &_MiSiPi_RNA_get_pi_overlaps, 6},
+    {"_MiSiPi_RNA_get_overlap_counts", (DL_FUNC) &_MiSiPi_RNA_get_overlap_counts, 7},
     {"_MiSiPi_RNA_getLoopPileupsCPP", (DL_FUNC) &_MiSiPi_RNA_getLoopPileupsCPP, 9},
     {"_MiSiPi_RNA_rep_nonseq_reads", (DL_FUNC) &_MiSiPi_RNA_rep_nonseq_reads, 5},
     {"_MiSiPi_RNA_rep_seq_reads", (DL_FUNC) &_MiSiPi_RNA_rep_seq_reads, 6},
+    {"_MiSiPi_RNA_new_get_si_overlaps", (DL_FUNC) &_MiSiPi_RNA_new_get_si_overlaps, 6},
     {NULL, NULL, 0}
 };
 

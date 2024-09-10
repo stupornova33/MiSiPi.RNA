@@ -60,6 +60,10 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
      dplyr::group_by_all() %>%
      dplyr::summarize(count = dplyr::n())
 
+   size_dist <- rbind(forward_dt, reverse_dt) %>%
+      dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
+   output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
+
    chromP <- NULL
    chromM <- NULL
 
@@ -100,21 +104,24 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         overlaps <- find_overlaps(forward_dt, reverse_dt) %>% dplyr::mutate(p5_overhang = r2_end - r1_end, p3_overhang = r2_start - r1_start) %>%
          dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
 
-      if(write_fastas == TRUE) write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
+        if(write_fastas == TRUE) write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
 
-      #calculate the number of dicer pairs for the zscore
-      dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
+        #calculate the number of dicer pairs for the zscore
+        dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
 
-      dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
+        dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
 
-      cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
-      # calculate the siRNA pairs for the heatmap
+        cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
+        # calculate the siRNA pairs for the heatmap
 
-      results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
-                                forward_dt$start, forward_dt$end, forward_dt$width)
+        #system.time(results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
+        #                          forward_dt$start, forward_dt$end, forward_dt$width))
 
-      row.names(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
-      colnames(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
+        results <- new_get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
+                                       forward_dt$start, forward_dt$end, forward_dt$width)
+
+        row.names(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
+        colnames(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
       } else {
 
 

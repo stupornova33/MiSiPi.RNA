@@ -76,8 +76,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     seqnames = c(chrom_name),
     ranges = IRanges::IRanges(start=c(1), end=c(length)))
 
-  #mygranges <- GenomicRanges::GRanges(seqnames = c(chrom_name), ranges = IRanges::IRanges(start = c(reg_start),
-  #                                                                                        end = c(reg_stop)))
+
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
   geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
 
@@ -419,12 +418,30 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     density_plot <- plot_density(data, reg_start, reg_stop)
     #arc_plot <- plot_helix("helix.txt")
 
+    if(!Sys.info()['sysname'] == "Windows"){
+      #grDevices::dev.control("enable")
+      #R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+      #arc_plot <- grDevices::recordPlot()
 
-    arc_plot <- grDevices::recordPlot("helix.txt")
+      arc_plot <- plot_helix("helix.txt")
+      grDevices::dev.control("enable")
+      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
 
-    arc_plot <- plot_helix("helix.txt")
-    #arc_plot <- grDevices::recordPlot()
+      arc_plot <- grDevices::recordPlot()
 
+      #print("Outputting arc plot only with grDevices.")
+
+      #grDevices::png(file = "helix_grDevice_arc.png", height = 10, width = 10, units = "in", res = 200)
+      #print(arc_plot)
+      #grDevices::dev.off()
+
+
+    } else {
+      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+
+      #arc_plot <- plot_helix("helix.txt")
+      arc_plot <- grDevices::recordPlot()
+    }
 
     ## why? No one knows
 
