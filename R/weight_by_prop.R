@@ -31,24 +31,24 @@ weight_by_prop <- function(dt, chrom_name){
      counts_dt$weighted_count <- round(counts_dt$weighted_count)
 
 
-     res_df <- rep_seq_reads(counts_dt$weighted_count, counts_dt$rname, counts_dt$start, counts_dt$end, counts_dt$first, counts_dt$seq)
+     final_df <- rep_seq_reads(counts_dt$weighted_count, counts_dt$rname, counts_dt$start, counts_dt$end, counts_dt$first, counts_dt$seq)
 
      # speed things up by selecting random subset.
      # find overlaps struggles with larger vectors
 
      #shuffle order randomly
-     res_df <- res_df[sample(1:nrow(res_df)), ] %>%
-       dplyr::mutate(width = end - start + 1)
+     #res_df <- res_df[sample(1:nrow(res_df)), ] %>%
+     #   dplyr::mutate(width = end - start + 1)
 
-     if(nrow(res_df) > 0){
+     #if(nrow(res_df) > 0){
        #select a subset
-       final_df <- utils::head(res_df, 10000)
-     } else {
-       final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
-     }
+       #final_df <- utils::head(res_df, 10000)
+     #} else {
+     #    final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
+     #}
 
-     } else {
-       final_df <- data.frame(matrix(ncol = 3, nrow = 0))
+     #} else {
+      # final_df <- data.frame(matrix(ncol = 3, nrow = 0))
   }
 
  }

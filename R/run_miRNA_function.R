@@ -88,6 +88,12 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
      dplyr::summarize(count = dplyr::n())
    filter_r2_dt <- chrom_df %>% dplyr::mutate(rname = chrom_name)
 
+   size_dist <- chrom_df %>%
+     dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
+
+   output_readsize_dist(size_dist, prefix, wkdir, strand = strand, type = "miRNA")
+
+
    if(nrow(filter_r2_dt) == 0){
       return(null_mi_res())
    } else {

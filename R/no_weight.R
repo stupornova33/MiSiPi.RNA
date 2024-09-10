@@ -21,12 +21,13 @@ no_weight <- function(filter_dt, chrom_name){
      dplyr::mutate(width = end - start + 1)
 
 
-   if(nrow(counts_dt) > 0){
+   #if(nrow(counts_dt) > 0){
       #select a random subset
-      final_df <- utils::head(res_df, 10000)
-   } else {
-      final_df <- counts_dt
-   }
+   #    final_df <- utils::head(res_df, 10000)
+   #} else {
+   #    final_df <- counts_dt
+   #}
 
+   final_df <- res_df
    return(final_df)
 }

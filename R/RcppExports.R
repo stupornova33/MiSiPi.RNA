@@ -238,9 +238,26 @@ make_count_table <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwi
     .Call(`_MiSiPi_RNA_make_count_table`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
 }
 
+#' map_and_count
+#'
+#' This function takes in a vector of start positions from read group 1 and
+#' a vector of stop positions from read group 2 along with an overlap width
+#' It calculates counts proper overlaps contained in the vectors and returns the count
+#'
+#' @param fstart A vector of ints
+#' @param fstart_size An integer
+#' @param rend A vector of ints
+#' @param proper_overlap An integer
+#' @return An integer represent the number of overlaps present between the input vectors
+#' @export
+map_and_count <- function(fstart, fstart_size, rend, proper_overlap) {
+    .Call(`_MiSiPi_RNA_map_and_count`, fstart, fstart_size, rend, proper_overlap)
+}
+
 #' get_pi_overlaps
 #'
-#' This function calculates the overlaps present at each width of reads from 15-32
+#' This function takes in vectors of start and stop positions for read groups 1 and 2
+#' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
 #'
 #' @param fdt_start A vector of ints
 #' @param fdt_end A vector of ints
@@ -252,6 +269,24 @@ make_count_table <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwi
 #' @export
 get_pi_overlaps <- function(fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth) {
     .Call(`_MiSiPi_RNA_get_pi_overlaps`, fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth)
+}
+
+#' get_overlap_counts
+#'
+#' This function takes in vectors of start and stop positions for read groups 1 and 2
+#' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
+#'
+#' @param fdt_start A vector of ints
+#' @param fdt_end A vector of ints
+#' @param fwidth An integer
+#' @param rdt_start A vector of ints
+#' @param rdt_end A vector of ints
+#' @param rwidth An integer
+#' @param check_pi A bool, if TRUE (1), the function will look for piRNA overlaps, if FALSE (0) it will check for siRNA overlaps
+#' @return result A matrix representing the overlaps present at each width of reads from 15-32
+#' @export
+get_overlap_counts <- function(fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth, check_pi) {
+    .Call(`_MiSiPi_RNA_get_overlap_counts`, fdt_start, fdt_end, fwidth, rdt_end, rdt_start, rwidth, check_pi)
 }
 
 #' getLoopPileupsCPP
@@ -301,5 +336,22 @@ rep_nonseq_reads <- function(rep_count, rname, start, end, first) {
 #' @export
 rep_seq_reads <- function(rep_count, rname, start, end, first, seq) {
     .Call(`_MiSiPi_RNA_rep_seq_reads`, rep_count, rname, start, end, first, seq)
+}
+
+#' new_get_si_overlaps
+#'
+#' This function takes in vectors of start and stop positions for read groups 1 and 2
+#' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
+#'
+#' @param fdt_start A vector of ints
+#' @param fdt_end A vector of ints
+#' @param fwidth An integer
+#' @param rdt_start A vector of ints
+#' @param rdt_end A vector of ints
+#' @param rwidth An integer
+#' @return result A matrix representing the overlaps present at each width of reads from 15-32
+#' @export
+new_get_si_overlaps <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth) {
+    .Call(`_MiSiPi_RNA_new_get_si_overlaps`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
 }
 
