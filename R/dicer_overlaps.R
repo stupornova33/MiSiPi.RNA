@@ -266,20 +266,20 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
      j_dat <- j_dat %>%
        dplyr::relocate(rname)
 
-      if(nrow(i_dat) > 2000 | nrow(j_dat) > 2000){
+      if(nrow(i_dat) > 10000 | nrow(j_dat) > 10000){
          #shuffle order of dts and randomly select sample
          #because find_overlaps can't handle large vector sizes....
          i_dat <- i_dat[sample(1:nrow(i_dat)),]
          j_dat <- j_dat[sample(1:nrow(j_dat)),]
-         i_dat <- utils::head(i_dat, 2000)
-         j_dat <- utils::head(j_dat, 2000)
+         i_dat <- utils::head(i_dat, 10000)
+         j_dat <- utils::head(j_dat, 10000)
       }
       i_dat <- i_dat %>% stats::na.omit(i_dat)
       j_dat <- j_dat %>% stats::na.omit(j_dat)
 
       if(!nrow(i_dat) == 0 && !nrow(j_dat) == 0){
-        #i_j_overlaps <- find_overlaps(j_dat, i_dat)
-        i_j_overlaps <- find_overlaps(i_dat, j_dat)
+        #i_j_overlaps <- find_overlaps(i_dat, j_dat)
+        i_j_overlaps <- new_find_overlaps(i_dat, j_dat)
       } else {
         i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
                                    r2_start = 0, r2_width = 0, r2_end = 0)

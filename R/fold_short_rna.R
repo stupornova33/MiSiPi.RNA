@@ -1,6 +1,6 @@
 
 fold_short_rna <- function(start, stop, converted, path_to_RNAfold){
-   cat(converted, file = "converted.fasta", sep = "\n", append = FALSE)
+   write.table(converted, file = "converted.fasta", sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
    #fold <- system2(command = path_to_RNAfold, args = "converted.fasta", stdout= TRUE, wait = TRUE, invisible = TRUE)
 
     syscheck <- unlist(unname(Sys.info()[1]))

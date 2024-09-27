@@ -91,6 +91,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    size_dist <- chrom_df %>%
      dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
 
+   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
    output_readsize_dist(size_dist, prefix, wkdir, strand = strand, type = "miRNA")
 
 
@@ -139,6 +140,14 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    # using find_overlaps instead of find_hp_overlaps
    # find_overlaps only requires one df passed in and doesn't transform end of reads to original
    # find_hp_overlaps requires two dfs and automatically transforms ends of reads
+
+   # need to find a way around the huge memory requirement for findOverlaps when dataframes are > 10k
+   r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
+   r1_dt <- utils::head(r1_dt, 15000)
+
+   r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
+   r2_dt <- utils::head(r2_dt, 15000)
+
    overlaps_tmp <- find_overlaps(r1_dt, r2_dt)
 
    overlaps <- overlaps_tmp %>%

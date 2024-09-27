@@ -60,12 +60,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
                                      pi_phasedz = numeric(1),
                                      pi_phased26z = numeric(1))
 
-
+  print("setting locus")
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
   local_ml$locus_length <- reg_stop - reg_start
 
   print(local_ml$locus_length)
+  print("setting prefix")
   prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
 ####################################################################### process bam input files #############################################################################
@@ -90,6 +91,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
   chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
+  print("filtering forward and reverse dts")
   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
@@ -108,7 +110,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   size_dist <- rbind(forward_dt, reverse_dt) %>%
     dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
 
-  output_readsize_dist(size_dist, prefix, wkdir, strand = NULL)
+  print("output_readsize_dist")
+  output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
 
   chromP <- NULL
   chromM <- NULL
@@ -122,6 +125,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # ave_size
   # perc_first_nucT
   # perc_A10
+  print('Getting extra metrics for ML')
 
   sizes <- data.frame(width = c(forward_dt$width, reverse_dt$width))
 
@@ -142,17 +146,29 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   local_ml$unique_read_bias <- unique_read_count/total_read_count
 
+  if(nrow(forward_dt) > 0){
+    forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+  } else {
+    forward_dt <- forward_dt %>% dplyr::select(-c(count))
+  }
 
-  forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
-  reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+  if(nrow(reverse_dt) > 0){
+    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+  } else {
+    reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
+  }
+
   all_data <- rbind(forward_dt, reverse_dt)
 
 
   #d <- density.default(all_data$width)
   print("about to do the histogram")
   if(nrow(all_data) > 1){
+
+    all_data <- na.omit(all_data)
     m <- mean(all_data$width)
     std <- sqrt(var(all_data$width))
+
 
     if(!std == 0){
       bin_width <- KernSmooth::dpih(all_data$width, scalest = "stdev")
@@ -169,9 +185,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
         col="darkblue", lwd=2, add=TRUE, yaxt="n")
 
       local_ml$auc <- sum(diff(curve$x) * (head(curve$y,-1)+tail(curve$y,-1)))/2
-     } else {
-         local_ml$auc <- 0
-     }
+       } else {
+           local_ml$auc <- 0
+       }
 
     } else {
        local_ml$auc <- -1
@@ -259,7 +275,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # hp_phasedz [ maximum value of plus_phasedz[1:4] and minus_phasedz[1:4] ]
   # MFE change to hp_mfe
   # hp_dicerz [ maximum value of plus_dicerz and minus_dicerz]
-
+  print("getting hairpin-specific results")
   #plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
   plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
   #if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){

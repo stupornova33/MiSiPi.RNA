@@ -118,14 +118,18 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     r2_dt <- no_weight(dt, as.character(chrom_name))
   }
 
+
+  r2_dt <- na.omit(r2_dt)
+
   #transform end of reads in one df
   print("Transforming ends of reads.")
   r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
 
   # if no results, need to store a specific value for the run_all/machine learning
   # null_hp_res() creates a table of specific "no result" values for zscores and such
-  print("r1_dt contains less than 3 rows. Setting plus_null_res.")
+
   if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
+    print("r1_dt contains less than 3 rows. Setting plus_null_res.")
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     plus_null_res <- null_hp_res()[[2]]
   }
