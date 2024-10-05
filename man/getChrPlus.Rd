@@ -3,21 +3,25 @@
 \name{getChrPlus}
 \alias{getChrPlus}
 \title{create an object from read data from plus strand
-takes bam obj, chrom name, reg_start, and reg_stop}
+takes bam obj, chrom name, reg_start, and reg_stop
+extracts rname, pos, qwidth, and seq from bam obj}
 \usage{
 getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
 }
 \arguments{
 \item{bam_obj}{a bam object created by openBamFile}
 
-\item{reg_start}{an integer}
+\item{chrom_name}{a name passed in by user/bed file}
 
-\item{reg_stop}{an integer}
+\item{reg_start}{a whole number}
+
+\item{reg_stop}{a whole number}
 }
 \value{
-max_overhang
+chrom obj
 }
 \description{
 create an object from read data from plus strand
 takes bam obj, chrom name, reg_start, and reg_stop
+extracts rname, pos, qwidth, and seq from bam obj
 }
