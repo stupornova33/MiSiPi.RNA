@@ -1089,6 +1089,7 @@ NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fd
        std::cout << "check_pi == TRUE" << std::endl;
        p_overlap = 10;
      } else {
+       std::cout << "check_pi == FALSE" << std::endl;
        p_overlap = proper_overlap(i, j);
      }
 

@@ -19,6 +19,8 @@
 #'
 run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal,
                                plot_output, weight_reads, write_fastas, out_type){
+  message("Started run_piRNA_function()")
+  
   prefix <- paste0(chrom_name, ":", reg_start, "_", reg_stop)
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
@@ -541,7 +543,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     ave_minus_26z <- -33
   }
 
-
+  message("Made it to the return statement of run_piRNA_function")
   #return(c(ave_z, ave_26z))
   #cat(file = paste0(wkdir, logfile), paste0("Returning results for ML table.", "\n"), append = TRUE)
   #results for ML table
