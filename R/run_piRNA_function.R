@@ -208,6 +208,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       })
     output <- NULL
 
+    message("Making z_df")
     # Put results into table
     z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
     #z_res <- NULL
@@ -226,6 +227,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   #prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
   #for the read size dist plot
+  message("Getting read size distribution")
   cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
   read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
