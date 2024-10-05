@@ -234,7 +234,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   ################## compute plus strand
 
   message("Setting chrom with getChrPlus")
-  chrom <- data.table::setDT(getChrPlus(bam_obj, chrom_name, reg_start, reg_stop))
+  chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
   message("Setting chrom: Success")
   cat(file = paste0(wkdir, logfile), paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
   print("Calculating phasing on plus strand.")
