@@ -14,6 +14,7 @@
 
 
 get_read_dist <- function(bam_obj, chrom_name, reg_start, reg_stop) {
+  message("Starting get_read_dist()")
    options(scipen = 999)
    width <- pos <- count.y <- count.x <- NULL
 
@@ -51,6 +52,7 @@ get_read_dist <- function(bam_obj, chrom_name, reg_start, reg_stop) {
    size_dist["count"][is.na(size_dist["count"])] <- 0
 
    sizeDist <- NULL
-
+  
+  message("Returning from get_read_dist()")
    return(size_dist)
 }
