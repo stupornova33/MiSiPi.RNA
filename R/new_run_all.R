@@ -63,7 +63,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   print("setting locus")
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
-  local_ml$locus_length <- reg_stop - reg_start
+  local_ml$locus_length <- reg_stop - reg_start + 1
 
   print(local_ml$locus_length)
   print("setting prefix")
@@ -94,27 +94,31 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   print("filtering forward and reverse dts")
   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
     # get the number of times a read occurs
-    dplyr::summarize(count = dplyr::n())
+    dplyr::summarize(count = dplyr::n()) %>%
+    na.omit()
 
   reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
     subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
-    dplyr::summarize(count = dplyr::n())
-
-  size_dist <- rbind(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
+    dplyr::summarize(count = dplyr::n()) %>%
+    na.omit()
+  
+  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+    dplyr::group_by(width) %>%
+    dplyr::summarize(count = sum(count))
 
   print("output_readsize_dist")
   output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
 
   chromP <- NULL
   chromM <- NULL
+  size_dist <- NULL
 ############################################################################ get extra metrics for ML ###################################################################
 
   # calculate
