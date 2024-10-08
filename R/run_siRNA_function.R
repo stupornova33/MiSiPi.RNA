@@ -21,52 +21,64 @@
 #' @export
 
 run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, logfile, wkdir,
-                           pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
-   print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
-   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-   width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
+                           pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type) {
+  print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
+  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+  width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
 
-   # use Rsamtools to process the bam file
-   bam_obj <- OpenBamFile(bam_file, logfile)
-   bam_header <- Rsamtools::scanBamHeader(bam_obj)
-   chr_name <- names(bam_header[['targets']])
-   chr_length <- unname(bam_header[['targets']])
-   bam_header <- NULL
+  # use Rsamtools to process the bam file
+  bam_obj <- OpenBamFile(bam_file, logfile)
+  bam_header <- Rsamtools::scanBamHeader(bam_obj)
+  chr_name <- names(bam_header[['targets']])
+  chr_length <- unname(bam_header[['targets']])
+  bam_header <- NULL
 
-   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
-   cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
+  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+  cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
 
-   # extract reads by strand
-   # this creates a list object
-   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-   chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+  # extract reads by strand
+  # this creates a list object
+  chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
+  chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
-   # turn the list object into a more useable data frame and filter reads by length,
-   # bam only contains pos and width, need to add an end column
-    cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
-    forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
-     subset(width <= 32 & width >= 18) %>%
-      dplyr::mutate(start = pos, end = pos + width - 1) %>%
-      dplyr::select(-c(pos)) %>%
-      dplyr::group_by_all() %>%
-     # get the number of times a read occurs
-      dplyr::summarize(count = dplyr::n())
+  # turn the list object into a more useable data frame and filter reads by length,
+  # bam only contains pos and width, need to add an end column
+  cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
+  forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
+    subset(width <= 32 & width >= 18) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
+    dplyr::group_by_all() %>%
+    # get the number of times a read occurs
+    dplyr::summarize(count = dplyr::n())
 
-    cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
-    reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
-     subset(width <= 32 & width >= 18) %>%
-     dplyr::mutate(start = pos, end = pos + width - 1) %>%
-     dplyr::select(-c(pos)) %>%
-     dplyr::group_by_all() %>%
-     dplyr::summarize(count = dplyr::n())
+  cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
+  reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
+    subset(width <= 32 & width >= 18) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
+    dplyr::group_by_all() %>%
+    dplyr::summarize(count = dplyr::n())
 
-   size_dist <- rbind(forward_dt, reverse_dt) %>%
-      dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
-   output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
+  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+    dplyr::group_by(width) %>%
+    dplyr::summarise(count = sum(count))
+   
+  output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
-   chromP <- NULL
-   chromM <- NULL
+  chromP <- NULL
+  chromM <- NULL
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
    # If the data frames are empty there are no reads, can't do siRNA calculations
    if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
       print("f_dt and r_dt are not empty")
