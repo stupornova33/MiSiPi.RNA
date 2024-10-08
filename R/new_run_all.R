@@ -137,7 +137,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   sample <- sizes[sample(1:nrow(sizes)),]
   sample <- head(sample, 5000)
   print(head(sample))
-
+  sizes <- NULL
+  
   if((length(sample) > 3) && !(length(unique(sample)) == 1)){
     local_ml$log_shap_p <- log10(as.numeric(unlist(unname(shapiro.test(sample)))[2]))
   } else {
@@ -151,13 +152,14 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   local_ml$unique_read_bias <- unique_read_count/total_read_count
 
   if(nrow(forward_dt) > 0){
-    forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+    forward_dt <- no_weight(forward_dt, as.character(chrom_name))
   } else {
-    forward_dt <- forward_dt %>% dplyr::select(-c(count))
+    forward_dt <- forward_dt %>%
+      dplyr::select(-c(count))
   }
 
   if(nrow(reverse_dt) > 0){
-    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
   } else {
     reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
   }
