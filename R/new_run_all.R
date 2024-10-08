@@ -195,11 +195,6 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   
   all_widths <- NULL
 
-    } else {
-       local_ml$auc <- -1
-    }
-
-
   print("got past the histogram")
 
   # TO DO: make a null_res to return
@@ -216,9 +211,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
      local_ml$strand_bias <- perc_minus
   }
 
-  local_ml$perc_GC <- get_GC_content(all_data)
-  read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-
+  all_seqs <- c(forward_dt$seq, reverse_dt$seq)
+  local_ml$perc_GC <- get_GC_content(all_seqs)
+  
+  read_dist <- get_read_size_dist(forward_dt, reverse_dt)
+  
   ave_size <- highest_sizes(read_dist)
 
   local_ml$ave_size <- ave_size
@@ -233,10 +230,28 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   }
 
   local_ml$perc_first_nucT <- first_nuc_T(forward_dt, reverse_dt)
-  local_ml$perc_A10 <- get_nuc_10(forward_dt, reverse_dt)
-
+  
+  all_nuc_10 <- all_seqs %>%
+    stringr::str_sub(10, 10)
+  all_nuc_10_A <- sum(all_nuc_10 == "A")
+  local_ml$perc_A10 <- all_nuc_10_A / length(all_nuc_10)
+  
+  all_seqs <- NULL
+  all_nuc_10 <- NULL
+  all_nuc_10_A <- NULL
   max_sizes <- NULL
   read_dist <- NULL
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 ############################################################################ run siRNA function #######################################################################
   # calculate
