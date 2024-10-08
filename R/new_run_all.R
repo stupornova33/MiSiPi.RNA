@@ -164,36 +164,36 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
   }
 
-  all_data <- rbind(forward_dt, reverse_dt)
-
-
-  #d <- density.default(all_data$width)
-  print("about to do the histogram")
-  if(nrow(all_data) > 1){
-
-    all_data <- na.omit(all_data)
-    m <- mean(all_data$width)
-    std <- sqrt(var(all_data$width))
-
-
-    if(!std == 0){
-      bin_width <- KernSmooth::dpih(all_data$width, scalest = "stdev")
-
-      nbins <- seq(min(all_data$width) - bin_width,
-             max(all_data$width) + bin_width,
-             by = bin_width)
-
-      hist(all_data$width, density=20, breaks = 5, prob=TRUE,
-       xlab="read size", ylim=c(0, 2),
-      main="normal curve over histogram")
-
-      curve <- curve(dnorm(x, mean=m, sd=std),
-        col="darkblue", lwd=2, add=TRUE, yaxt="n")
-
-      local_ml$auc <- sum(diff(curve$x) * (head(curve$y,-1)+tail(curve$y,-1)))/2
-       } else {
-           local_ml$auc <- 0
-       }
+  print("about to do historgram")
+  if (nrow(forward_dt) + nrow(reverse_dt) > 1) {
+    all_widths <- c(forward_dt$width, reverse_dt$width)
+    
+    m <- mean(all_widths)
+    std <- sd(all_widths)
+    
+    if (!(std == 0)) {
+      bin_width <- KernSmooth::dpih(all_widths, scalest = "stdev")
+      
+      nbins <- seq(min(all_widths) - bin_width,
+                   max(all_widths) + bin_width,
+                   by = bin_width)
+      
+      hist(all_widths, density = 20, breaks = 5, prob = TRUE,
+           xlab = "Read size", ylim = c(0, 2),
+           main = "Normal curve over histogram")
+      
+      curve <- curve(dnorm(x, mean = m, sd = std),
+                     col = "darkblue", lwd = 2, add = TRUE, yaxt = "n")
+      
+      local_ml$auc <- sum(diff(curve$x) * (head(curve$y, -1) + tail(curve$y, -1))) / 2
+    } else {
+      local_ml$auc <- 0
+    }
+  } else {
+    local_ml$auc <- -1
+  }
+  
+  all_widths <- NULL
 
     } else {
        local_ml$auc <- -1
