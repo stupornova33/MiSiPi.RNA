@@ -68,90 +68,100 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
   chromP <- NULL
   chromM <- NULL
+  size_dist <- NULL
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-   # If the data frames are empty there are no reads, can't do siRNA calculations
-   if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
-      print("f_dt and r_dt are not empty")
-      cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
+  # If the data frames are empty there are no reads, can't do siRNA calculations
+  if (nrow(forward_dt) > 0 & nrow(reverse_dt) > 0) {
+    print("f_dt and r_dt are not empty")
+    cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
-      if(weight_reads == "None" | weight_reads == "none"){
-        print("No weighting of reads applied.")
-        forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+    if (weight_reads == "None" | weight_reads == "none") {
+      print("No weighting of reads applied.")
+      forward_dt <- no_weight(forward_dt, as.character(chrom_name))
+      reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
 
-      } else if(weight_reads == "weight_by_prop"){
-        forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+    } else if (weight_reads == "weight_by_prop") {
+      print("Weighting reads by proportion.")
+      forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name))
+      reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name))
 
+    } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
+      forward_dt <- locus_norm(forward_dt, sum(forward_dt$count)) %>% dplyr::mutate(width = end - start + 1)
+      reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count)) %>% dplyr::mutate(width = end - start + 1)
 
-      } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
-        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count)) %>% dplyr::mutate(width = end - start + 1)
+    } else if (is.integer(weight_reads)) {
+      print("User supplied custom weighting value for reads.")
+      forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start))
+      reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start))
 
-      } else if(is.integer(weight_reads)){
-        print("User supplied custom weighting value for reads.")
-        forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
+    } else {
+      cat(file = paste0(wkdir, logfile),
+          "Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n",
+          append = TRUE)
+    }
+    
+    print("Completed getting weighted dataframes.")
+    
+    # check to see if subsetted dfs are empty
+    # have to keep doing this at each step otherwise errors will happen
+    if (nrow(forward_dt) > 0 & nrow(reverse_dt) > 0) {
 
-      } else {
-        cat(file = paste0(wkdir, logfile),"Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n", append = TRUE)
-      }
+      # Now that the DTs have been weighted and re-expanded,
+      # Let's summarize them again and keep track of the duplicates with the column "n"
+      # This will be crucial in keeping memory and cpu usage down during find_overlaps()
+      f_summarized <- forward_dt %>%
+        dplyr::group_by_all() %>%
+        dplyr::count()
+      
+      r_summarized <- reverse_dt %>%
+        dplyr::group_by_all() %>%
+        dplyr::count()
+      
+      # get overlapping reads
+      overlaps <- find_overlaps(f_summarized, r_summarized) %>%
+        dplyr::mutate(p5_overhang = r2_end - r1_end,
+                      p3_overhang = r2_start - r1_start) %>%
+        dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
 
-      print("Completed getting weighted dataframes.")
-      # check to see if subsetted dfs are empty
-      # have to keep doing this at each step otherwise errors will happen
-      if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
+      # TODO This function runs very slowly on large loci
+      # See if it can be run on the summarized dts
+      if (write_fastas == TRUE) write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
 
-        # get overlapping reads
-        overlaps <- find_overlaps(forward_dt, reverse_dt) %>% dplyr::mutate(p5_overhang = r2_end - r1_end, p3_overhang = r2_start - r1_start) %>%
-         dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
+      #calculate the number of dicer pairs for the zscore
+      dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end,
+                                        overlaps$r2_start, overlaps$r2_width,
+                                        dupes_present = TRUE,
+                                        overlaps$r1_dupes, overlaps$r2_dupes)
 
-        if(write_fastas == TRUE) write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
+      dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
 
-        #calculate the number of dicer pairs for the zscore
-        dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
+      cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
+      # calculate the siRNA pairs for the heatmap
 
-        dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
+      #system.time(results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
+      #                          forward_dt$start, forward_dt$end, forward_dt$width))
 
-        cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
-        # calculate the siRNA pairs for the heatmap
+      # TODO See if this can be run on the summarized dts for cpu time improvement
+      results <- new_get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
+                                     forward_dt$start, forward_dt$end, forward_dt$width)
 
-        #system.time(results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
-        #                          forward_dt$start, forward_dt$end, forward_dt$width))
-
-        results <- new_get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
-                                       forward_dt$start, forward_dt$end, forward_dt$width)
-
-        row.names(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
-        colnames(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
-      } else {
-
-
-        # results are being stored also in case the run_all function is being used, at the end they will be written to a table
-        cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
-        #the data.frame should be modified if using calc_expand_overhangs
-        dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
-        #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
-        results <- 0
-      }
-
-   } else {
+      row.names(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
+      colnames(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
+    } else {
+      # results are being stored also in case the run_all function is being used, at the end they will be written to a table
       cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
-      #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+      #the data.frame should be modified if using calc_expand_overhangs
       dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
+      #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
       results <- 0
-   }
+    }
 
+  } else {
+    cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
+    #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+    dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
+    results <- 0
+  }
 
    # transform the data frame for writing to table by row
    # output is the locus followed by all zscores
