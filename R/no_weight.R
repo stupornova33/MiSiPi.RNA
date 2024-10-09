@@ -4,7 +4,7 @@
 #'
 #' @param filter_dt a data table or data frame of reads
 #' @param chrom_name a string
-#' @return filter_dt
+#' @return expanded_dt a dataframe
 #' @export
 
 ### this is the unweighted version.
