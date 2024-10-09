@@ -6,68 +6,87 @@
 #' @param r1_dt a data frame which contains a read_name, start, and stop
 #' @param r2_dt a data frame which contains a read_name, start, and stop
 #' @return overlap table
-
-
-
 #' @export
 
-find_overlaps <- function(r1_dt, r2_dt = NULL){
+find_overlaps <- function(r1_dt, r2_dt = NULL) {
+  # Currently it is expecting the r2_dt to have a column of summarized counts called "n"
+  # So all duplicate rows are removed. The output of this function keeps that column in
+  # So it can be used downstream
+  # TODO We either need to incorporate a duplicate column for both dt's OR
+  # we need to check ahead of time which dt has more duplicates, and only summarize that one
+  # if we go the second route, then we'll need another variable to track which dt is summarized
+  
+  # Attempting to work with both DTs as summarized
 
   #r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
   #r1_dt <- utils::head(r1_dt, 10000)
 
-   if(!is.null(r2_dt)){
+  if (!is.null(r2_dt)) {
     #r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
     #r2_dt <- utils::head(r2_dt, 10000)
+    
     gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
     gr2_obj <- makeGRobj(r2_dt, "rname", "start", "end")
 
 
     res <- GenomicRanges::findOverlaps(gr1_obj, gr2_obj,
-                                      maxgap=-1L, minoverlap=4L,
-                                      type=c("any"),
-                                      select=c("all"),
-                                      ignore.strand=TRUE)
+                                       maxgap=-1L, minoverlap=4L,
+                                       type=c("any"),
+                                       select=c("all"),
+                                       ignore.strand=TRUE)
+  } else {
+    gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
+    res <- GenomicRanges::findOverlaps(gr1_obj,
+                                       maxgap=-1L, minoverlap=4L,
+                                       type=c("any"),select=c("all"),
+                                       ignore.strand=TRUE,
+                                       drop.self = TRUE,
+                                       drop.redundant = TRUE)
+    gr2_obj <- gr1_obj
+  }
+  
+  #queryHits and subjectHits are functions to get the value at an index
+  query_idx <- S4Vectors::queryHits(res)
+  sub_idx <- S4Vectors::subjectHits(res)
+  res <- NULL
+  
+  
+  overlap_df <- data.frame(r1_start = IRanges::start(gr1_obj[query_idx]),
+                           r1_width = IRanges::width(gr1_obj[query_idx]),
+                           r1_end = IRanges::end(gr1_obj[query_idx]),
+                           r1_dupes = gr1_obj$n[query_idx],
+                           r2_start = IRanges::start(gr2_obj[sub_idx]),
+                           r2_width = IRanges::width(gr2_obj[sub_idx]),
+                           r2_end = IRanges::end(gr2_obj[sub_idx]),
+                           r2_dupes = gr2_obj$n[sub_idx])
+  
+  gr1_obj <- NULL
+  gr2_obj <- NULL
+  query_idx <- NULL
+  sub_idx <- NULL
+  
+
+  #query_values <- data.frame(r1_start = IRanges::start(gr1_obj[query_idx]),
+  #                           r1_width = IRanges::width(gr1_obj[query_idx]),
+  #                           r1_end = IRanges::end(gr1_obj[query_idx]))
 
 
-   } else {
-      gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
-      res <- GenomicRanges::findOverlaps(gr1_obj,maxgap=-1L, minoverlap=4L,
-                                         type=c("any"),select=c("all"),
-                                         ignore.strand=TRUE, drop.self = TRUE, drop.redundant = TRUE)
-      gr2_obj <- gr1_obj
-   }
-   #queryHits and subjectHits are functions to get the value at an index
+  #sub_values <- data.frame(r2_start = IRanges::start(gr2_obj[sub_idx]),
+  #                         r2_width = IRanges::width(gr2_obj[sub_idx]),
+  #                         r2_end = IRanges::end(gr2_obj[sub_idx]))
 
-   query_idx <- S4Vectors::queryHits(res)
 
-   sub_idx <- S4Vectors::subjectHits(res)
-   res <- NULL
+  #size <- nrow(query_values)
+  #reorganize so that 5' read comes first in the table
+  #blank_tbl <- data.frame(r1_start = numeric(size), r1_width = numeric(size), r1_end = numeric(size),
+  #                        r2_start = numeric(size), r2_width = numeric(size), r2_end = numeric(size))
 
-   query_values <- data.frame(r1_start = IRanges::start(gr1_obj[query_idx]), r1_width = IRanges::width(gr1_obj[query_idx]), r1_end = IRanges::end(gr1_obj[query_idx])) #%>%
-      #dplyr::mutate(r1_end = r1_start + r1_width - 1)
-   query_idx <- NULL
+  #tmp_tbl <- data.frame(cbind(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_end,
+  #                            r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_end))
+  #res_tbl <- dplyr::bind_rows(blank_tbl, tmp_tbl)
 
-   sub_values <- data.frame(r2_start = IRanges::start(gr2_obj[sub_idx]), r2_width = IRanges::width(gr2_obj[sub_idx]), r2_end = IRanges::end(gr2_obj[sub_idx]))#%>%
-      #dplyr::mutate(r2_end = r2_start + r2_width - 1)
-   sub_idx <- NULL
+  #res_tbl <- data.frame(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_end,
+  #                      r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_end)
 
-   #size <- nrow(query_values)
-   #reorganize so that 5' read comes first in the table
-   #blank_tbl <- data.frame(r1_start = numeric(size), r1_width = numeric(size), r1_end = numeric(size),
-    #                     r2_start = numeric(size), r2_width = numeric(size), r2_end = numeric(size))
-
-   #tmp_tbl <- data.frame(cbind(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_end,
-    #                           r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_end))
-   #res_tbl <- dplyr::bind_rows(blank_tbl, tmp_tbl)
-
-   res_tbl <- data.frame(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_end,
-                               r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_end)
-
-   query_idx <- NULL
-   sub_idx <- NULL
-   query_values <- NULL
-   sub_values <- NULL
-   size <- NULL
-   return(res_tbl)
+  return(overlap_df)
 }
