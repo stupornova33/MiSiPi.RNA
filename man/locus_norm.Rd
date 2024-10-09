@@ -12,7 +12,7 @@ locus_norm(dt, locus_read_count)
 \item{locus_read_count}{an integer}
 }
 \value{
-final_df a dataframe
+expanded_dt a dataframe
 }
 \description{
 normalize read counts by total number of reads mapped to locus

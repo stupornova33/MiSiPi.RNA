@@ -4,7 +4,15 @@
 \alias{calc_overhangs}
 \title{calc_overhangs}
 \usage{
-calc_overhangs(r1_start, r1_end, r2_start, r2_width)
+calc_overhangs(
+  r1_start,
+  r1_end,
+  r2_start,
+  r2_width,
+  dupes_present,
+  r1_dupes,
+  r2_dupes
+)
 }
 \arguments{
 \item{r1_start}{A vector of ints}
@@ -12,6 +20,12 @@ calc_overhangs(r1_start, r1_end, r2_start, r2_width)
 \item{r1_end}{A vector of ints}
 
 \item{r2_start}{A vector of ints}
+
+\item{dupes_present}{A bool indicating if vectors of duplicate counts are supplied}
+
+\item{r1_dupes}{A vector of ints representing the number of duplicates}
+
+\item{r2_dupes}{A vector of ints representing the number of duplicates}
 
 \item{r2_end}{A vector of ints}
 }

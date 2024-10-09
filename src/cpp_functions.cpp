@@ -492,11 +492,16 @@ DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
 //' @param r1_end A vector of ints
 //' @param r2_start A vector of ints
 //' @param r2_end A vector of ints
+//' @param dupes_present A bool indicating if vectors of duplicate counts are supplied
+//' @param r1_dupes A vector of ints representing the number of duplicates
+//' @param r2_dupes A vector of ints representing the number of duplicates
 //' @return A data.frame representing the number of proper and improper overhangs calculated at each shift position
 //' @export
 // [[Rcpp::export]]
 DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
-                         std::vector<int> r2_start, std::vector<int> r2_width){
+                         std::vector<int> r2_start, std::vector<int> r2_width,
+                         bool dupes_present,
+                         std::vector<int> r1_dupes, std::vector<int> r2_dupes) {
   std::vector<int> shift_vec = {-4,-3,-2,-1,0,1,2,3,4};
   int vector_length = r1_start.size();
   int MEMORY_SIZE = 9;
@@ -517,12 +522,18 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
       int p3_overhang = new_r2_start - r1_start[j];
       int p5_overhang = new_r2_end - r1_end[j];
 
-      //int p3_overhang = r1_start[j] - new_r2_start;
-      //int p5_overhang = r1_end[j] - new_r2_end;
-      if (p5_overhang == 2 && p3_overhang == 2){
-        pcount++;
+      if (p5_overhang == 2 && p3_overhang == 2) {
+        if (dupes_present) {
+          pcount += r1_dupes[j] * r2_dupes[j];
+        } else {
+          pcount++;
+        }
       } else {
-        icount++;
+        if (dupes_present) {
+          icount += r1_dupes[j] * r2_dupes[j];
+        } else {
+          icount++;
+        }
       }
     }
     proper_count.emplace_back(pcount);
