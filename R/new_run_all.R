@@ -13,6 +13,7 @@
 #' @param pi_pal a string
 #' @param plot_output a bool, TRUE or FALSE
 #' @param path_to_RNAfold a string
+#' @param path_to_RNAplot a string
 #' @param annotate_region a bool, TRUE or FALSE
 #' @param weight_reads a bool, TRUE or FALSE
 #' @param gtf_file a string
@@ -24,12 +25,24 @@
 
 
 
-new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-                        plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
+new_run_all <- function(chrom_name, reg_start, reg_stop,
+                        chromosome, length, bam_file,
+                        roi, genome_file, min_read_count,
+                        si_pal, pi_pal, plot_output,
+                        path_to_RNAfold, path_to_RNAplot,
+                        annotate_region,
+                        weight_reads, gtf_file,
+                        write_fastas, out_type) {
 
 
-  wrapped <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-                      plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
+  #wrapped <- function(chrom_name, reg_start, reg_stop,
+  #                    chromosome, length, bam_file,
+  #                    roi, genome_file, min_read_count,
+  #                    si_pal, pi_pal, plot_output,
+  #                    path_to_RNAfold, path_to_RNAplot,
+  #                    annotate_region,
+  #                    weight_reads, gtf_file,
+  #                    write_fastas, out_type) {
 
   width <- pos <- start <- end <- NULL
 
@@ -119,6 +132,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   chromP <- NULL
   chromM <- NULL
   size_dist <- NULL
+  
 ############################################################################ get extra metrics for ML ###################################################################
 
   # calculate
@@ -222,7 +236,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   cat(file = logfile, "Creating size plots\n", append = TRUE)
 
-  if(!dir.exists('run_all/size_plots/')) dir.create('run_all/size_plots/')
+  if (!dir.exists('run_all/size_plots/')) {
+    dir.create('run_all/size_plots/')
+  }
 
   if(plot_output == TRUE){
     size_dir <- 'run_all/size_plots/'
@@ -261,14 +277,23 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # hp_perc_paired
 
   cat(file = logfile, "Begin siRNA function\n", append = TRUE)
-  if(!dir.exists('run_all/siRNA_dir/')) dir.create('run_all/siRNA_dir/')
+  if(!dir.exists('run_all/siRNA_dir/')) {
+    dir.create('run_all/siRNA_dir/')
+  } 
 
   si_dir <- 'run_all/siRNA_dir/'
-  si_log <- file.create('si_logfile.txt')
-
-
-  si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
-                           annotate_region, weight_reads, gtf_file, write_fastas, out_type)
+  si_log <- 'si_logfile.txt'
+  
+  if (!file.exists(file.path(si_dir, si_log))) {
+    file.create(file.path(si_dir, si_log))
+  }
+  
+  si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop,
+                               length, min_read_count, genome_file,
+                               bam_file, si_log, si_dir,
+                               si_pal, plot_output, path_to_RNAfold,
+                               annotate_region, weight_reads, gtf_file,
+                               write_fastas, out_type)
 
   max_si_heat <- get_max_si_heat(si_res)
 
@@ -347,11 +372,28 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # mirna_overlapz
 
   cat(file = logfile, "Begin miRNA function\n", append = TRUE)
-  if(!dir.exists('run_all/miRNA_dir/')) dir.create('run_all/miRNA_dir/')
+  if(!dir.exists('run_all/miRNA_dir/')) {
+    dir.create('run_all/miRNA_dir/') 
+  }
+  
   miRNA_dir <- 'run_all/miRNA_dir/'
-  mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
-  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads, write_fastas, out_type)
-
+  mi_log <- 'mi_logfile.txt'
+  
+  if (!file.exists(file.path(miRNA_dir, mi_log))) {
+    file.create(paste0(miRNA_dir, mi_log))
+  }
+  
+  mi_res <- new_miRNA_function(chrom_name, reg_start, reg_stop,
+                               chromosome, length, "+",
+                               min_read_count, genome_file, bam_file,
+                               mi_log, miRNA_dir,
+                               plot_output,
+                               path_to_RNAfold,
+                               path_to_RNAplot,
+                               weight_reads,
+                               write_fastas,
+                               out_type)
+  
   #Look at first result
   mi_res <- mi_res[[1]]
   mirnaMFE_plus <- mi_res$mfe
@@ -365,7 +407,16 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     plus_overlapz <- NA
   }
 
-  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads, write_fastas, out_type)
+  mi_res <- new_miRNA_function(chrom_name, reg_start, reg_stop,
+                               chromosome, length, "-",
+                               min_read_count, genome_file, bam_file,
+                               mi_log, miRNA_dir,
+                               plot_output,
+                               path_to_RNAfold,
+                               path_to_RNAplot,
+                               weight_reads,
+                               write_fastas,
+                               out_type)
 
   mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -417,8 +468,18 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   if(!dir.exists('run_all/piRNA_dir/')) dir.create('run_all/piRNA_dir/')
 
   piRNA_dir <- 'run_all/piRNA_dir/'
-  pi_log <- file.create(paste0(piRNA_dir, 'pi_logfile.txt'))
-  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, pi_log, piRNA_dir, pi_pal, plot_output = FALSE, weight_reads, write_fastas, out_type)
+  pi_log <- "pi_logfile.txt"
+  if (!file.exists(file.path(piRNA_dir, pi_log))) {
+    file.create(paste0(piRNA_dir, pi_log))
+  }
+  
+  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop,
+                               length, bam_file, genome_file,
+                               pi_log, piRNA_dir, pi_pal,
+                               plot_output = FALSE,
+                               weight_reads,
+                               write_fastas,
+                               out_type)
 
 
   #if(!is.na(pi_res[[1]])){
@@ -513,15 +574,21 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 
   print("file has been written.")
-  }
+  #}
 
-  tryCatch(
-    wrapped(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-            plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type),
-    error = function(e) {
-      message(conditionMessage(e))
-    }
-  )
+  #tryCatch(
+  #  wrapped(chrom_name, reg_start, reg_stop,
+  #          chromosome, length, bam_file,
+  #          roi, genome_file, min_read_count,
+  #          si_pal, pi_pal, plot_output,
+  #          path_to_RNAfold, path_to_RNAplot,
+  #          annotate_region,
+  #          weight_reads, gtf_file,
+  #          write_fastas, out_type),
+  #  error = function(e) {
+  #    message(paste("Uh oh boss:", conditionMessage(e)))
+  #  }
+  #)
 
 
 }
