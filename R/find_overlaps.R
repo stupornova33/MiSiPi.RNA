@@ -18,16 +18,9 @@ find_overlaps <- function(r1_dt, r2_dt = NULL) {
   
   # Attempting to work with both DTs as summarized
 
-  #r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
-  #r1_dt <- utils::head(r1_dt, 10000)
-
   if (!is.null(r2_dt)) {
-    #r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
-    #r2_dt <- utils::head(r2_dt, 10000)
-    
     gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
     gr2_obj <- makeGRobj(r2_dt, "rname", "start", "end")
-
 
     res <- GenomicRanges::findOverlaps(gr1_obj, gr2_obj,
                                        maxgap=-1L, minoverlap=4L,
@@ -50,7 +43,6 @@ find_overlaps <- function(r1_dt, r2_dt = NULL) {
   sub_idx <- S4Vectors::subjectHits(res)
   res <- NULL
   
-  
   overlap_df <- data.frame(r1_start = IRanges::start(gr1_obj[query_idx]),
                            r1_width = IRanges::width(gr1_obj[query_idx]),
                            r1_end = IRanges::end(gr1_obj[query_idx]),
@@ -65,28 +57,5 @@ find_overlaps <- function(r1_dt, r2_dt = NULL) {
   query_idx <- NULL
   sub_idx <- NULL
   
-
-  #query_values <- data.frame(r1_start = IRanges::start(gr1_obj[query_idx]),
-  #                           r1_width = IRanges::width(gr1_obj[query_idx]),
-  #                           r1_end = IRanges::end(gr1_obj[query_idx]))
-
-
-  #sub_values <- data.frame(r2_start = IRanges::start(gr2_obj[sub_idx]),
-  #                         r2_width = IRanges::width(gr2_obj[sub_idx]),
-  #                         r2_end = IRanges::end(gr2_obj[sub_idx]))
-
-
-  #size <- nrow(query_values)
-  #reorganize so that 5' read comes first in the table
-  #blank_tbl <- data.frame(r1_start = numeric(size), r1_width = numeric(size), r1_end = numeric(size),
-  #                        r2_start = numeric(size), r2_width = numeric(size), r2_end = numeric(size))
-
-  #tmp_tbl <- data.frame(cbind(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_end,
-  #                            r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_end))
-  #res_tbl <- dplyr::bind_rows(blank_tbl, tmp_tbl)
-
-  #res_tbl <- data.frame(r1_start = query_values$r1_start, r1_width = query_values$r1_width, r1_end = query_values$r1_end,
-  #                      r2_start = sub_values$r2_start, r2_width = sub_values$r2_width, r2_end = sub_values$r2_end)
-
   return(overlap_df)
 }
