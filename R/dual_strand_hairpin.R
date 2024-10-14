@@ -32,28 +32,28 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   # calls fold_long_rna which runs RNAfold from ViennaRNA, splits the strings returned into
   # the dot thing and the mfe
   # R4RNA viennaToHelix is used to create the helix from the dot
-  fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold){
+  fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir) {
 
      dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
 
      converted <- convertU(dna_vec, 1)
-     writeLines(converted, con = "converted.txt")
+     #writeLines(converted, con = file.path(wkdir, "converted.txt")) # This is written in fold_long_rna as converted.fasta
      dna_vec <- NULL
 
      # use
-     fold_list <- mapply(fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold)
+     fold_list <- mapply(fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold, wkdir)
      fold_list <- t(fold_list)
      MFE <- unlist(unname(fold_list[,3]))
      vienna <- fold_list[,5]
      extracted_df <- fold_list[4][[1]]
 
-     writeLines(as.character(vienna), con = "vienna.txt")
+     writeLines(as.character(vienna), con = file.path(wkdir, "vienna.txt"))
 
      prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
 
      helix <- R4RNA::viennaToHelix(unlist(fold_list[,5]))
 
-     filepath = "helix.txt"
+     filepath = file.path(wkdir, "helix.txt")
      R4RNA::writeHelix(helix, file = filepath)
      return(list(MFE = MFE, vienna = vienna, extracted_df = extracted_df, helix = helix))
   }
@@ -64,7 +64,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   #RNAfold can't fold things longer than 10kb
 
-  if(reg_stop - reg_start > 10000){
+  if (reg_stop - reg_start > 10000) {
     print("Region greater than 10kb. Creating null_hp_res.")
     res <- null_hp_res()
     return(res)
@@ -92,52 +92,54 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what=c('rname', 'pos', 'qwidth'), which=which)
   chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
 
-
   print("Filtering reads")
   #filter the reads and calculate the end position
-  filter_r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
+  r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  # We're operating on a single strand but need one data frame where the reads aren't transformed, one where they are
-  # so set the other dt to be the same as the first
-  dt <- filter_r2_dt
-
   print("Weighting reads.")
   # weight reads if argument supplied
-  if(weight_reads == "weight_by_prop"){
-    r2_dt <- weight_by_prop(dt, chrom_name)
-  } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
-    r2_dt <- locus_norm(dt, sum(dt$count))
-  } else if(is.integer(weight_reads)){
-    r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
+  if (weight_reads == "weight_by_prop") {
+    r2_dt <- weight_by_prop(r2_dt, chrom_name)
+  } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
+    r2_dt <- locus_norm(r2_dt, sum(r2_dt$count))
+  } else if (is.integer(weight_reads)) {
+    r2_dt <- weight_by_uservalue(r2_dt, weight_reads, (reg_stop - reg_start + 1))
   } else {
-    r2_dt <- no_weight(dt, as.character(chrom_name))
+    r2_dt <- no_weight(r2_dt, as.character(chrom_name))
   }
-
 
   r2_dt <- na.omit(r2_dt)
 
-  #transform end of reads in one df
+  # Now that the reads have been weighted,
+  # Let's resummarize them for more efficient processing
+  r2_dt_summarized <- r2_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+  
+  # We're operating on a single strand but need one data frame where the reads aren't transformed, one where they are
+  # so set the other dt to be the same as the first with transformed ends
   print("Transforming ends of reads.")
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
+  r1_dt_summarized <- r2_dt_summarized %>%
+    dplyr::mutate(end = end + 30)
 
   # if no results, need to store a specific value for the run_all/machine learning
   # null_hp_res() creates a table of specific "no result" values for zscores and such
 
-  if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
-    print("r1_dt contains less than 3 rows. Setting plus_null_res.")
+  if (nrow(r2_dt) < 3) {
+    print("r2_dt contains less than 3 rows. Setting plus_null_res.")
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     plus_null_res <- null_hp_res()[[2]]
   }
 
   # calculate phasing signatures
   print("Calculating plus phasing signature.")
-  if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
-    plus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 50)
+  if (nrow(r2_dt) > 0) {
+    plus_hp_phased_tbl <- calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
@@ -151,35 +153,40 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
   print("Checking to see if result is NA.")
-  if(plus_hp_phased_z == "NaN"){
+  if (plus_hp_phased_z == "NaN") {
     plus_hp_phased_z <- -33
   }
 
 
-  if(nrow(r2_dt) > 0){
+  if (nrow(r2_dt) > 0) {
     print("r2_dt contains data. Proceeding with fold and overlap calc.")
     # don't want to fold the dna twice. So once it's been folded
     # set fold_bool to TRUE
     fold_bool <- 'TRUE'
     print("Folding the RNA.")
-    fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold)
+    fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir)
     MFE <- fold_list$MFE
     perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
 
     #transform reads and find dicer pairs
     print("Calculating dicer overlaps.")
     #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
-    dicer_dt <- r2_dt %>% dplyr::group_by(rname, start, end, width, first) %>% dplyr::summarize(count = dplyr::n())
+    dicer_dt <- r2_dt %>%
+      dplyr::group_by(rname, start, end, width, first) %>%
+      dplyr::summarize(count = dplyr::n())
 
     all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
     # dicer_overlaps() returns zero values if there are no valid overlaps
     # so check to make sure the first values are not zero
-    if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){
+    if (!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)) {
       #if(write_fastas == TRUE) write_proper_overhangs(r2_dt, r2_dt, wkdir, prefix, all_overlaps, "_hairpin")
 
       print("all_overlaps contains data. Calculating overhangs.")
-      plus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
-                                                  all_overlaps$r2_start, all_overlaps$r2_width))
+      plus_overhangs <- calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
+                                       all_overlaps$r2_start, all_overlaps$r2_width,
+                                       dupes_present = TRUE,
+                                       r1_dupes = all_overlaps$r1_dupes,
+                                       r2_dupes = all_overlaps$r2_dupes)
       plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
       plus_hp_overhangz <- mean(plus_overhangs$zscore[5])
 
@@ -206,7 +213,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
   # results for the ML table
   print("Creating plus_res")
-  if(exists("plus_null_res")){
+  if (exists("plus_null_res")) {
     print("plus_null_res exists.")
     plus_res <- plus_null_res
   } else {
@@ -216,6 +223,19 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
                 phased_tbl.phased_z = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
   print("Beginning minus strand.")
@@ -224,47 +244,56 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
   print("Filtering data.")
-  filter_r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
+  r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  dt <- filter_r2_dt
   print("Weighting reads.")
   # weight reads if argument supplied
-  if(weight_reads == "weight_by_prop"){
-    r2_dt <- weight_by_prop(dt, chrom_name)
-  } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
-    r2_dt <- locus_norm(dt, sum(dt$count))
-  } else if(is.integer(weight_reads)){
-    r2_dt <- weight_by_uservalue(dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
+  if (weight_reads == "weight_by_prop") {
+    r2_dt <- weight_by_prop(r2_dt, chrom_name)
+  } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
+    r2_dt <- locus_norm(r2_dt, sum(r2_dt$count))
+  } else if (is.integer(weight_reads)) {
+    r2_dt <- weight_by_uservalue(r2_dt, weight_reads, (reg_stop - reg_start + 1))
   } else {
-    r2_dt <- no_weight(dt, as.character(chrom_name))
+    r2_dt <- no_weight(r2_dt, as.character(chrom_name))
   }
-  #transform ends of reads for phasing/finding overlaps
+  
+  r2_dt <- na.omit(r2_dt)
+  
+  # Now that the reads have been weighted,
+  # Let's resummarize them for more efficient processing
+  r2_dt_summarized <- r2_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+  
+  # We're operating on a single strand but need one data frame where the reads aren't transformed, one where they are
+  # so set the other dt to be the same as the first with transformed ends
   print("Transforming ends of reads.")
-  r1_dt <- r2_dt %>% dplyr::mutate(end = end + 30)
+  r1_dt_summarized <- r2_dt_summarized %>%
+    dplyr::mutate(end = end + 30)
 
-  if(nrow(r1_dt) < 3 || nrow(r2_dt) < 3){
-    print("nrow r1_dt is less than 3. Setting null_minus_res.")
+  if (nrow(r2_dt) < 3) {
+    print("nrow r2_dt is less than 3. Setting null_minus_res.")
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     minus_null_res <- null_hp_res()[[1]]
-
   }
 
   #calculate phasing
-  if(nrow(r1_dt) > 0 && nrow(r2_dt) > 0){
-     print("r1_dt contains data. Calculating phasing.")
-     minus_hp_phased_tbl <- calc_phasing(r1_dt, r2_dt, 50)
+  if (nrow(r2_dt) > 0) {
+     print("r2_dt contains data. Calculating phasing.")
+     minus_hp_phased_tbl <- calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
      print("summing minus_hp phased_num.")
      minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
      print("getting mean of minus_hp phased_num.")
      minus_hp_phasedz <- mean(minus_hp_phased_tbl$phased_z[1:4])
      print("finished getting mean of phased_num.")
   } else {
-    print("r1_dt does not contain data. Setting null phasing results.")
+    print("r2_dt does not contain data. Setting null phasing results.")
     cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
     minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0,50), phased_num = rep(0,51), phased_z = rep(0,51))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
@@ -272,29 +301,34 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
   print("minus_hp_phasedz is NA. Setting to -33.")
-  if(minus_hp_phasedz == "NaN"){
+  if (minus_hp_phasedz == "NaN") {
     minus_hp_phasedz <- -33
   }
 
   #i 9 j 1
   print("Beginning dicer stuff.")
-  if(nrow(r2_dt) > 0){
+  if (nrow(r2_dt) > 0) {
     print("nrow r2_dt > 0.")
     print(paste0("fold_bool: ", fold_bool))
-    if(fold_bool == 'TRUE'){
+    if (fold_bool == 'TRUE') {
        print("Calculating dicer_overlaps.")
 
        # take unique reads for dicer overhang calculation, then replicate according to count later
-       dicer_dt <- r2_dt %>% dplyr::group_by(rname, start, end,first, width) %>% dplyr::summarize(count = dplyr::n())
+       dicer_dt <- r2_dt %>%
+         dplyr::group_by(rname, start, end, first, width) %>%
+         dplyr::summarize(count = dplyr::n())
        #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
        all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
 
-       if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
+       if (!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)) {  #if there are overlaps calc overhangs
          #if(write_fastas == TRUE) write_proper_overhangs(r2_dt, r2_dt,wkdir, prefix, all_overlaps, "_hairpin")
 
          print("all_overlaps contains results. Computing overhangs.")
-         minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
-                                                     all_overlaps$r2_start, all_overlaps$r2_width))
+         minus_overhangs <- calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
+                                           all_overlaps$r2_start, all_overlaps$r2_width,
+                                           dupes_present = TRUE,
+                                           r1_dupes = all_overlaps$r1_dupes,
+                                           r2_dupes = all_overlaps$r2_dupes)
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
          minus_hp_overhangz <- mean(plus_overhangs$zscore[5])
        } else {
@@ -307,13 +341,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
        }
     } else { #else if fold bool is false and r2_dt > 0
         print("Fold_bool == FALSE.")
-        fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold)
+        fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir)
         MFE <- fold_list$MFE
         perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
         all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
 
-      if(!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)){  #if there are overlaps calc overhangs
-        if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, all_overlaps, "_hairpin")
+      if (!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)) {  #if there are overlaps calc overhangs
+        if (write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, all_overlaps, "_hairpin")
 
          minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
                                                       all_overlaps$r2_start, all_overlaps$r2_width))
@@ -336,7 +370,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   }
 
   print("exited the dicer/fold segment.")
-  if(exists("minus_null_res")){
+  if (exists("minus_null_res")) {
     print("minus_null_res exists.")
     minus_res <- minus_null_res
   } else {
