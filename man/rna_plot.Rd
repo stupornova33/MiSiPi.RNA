@@ -5,7 +5,17 @@
 \title{rna_plot
 calls rnafold and rnaplot from viennaRNA and colors the most abundant reads on the structure.}
 \usage{
-rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors)
+rna_plot(
+  path_to_RNAfold,
+  path_to_RNAplot,
+  wkdir,
+  pos_df,
+  colors,
+  chrom_name,
+  reg_start,
+  reg_stop,
+  strand
+)
 }
 \arguments{
 \item{path_to_RNAfold}{a string, the full path to the RNAfold executable.}
@@ -17,6 +27,14 @@ rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors)
 \item{pos_df}{a data.frame containing the starts and ends of the abundant reads.}
 
 \item{colors}{a list of two colors for highlighting abundant reads on the structure.}
+
+\item{chrom_name}{a string}
+
+\item{reg_start}{an integer}
+
+\item{reg_stop}{an integer}
+
+\item{strand}{a character}
 }
 \value{
 nothing
