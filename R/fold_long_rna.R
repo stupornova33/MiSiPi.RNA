@@ -6,18 +6,23 @@
 #' @param stop a whole number
 #' @param converted a vector containing a sequence
 #' @param path_to_RNAfold a string
+#' @param wkdir a string
 #' @return list
 #' @export
 
 
-fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold){
+fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold, wkdir){
    prefix <- paste0(chrom_name,"-", start, "-", stop)
-   cat(converted, file = "converted.fasta", sep = "\n", append = FALSE)
+   cat(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE)
 
    syscheck <- unlist(unname(Sys.info()[1]))
 
    if(syscheck == "Windows") {
-     fold <- system2(command = path_to_RNAfold, args = "converted.fasta", stdout= TRUE, wait = TRUE, invisible = TRUE)
+     fold <- system2(command = path_to_RNAfold,
+                     args = file.path(wkdir, "converted.fasta"),
+                     stdout= TRUE,
+                     wait = TRUE,
+                     invisible = TRUE)
    } else if(syscheck == "Linux" | syscheck == "Darwin"){
      fold <- system(command = path_to_RNAfold, input = converted, intern = TRUE)
    } else {
@@ -52,6 +57,8 @@ fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold){
    start <- start
    stop <- stop
 
+   ps_file_to_remove <- file.path(dirname(dirname(wkdir)), "rna.ps")
+   file.remove(ps_file_to_remove)
 
    return(list(start, stop, mfe, coord, vien_struct))
 }

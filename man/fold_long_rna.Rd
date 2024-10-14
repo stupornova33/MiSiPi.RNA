@@ -6,7 +6,7 @@
 processes output of RNA fold to get MFE and vien struct
 returns list of values for each region}
 \usage{
-fold_long_rna(chrom_name, start, stop, converted, path_to_RNAfold)
+fold_long_rna(chrom_name, start, stop, converted, path_to_RNAfold, wkdir)
 }
 \arguments{
 \item{chrom_name}{a string}
@@ -18,6 +18,8 @@ fold_long_rna(chrom_name, start, stop, converted, path_to_RNAfold)
 \item{converted}{a vector containing a sequence}
 
 \item{path_to_RNAfold}{a string}
+
+\item{wkdir}{a string}
 }
 \value{
 list
