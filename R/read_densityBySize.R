@@ -59,7 +59,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   make_bam_pileup <- function(bam, strand) {
     seqnames <- pos <- count <- NULL
     
-    which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))d
+    which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
     if (strand == "-") {
       bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
                                           what=c('rname', 'pos', 'qwidth'),
