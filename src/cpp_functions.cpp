@@ -69,7 +69,9 @@ DataFrame mergePileups(std::vector<int> start, std::vector<int> end, std::vector
 //' @export
 // [[Rcpp::export]]
 DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r_start, IntegerVector r_end, int max_dist, int dfsize){
-// Calculate the distance between overlapping read pairs
+  // To be deprecated - replaced with 2 lines of dplyr functions
+  
+  // Calculate the distance between overlapping read pairs
 
    int memory_reserve = dfsize;
 
@@ -94,10 +96,6 @@ DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r
    std::vector<int> res_dist;
    res_dist.reserve(memory_reserve);
 
-
-
-
-
    for(int i = 0; i < dfsize; i++){
       int r1_start = f_start[i];
       int r1_end = f_end[i];
@@ -121,16 +119,12 @@ DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r
          res_dist.emplace_back(abs(dist));
          res_wy.emplace_back(wy);
       }
-
-
    }
 
    DataFrame df = DataFrame::create(Named("start_r1") = res_start_r1, Named("end_r1") = res_end_r1, Named("widthx") = res_wx, Named("start_r2") = res_start_r2,
                                     Named("end_r2") = res_end_r2,
                                     Named("widthy") = res_wy, Named("dist") = res_dist);
    return df;
-
-
 }
 
 //' getFastas
@@ -338,8 +332,10 @@ std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
 //' @return A data.frame consisting of the average pileups in read 1 range and in read 2 range
 //' @export
 // [[Rcpp::export]]
-DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
-                     std::vector<int> start_r2, std::vector<int> end_r2){
+DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount,
+                        std::vector<int> start_r1, std::vector<int> end_r1,
+                        std::vector<int> start_r2, std::vector<int> end_r2,
+                        std::vector<int> dupe_count_r1, std::vector<int> dupe_count_r2) {
    //calculates the average pileup for a read using counts at each nucleotide position
    //takes position from read pileups df, count at that position, start pos of candidate read, end pos of candidate read
 
@@ -366,8 +362,11 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
    for (int i = 0; i < r1_length; i++) {
       int r1_start = start_r1[i];
       int r1_end = end_r1[i];
+      int r1_dupes = dupe_count_r1[i];
       int r2_start = start_r2[i];
       int r2_end = end_r2[i];
+      int r2_dupes = dupe_count_r2[i];
+      
 
       //set read length to be read end - read start
       //set start to be read_start_vec at pos i
@@ -397,14 +396,14 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
          // This was added in to reduce the number of iterations which was approaching 1 billion
          // Used dplyr to group all the duplicate overlap reads and mutate in a count column to keep track of the number of duplicates
          // That way we only have to iterate through each read range once and multiply the results by the number of duplicates
-         //r1_running_total *= duplicate_count;
+         r1_running_total *= r1_dupes;
          r1_count_average = r1_running_total / read_r1_length;
          res_start_r1.emplace_back(r1_start);
          res_end_r1.emplace_back(r1_end);
          res_r1_avg.emplace_back(r1_count_average);
       //}
       //if (r2_running_total != 0) {
-         //r2_running_total *= duplicate_count;
+         r2_running_total *= r2_dupes;
          r2_count_average = r2_running_total / read_r2_length;
          res_start_r2.emplace_back(r2_start);
          res_end_r2.emplace_back(r2_end);
@@ -841,9 +840,7 @@ DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
 // [[Rcpp::export]]
 DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                            std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth) {
-
-  std::cout << "This is the new function" << std::endl;
-
+  
   int res_size = 27;
 
   std::vector<int> overlap_res(res_size);
@@ -1097,10 +1094,8 @@ NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fd
 
      // Check if we're counting piRNA or siRNA overlaps
      if (check_pi) {
-       std::cout << "check_pi == TRUE" << std::endl;
        p_overlap = 10;
      } else {
-       std::cout << "check_pi == FALSE" << std::endl;
        p_overlap = proper_overlap(i, j);
      }
 
