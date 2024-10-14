@@ -18,18 +18,16 @@
 #' @export
 #'
 run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal,
-                               plot_output, weight_reads, write_fastas, out_type){
+                               plot_output, weight_reads, write_fastas, out_type) {
   message("Started run_piRNA_function()")
   
   prefix <- paste0(chrom_name, ":", reg_start, "_", reg_stop)
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
-  bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
   # Get the reads from the BAM using Rsamtools
-  bam_header <- NULL
   print("Making chromP and chromM")
-  cat(file = paste0(wkdir, logfile), "Making chromP and chromM", append = TRUE)
+  cat(file = paste0(wkdir, logfile), "Making chromP and chromM\n", append = TRUE)
   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
   chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
@@ -40,70 +38,92 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   cat(file = paste0(wkdir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
 
-  ## Changed 1/9/24 to add in weighting/normalization options
-
+  # Make forward and reverse dataframes filtered for width
   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
-    dplyr::group_by_all() %>%
-    # get the number of times a read occurs
-    dplyr::summarize(count = dplyr::n())
-
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1)
+  
   reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
     subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1)
+  
+  
+  # for the read size dist plot
+  message("Getting read size distribution")
+  cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
+  
+  read_dist <- get_read_size_dist(forward_dt, reverse_dt)
+  
+  # Summarize data frames into unique reads with a column of duplicates
+  forward_dt <- forward_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::summarize(count = dplyr::n())
+  
+  reverse_dt <- reverse_dt %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
+  chromP <- NULL
+  chromM <- NULL
 
   #for piRNA output tables
-  size_dist <- rbind(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
+  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+    dplyr::group_by(width) %>%
+    dplyr::summarize(count = sum(count))
 
   output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, type = "piRNA")
+  size_dist <- NULL
 
-  output <- NULL
+  # Expand the data frames back to full size and weight reads in some cases
   print("Getting weighted data.frames.")
   #include "T" argument to return read sequences
-  if(weight_reads == "weight_by_prop"){
+  if (weight_reads == "None" | weight_reads == "none") {
+    print("No weighting of reads applied")
+    forward_dt <- no_weight(forward_dt, as.character(chrom_name))
+    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
+  } else if (weight_reads == "weight_by_prop") {
+    print("weight reads by proportion")
     forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name))
     reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name))
-    print("weight reads by proportion")
-
-  } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
+  } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
     print("normalize read count to locus")
     forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
     reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
-
-  } else if(is.integer(weight_reads)){
+  } else if (is.integer(weight_reads)) {
     print("weight reads to a user provided value")
     forward_dt <- weight_by_uservalue(forward_dt, norm, (reg_stop - reg_start))
     reverse_dt <- weight_by_uservalue(reverse_dt, norm, (reg_stop - reg_start))
   } else {
-    print("weight_reads == 'none")
-    forward_dt <- no_weight(forward_dt, as.character(chrom_name))
-    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
+    stop("Invalid argument supplied to weight_reads")
+    cat(file = paste0(wkdir, logfile),
+        "Unexpected parameter provied for 'weight_reads'\n",
+        append = TRUE)
   }
-
-  chromP <- NULL
-  chromM <- NULL
 
   print("Completed getting weighted dataframes.")
 
 
   #if there are both forward and reverse results
-  if(!nrow(forward_dt) == 0 && !nrow(reverse_dt) == 0){
+  if (!nrow(forward_dt) == 0 && !nrow(reverse_dt) == 0) {
+    # Resummarize the reads for more efficient processing
+    f_summarized <- forward_dt %>%
+      dplyr::group_by_all() %>%
+      dplyr::count()
+    
+    r_summarized <- reverse_dt %>%
+      dplyr::group_by_all() %>%
+      dplyr::count()
+    
     #get the overlapping read pairs
-    overlaps <- find_overlaps(reverse_dt, forward_dt)
+    overlaps <- find_overlaps(r_summarized, f_summarized)
+    
     print("Completed find_overlaps.")
 
     #1/9/24 now make_BamDF returns sequence too, so read sequences can be extracted from that
     # ignoring reads with same start/stop but internal mismatches from output fasta
-
-
-    if(write_fastas == TRUE){
+    if (write_fastas == TRUE) {
       #proper_overlaps <- overlaps %>% dplyr::filter(r1_end - r2_start == 10)
       #overlaps <- NULL
       proper_overlaps <- overlaps %>% dplyr::mutate(overlap = dplyr::case_when(r1_start > r2_start ~ (r2_end - r1_start), r1_start < r2_start ~ (r1_end - r2_start),
@@ -150,48 +170,40 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       fastas <- NULL
     }
 
-
-
     cat(file = paste0(wkdir, logfile), paste0("Making counts table.", "\n"), append = TRUE)
+    
     z_res <- make_count_table(forward_dt$start, forward_dt$end, forward_dt$width,
                               reverse_dt$start, reverse_dt$end, reverse_dt$width)
 
     cat(file = paste0(wkdir, logfile), paste0("Finding overlaps.", "\n"), append = TRUE)
 
-    #testf_dt <- forward_dt[sample(nrow(forward_dt), 10000), ]
-    #testr_dt <- reverse_dt[sample(nrow(reverse_dt), 10000), ]
-
-    #old_heat <- get_pi_overlaps(testf_dt$start, testf_dt$end, testf_dt$width,
-    #                            testr_dt$end, testr_dt$start, testr_dt$width)
-
-    #old_heat_plot <- plot_si_heat(old_heat, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
-
-
-
     heat_results <- get_overlap_counts(forward_dt$start, forward_dt$end, forward_dt$width,
-                                    reverse_dt$end, reverse_dt$start, reverse_dt$width, check_pi = TRUE)
-
+                                       reverse_dt$end, reverse_dt$start, reverse_dt$width,
+                                       check_pi = TRUE)
 
     #new_heat_plot <- plot_si_heat(new_heat, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     # calculate overlaps of all reads for output table
-    overlaps <- overlaps %>% dplyr::mutate(overlap = dplyr::case_when(r1_start > r2_start ~ (r2_end - r1_start), r1_start < r2_start ~ (r1_end - r2_start),
-                                                                    (r1_start >= r2_start & r1_end <= r2_end) ~ (r1_end - r1_start + 1),
-                                                                    (r2_start >= r1_start & r2_end <= r1_end) ~ (r2_end - r2_start + 1))) #%>%
-
+    overlaps <- overlaps %>%
+      dplyr::mutate(overlap = dplyr::case_when(r1_start > r2_start ~ (r2_end - r1_start),
+                                               r1_start < r2_start ~ (r1_end - r2_start),
+                                               (r1_start >= r2_start & r1_end <= r2_end) ~ (r1_end - r1_start + 1),
+                                               (r2_start >= r1_start & r2_end <= r1_end) ~ (r2_end - r2_start + 1)),
+                    total_dupes = r1_dupes * r2_dupes)
     # call new_pi_overlaps
 
-    overlap_counts <- overlaps %>% dplyr::group_by(overlap) %>% dplyr::summarise(num = dplyr::n())
-
-
+    overlap_counts <- overlaps %>%
+      dplyr::group_by(overlap) %>%
+      dplyr::summarize(num = sum(total_dupes))
+    
     suppressWarnings(
       if(!file.exists("piRNA_alloverlaps_counts.txt")){
-        utils::write.table(output, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = T, na = "NA", row.names = F)
+        utils::write.table(overlap_counts, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = T, na = "NA", row.names = F)
       } else {
-        utils::write.table(output, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+        utils::write.table(overlap_counts, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     })
 
-    forward_dt <- NULL
-    reverse_dt <- NULL
+    #forward_dt <- NULL
+    #reverse_dt <- NULL
 
     row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
     colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
@@ -223,73 +235,81 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   }
 
 
+  f_summarized <- NULL
+  r_summarized <- NULL
+  overlaps <- NULL
+  
 ################################################################### phased piRNAs #########################################################################
   #prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
-  #for the read size dist plot
-  message("Getting read size distribution")
-  cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
-  read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-
   ################## compute plus strand
 
-  message("Setting chrom with getChrPlus")
-  chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-  message("Setting chrom: Success")
+  #message("Setting chrom with getChrPlus")
+  #chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
+  #message("Setting chrom: Success")
   cat(file = paste0(wkdir, logfile), paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
   print("Calculating phasing on plus strand.")
-  # Not outputting fastas here so extracting without sequence is fine
-  filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
-    base::subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + (width -1)) %>%
-    dplyr::select(-c(rname, pos)) %>%
-    dplyr::distinct()
-
-  filter_dt <- filter_dt %>% dplyr::mutate(rname = chrom_name)
-
+  
   # Processing unistrand, so make copy of original read df to transform
-  filter_r1_dt <- filter_dt %>%
+  filter_r1_dt <- forward_dt %>%
     dplyr::filter(first == "T") %>%
     dplyr::mutate(end = start + (width - 1) + 59) %>%
-    dplyr::select(-c(first))
+    dplyr::select(-first) %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
 
-  # for looking at only reads >= 26nt
-  over_26_dt <- filter_dt %>% subset(width >= 26)
-  over_26_dt <- over_26_dt %>% dplyr::filter(first == "T") %>%
-    dplyr::mutate(end = start + (width - 1) + 59) %>%
-    dplyr::select(-c(first))
+  filter_r2_dt <- forward_dt %>%
+    dplyr::filter(first == "T") %>%
+    dplyr::select(-first) %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
 
-  filter_r2_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
-    dplyr::select(-c(first))
+  all_table <- data.table::data.table(phased_dist=seq(0,50),
+                                      phased_num=rep(0, 51))
 
-  all_table <- data.table::data.table(phased_dist=seq(0,50), phased_num=rep(0, 51))
-
-
-  if(!nrow(filter_r1_dt) == 0) {
+  if (!nrow(filter_r1_dt) == 0) {
     phased_plus_counts <- calc_phasing(filter_r1_dt, filter_r2_dt, 59)
   } else {
     # set null results for machine learning if no reads
-    phased_plus_counts <- data.table::data.table(phased_dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
-    phased_plus_counts <- data.table::setDT(dplyr::full_join(phased_plus_counts, all_table, by = "phased_dist", "phased_num")) %>%
-      dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
+    phased_plus_counts <- data.table::data.table(phased_dist = c(seq(0,50)),
+                                                 phased_num = c(rep(0, times = 51)),
+                                                 phased_z = NA)
+    phased_plus_counts <- data.table::setDT(dplyr::full_join(phased_plus_counts,
+                                                             all_table,
+                                                             by = "phased_dist", "phased_num")) %>%
+      dplyr::select(-phased_num.y) %>%
+      dplyr::rename('phased_num' = phased_num.x)
     #phased_plus_counts[is.na(phased_plus_counts)] <- NA
   }
 
   cat(file = paste0(wkdir, logfile), paste0("Calculating plus strand phasing.", "\n"), append = TRUE)
 
-  if(!nrow(over_26_dt) == 0){
+  # for looking at only reads >= 26nt
+  over_26_dt <- forward_dt %>%
+    subset(width >= 26) %>%
+    dplyr::filter(first =="T") %>%
+    dplyr::mutate(end = start + (width - 1) + 59) %>%
+    dplyr::select(-first) %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+  
+  if (!nrow(over_26_dt) == 0) {
     phased_26_plus_counts <- calc_phasing(over_26_dt, over_26_dt, 59)
   } else {
-    phased_26_plus_counts <- data.table::data.table(phased_dist =  c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
-    phased_26_plus_counts <- data.table::setDT(dplyr::full_join(phased_26_plus_counts, all_table, by = "phased_dist", "phased_num")) %>%
-      dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
-    #phased_26_plus_counts[is.na(phased_26_plus_counts)] <- -33
+    phased_26_plus_counts <- data.table::data.table(phased_dist =  c(seq(0,50)),
+                                                    phased_num = c(rep(0, times = 51)),
+                                                    phased_z = NA)
+    phased_26_plus_counts <- data.table::setDT(dplyr::full_join(phased_26_plus_counts,
+                                                                all_table,
+                                                                by = "phased_dist", "phased_num")) %>%
+      dplyr::select(-phased_num.y) %>%
+      dplyr::rename('phased_num' = phased_num.x)
   }
 
-
-
   phased_26_plus_counts <- phased_26_plus_counts %>%
-    dplyr::rename(phased26_dist = phased_dist, phased26_num = phased_num, phased26_z = phased_z)
+    dplyr::rename(phased26_dist = phased_dist,
+                  phased26_num = phased_num,
+                  phased26_z = phased_z)
 
   #combine the results tables
   plus_df <- cbind(phased_plus_counts, phased_26_plus_counts)
@@ -297,140 +317,216 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
 
-  phased_plus_output <- phased_plus_counts %>% dplyr::select(c(phased_z))
+  phased_plus_output <- phased_plus_counts %>%
+    dplyr::select(phased_z)
 
   #transform table to one line for writing output
   phased_plus_output <- t(c(prefix, t(phased_plus_output)))
 
-  phased26_plus_output <- phased_26_plus_counts %>% dplyr::select(c(phased26_z))
+  phased26_plus_output <- phased_26_plus_counts %>%
+    dplyr::select(phased26_z)
   phased26_plus_output <- t(c(prefix, t(phased26_plus_output)))
 
 
   suppressWarnings(
-    if(!file.exists("phased_plus_piRNA_zscores.txt")){
-      utils::write.table(phased_plus_output, file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = T, na = "NA", row.names = F)
+    if (!file.exists("phased_plus_piRNA_zscores.txt")) {
+      write.table(phased_plus_output,
+                  file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"),
+                  sep = "\t",
+                  quote = FALSE,
+                  append = FALSE,
+                  col.names = T,
+                  na = "NA",
+                  row.names = F)
     } else {
-      utils::write.table(phased_plus_output, file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(phased_plus_output,
+                  file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"),
+                  quote = FALSE,
+                  sep = "\t",
+                  col.names = F,
+                  append = TRUE,
+                  na = "NA",
+                  row.names = F)
     }
   )
 
   suppressWarnings(
-    if(!file.exists("phased26_plus_piRNA_zscores.txt")){
-      utils::write.table(phased26_plus_output, file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = T, na = "NA", row.names = F)
+    if (!file.exists("phased26_plus_piRNA_zscores.txt")) {
+      write.table(phased26_plus_output,
+                  file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"),
+                  sep = "\t",
+                  quote = FALSE,
+                  append = FALSE,
+                  col.names = T,
+                  na = "NA",
+                  row.names = F)
     } else {
-      utils::write.table(phased26_plus_output, file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(phased26_plus_output,
+                  file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"),
+                  quote = FALSE,
+                  sep = "\t",
+                  col.names = F,
+                  append = TRUE,
+                  na = "NA",
+                  row.names = F)
     }
   )
 
   ################ run minus strand
   cat(file = paste0(wkdir, logfile), paste0("Running minus strand phasing.", "\n"), append = TRUE)
   print("Running minus strand phasing.")
-  chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-
-  filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
-    base::subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + (width - 1)) %>%
-    dplyr::select(-c(rname, pos)) %>%
-    dplyr::distinct()
-
-  filter_dt <- filter_dt %>% dplyr::mutate(rname = chrom_name)
-
-  over_26_dt <- filter_dt %>% subset(width >= 26)
-
-  over_26_dt <- over_26_dt %>% dplyr::filter(first == "T") %>%
+  
+  filter_r1_dt <- reverse_dt %>%
+    dplyr::filter(first == "T") %>%
     dplyr::mutate(end = start + (width - 1) + 59) %>%
-    dplyr::select(-c(first))
+    dplyr::select(-first) %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+  
+  filter_r2_dt <- reverse_dt %>%
+    dplyr::filter(first == "T") %>%
+    dplyr::select(-first) %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
 
-  filter_r1_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
-    dplyr::mutate(end = start + (width - 1) + 59) %>%
-    dplyr::select(-c(first))
-
-  filter_r2_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
-    dplyr::select(-c(first))
-
-
-
-  over_26_dt <- filter_dt %>% subset(width >= 26)
-  over_26_dt <- over_26_dt %>% dplyr::filter(first == "T") %>%
-    dplyr::mutate(end = start + (width - 1) + 59) %>%
-    dplyr::select(-c(first))
-
-  filter_r2_dt <- filter_dt %>% dplyr::filter(first == "T") %>%
-    dplyr::select(-c(first))
-
-  all_table <- data.table::data.table(phased_dist=seq(0,50), phased_num=rep(0, 51))
+  all_table <- data.table::data.table(phased_dist=seq(0,50),
+                                      phased_num=rep(0, 51))
 
   cat(file = paste0(wkdir, logfile), paste0("Calculating minus strand phasing.", "\n"), append = TRUE)
-  if(!nrow(filter_r1_dt) == 0) {
+  if (!nrow(filter_r1_dt) == 0) {
     phased_minus_counts <- calc_phasing(filter_r1_dt, filter_r2_dt, 59)
   } else {
-    phased_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
-    phased_minus_counts <- data.table::setDT(dplyr::full_join(phased_minus_counts, all_table, by = "phased_dist", "phased_num")) %>%
-      dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
-    #phased_minus_counts[is.na(phased_minus_counts)] <- 0
+    phased_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)),
+                                                  phased_num = c(rep(0, times = 51)),
+                                                  phased_z = NA)
+    phased_minus_counts <- data.table::setDT(dplyr::full_join(phased_minus_counts,
+                                                              all_table,
+                                                              by = "phased_dist", "phased_num")) %>%
+      dplyr::select(-phased_num.y) %>%
+      dplyr::rename('phased_num' = phased_num.x)
   }
 
-  if(!nrow(over_26_dt) == 0){
+  # for looking at only reads >= 26nt
+  over_26_dt <- reverse_dt %>%
+    subset(width >= 26) %>%
+    dplyr::filter(first == "T") %>%
+    dplyr::mutate(end = start + (width - 1) + 59) %>%
+    dplyr::select(-first) %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+
+  if (!nrow(over_26_dt) == 0) {
     phased_26_minus_counts <- calc_phasing(over_26_dt, over_26_dt, 59)
   } else {
-    phased_26_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)), phased_num = c(rep(0, times = 51)), phased_z = NA)
-    phased_26_minus_counts <- data.table::setDT(dplyr::full_join(phased_26_minus_counts, all_table, by = "phased_dist", "phased_num")) %>%
-      dplyr::select(-c(phased_num.y)) %>% dplyr::rename('phased_num' = phased_num.x)
-    #phased_26_minus_counts[is.na(phased_26_minus_counts)] <- 0
+    phased_26_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)),
+                                                     phased_num = c(rep(0, times = 51)),
+                                                     phased_z = NA)
+    phased_26_minus_counts <- data.table::setDT(dplyr::full_join(phased_26_minus_counts,
+                                                                 all_table,
+                                                                 by = "phased_dist", "phased_num")) %>%
+      dplyr::select(-phased_num.y) %>%
+      dplyr::rename('phased_num' = phased_num.x)
   }
 
   #make the results data table
 
   phased_26_minus_counts <- phased_26_minus_counts %>%
-    dplyr::rename(phased26_dist = phased_dist, phased26_num = phased_num, phased26_z = phased_z)
-
+    dplyr::rename(phased26_dist = phased_dist,
+                  phased26_num = phased_num,
+                  phased26_z = phased_z)
 
   minus_df <- cbind(phased_minus_counts, phased_26_minus_counts)
 
   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
-
-  phased_minus_output <- phased_minus_counts %>% dplyr::select(c(phased_z))
+  phased_minus_output <- phased_minus_counts %>%
+    dplyr::select(phased_z)
   phased_minus_output <- t(c(prefix, t(phased_minus_output)))
 
-  phased26_minus_output <- phased_26_minus_counts %>% dplyr::select(c(phased26_z))
+  phased26_minus_output <- phased_26_minus_counts %>%
+    dplyr::select(phased26_z)
   phased26_minus_output <- t(c(prefix, t(phased26_minus_output)))
 
   all_phased <- data.frame(dist = phased_minus_counts$phased_dist)
-  all_phased <- all_phased %>% dplyr::mutate(count = phased_plus_counts$phased_num + phased_minus_counts$phased_num)
+  all_phased <- all_phased %>%
+    dplyr::mutate(count = phased_plus_counts$phased_num + phased_minus_counts$phased_num)
   all_phased$zscore <- calc_zscore(all_phased$count)
-  tbl <- all_phased %>% dplyr::select(c(zscore))
+  tbl <- all_phased %>%
+    dplyr::select(zscore)
   tbl <- as.data.frame(t(tbl))
   tbl$locus <- prefix
   colnames(tbl) <- c(all_phased$dist, "locus")
   tbl <- dplyr::select(tbl,52,1:51)
 
   suppressWarnings(
-    if(!file.exists("phased_minus_piRNA_zscores.txt")){
-      utils::write.table(phased_minus_output, file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+    if (!file.exists("phased_minus_piRNA_zscores.txt")) {
+      write.table(phased_minus_output,
+                  file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"),
+                  sep = "\t",
+                  quote = FALSE,
+                  append = FALSE,
+                  col.names = F,
+                  na = "NA",
+                  row.names = F)
     } else {
-      utils::write.table(phased_minus_output, file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(phased_minus_output,
+                  file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"),
+                  quote = FALSE,
+                  sep = "\t",
+                  col.names = F,
+                  append = TRUE,
+                  na = "NA",
+                  row.names = F)
     }
   )
 
   suppressWarnings(
-    if(!file.exists("phased26_minus_piRNA_zscores.txt")){
-      utils::write.table(phased26_minus_output, file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+    if (!file.exists("phased26_minus_piRNA_zscores.txt")) {
+      write.table(phased26_minus_output,
+                  file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"),
+                  sep = "\t",
+                  quote = FALSE,
+                  append = FALSE,
+                  col.names = F,
+                  na = "NA",
+                  row.names = F)
     } else {
-      utils::write.table(phased26_minus_output, file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(phased26_minus_output,
+                  file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"),
+                  quote = FALSE,
+                  sep = "\t",
+                  col.names = F,
+                  append = TRUE,
+                  na = "NA",
+                  row.names = F)
     }
   )
 
   suppressWarnings(
     if(!file.exists("all_phased_piRNA_zscores.txt")){
-      utils::write.table(tbl, file = paste0(wkdir, "all_phased_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = T, na = "NA", row.names = F)
+      write.table(tbl,
+                  file = paste0(wkdir, "all_phased_piRNA_zscores.txt"),
+                  sep = "\t",
+                  quote = FALSE,
+                  append = FALSE,
+                  col.names = T,
+                  na = "NA",
+                  row.names = F)
     } else {
-      utils::write.table(tbl, file = paste0(wkdir, "all_phased_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(tbl,
+                  file = paste0(wkdir, "all_phased_piRNA_zscores.txt"),
+                  quote = FALSE,
+                  sep = "\t",
+                  col.names = F,
+                  append = TRUE,
+                  na = "NA",
+                  row.names = F)
     }
   )
 
   print("Completed calculations. Making plots.")
   print(paste0("sum heat results: ", sum(heat_results)))
+  
 #################################################################################################
 ### make plots
 #  if(!sum(heat_results) == 0 && plot_output == TRUE){

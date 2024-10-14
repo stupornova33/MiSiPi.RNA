@@ -72,41 +72,34 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   # Processing one strand, so make copy of df to transform
   # 1/9/24 added seq back in for writing miRNA pairs (arms)
 
-  chrom_df <- make_si_BamDF(chrom) %>%
+  r2_dt <- make_si_BamDF(chrom) %>%
     subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
-  filter_r2_dt <- chrom_df %>% dplyr::mutate(rname = chrom_name)
+  
+  chrom <- NULL
 
-  if(nrow(filter_r2_dt) == 0){
+  if (nrow(r2_dt) == 0) {
     return(null_mi_res())
   } else {
-    if(weight_reads == "weight_by_prop"){
-      r2_dt <- weight_by_prop(filter_r2_dt, as.character(chrom_name))
-      r1_dt <- weight_by_prop(filter_r2_dt, as.character(chrom_name))
-    } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
+    if (weight_reads == "weight_by_prop") {
+      r2_dt <- weight_by_prop(r2_dt, as.character(chrom_name))
+    } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
       locus_length <- reg_stop - reg_start
-      locus_read_count <- sum(filter_r2_dt$count)
-      r2_dt <- locus_norm(filter_r2_dt, locus_read_count)
-      r1_dt <- locus_norm(filter_r2_dt, locus_read_count)
+      locus_read_count <- sum(r2_dt$count)
+      r2_dt <- locus_norm(r2_dt, locus_read_count)
     } else {
-      r2_dt <- no_weight(filter_r2_dt, as.character(chrom_name))
-      r1_dt <- no_weight(filter_r2_dt, as.character(chrom_name))
-    }
-    #transform ends of one set of reads
-    r1_dt <- r1_dt %>% dplyr::mutate(end = end + 59)
-    filter_r2_dt <- NULL
-    if(nrow(r2_dt) == 0){
-      return(null_mi_res())
+      r2_dt <- no_weight(r2_dt, as.character(chrom_name))
     }
   }
+  
+  #transform ends of one set of reads
+  r1_dt <- r2_dt %>%
+    dplyr::mutate(end = end + 59)
 
-  chrom <- NULL
-  chrom_df <- NULL
-
-  if(nrow(r1_dt) == 0 || nrow(r2_dt) == 0){
+  if (nrow(r1_dt) == 0 || nrow(r2_dt) == 0) {
     cat(paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
     return(null_mi_res())
   }
@@ -116,12 +109,16 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   pileups <- get_read_pileups(pileup_start, pileup_stop, bam_scan, bam_file)
   #dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
 
-
   empty_table <- data.frame(pos = c(seq(pileup_start, pileup_stop)), count = c(0))
 
-  dt_table <- merge(empty_table, pileups, by = 'pos', all.x = TRUE) %>% dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
+  dt_table <- merge(empty_table,
+                    pileups,
+                    by = 'pos',
+                    all.x = TRUE) %>%
+    dplyr::select(-c(count.x)) %>%
+    dplyr::rename('count' = count.y)
+  
   dt_table[is.na(dt_table)] = 0
-
 
   # returns overlaps
   # using find_overlaps instead of find_hp_overlaps
@@ -129,43 +126,44 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   # find_hp_overlaps requires two dfs and automatically transforms ends of reads
 
 
-  r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
-  r1_dt <- utils::head(r1_dt, 10000)
+  #r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
+  #r1_dt <- utils::head(r1_dt, 10000)
 
-  r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
-  r2_dt <- utils::head(r2_dt, 10000)
+  #r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
+  #r2_dt <- utils::head(r2_dt, 10000)
 
   #system.time(test_overlap <- new_find_overlaps(r2_dt))
+  
+  r1_summarized <- r1_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+  
+  r2_summarized <- r2_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
 
-  overlaps_tmp <- find_overlaps(r1_dt, r2_dt)
+  overlaps <- find_overlaps(r1_summarized, r2_summarized)
+  
+  MAX_DIST_APART <- 60
 
-  overlaps <- overlaps_tmp %>%
-    dplyr::mutate(r1_end = r1_end - 59) %>%
-    dplyr::mutate(r1_width = r1_end - r1_start + 1)
-
-  overlaps_tmp <- NULL
-
-
-  #need to filter to remove self matches, get dist between end of R1 and start of R2
-  size <- nrow(overlaps)
-  overlaps <- get_nearby(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_end, 60, size)
-
-
-  # only want read pairs where start position of read 2 is after the end of read 1
   overlaps <- overlaps %>%
-    dplyr::filter(dist > 2) %>%
-    #dplyr::mutate(end_r1 = start_r1 + widthx - 1, end_r2 = start_r2 + widthy - 1) %>%
-    dplyr::select(-c(dist))
-
+    dplyr::mutate(r1_end = r1_end - 59) %>%
+    dplyr::mutate(r1_width = r1_end - r1_start + 1) %>%
+    dplyr::mutate(dist = r2_start - r1_end) %>%               #This line and the next effectively replace the cpp function get_nearby()
+    dplyr::filter(r1_end < r2_start & dist <= MAX_DIST_APART) %>%
+    dplyr::filter(dist > 2) %>%  # only want read pairs where start position of read 2 is after the end of read 1
+    dplyr::select(-dist)
+  
   # write out pairs here
-
-  if(nrow(overlaps) == 0){
+  if (nrow(overlaps) == 0) {
     cat(paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
     return(null_mi_res())
   }
 
-
-  read_pileups <- getPileupsMap(dt_table$pos, dt_table$count, overlaps$start_r1, overlaps$end_r1, overlaps$start_r2, overlaps$end_r2)# %>%
+  read_pileups <- getPileupsMap(dt_table$pos, dt_table$count,
+                                overlaps$r1_start, overlaps$r1_end,
+                                overlaps$r2_start, overlaps$r2_end,
+                                overlaps$r1_dupes, overlaps$r2_dupes)
 
   overlaps <- NULL
 
@@ -174,10 +172,13 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   }
 
   read_pileups <- read_pileups %>%
-    dplyr::mutate(width_r1 = (r1_end - r1_start) + 1, width_r2 = (r2_end - r2_start) + 1)
+    dplyr::mutate(width_r1 = (r1_end - r1_start) + 1,
+                  width_r2 = (r2_end - r2_start) + 1)
 
 
-  read_pileups <- read_pileups %>% dplyr::mutate("lstart" = r1_end + 1, "lstop" = r2_start - 1) %>%  #get rid of rows with loop length less than 3
+  read_pileups <- read_pileups %>%
+    dplyr::mutate("lstart" = r1_end + 1,
+                  "lstop" = r2_start - 1) %>%  #get rid of rows with loop length less than 3
     dplyr::filter((lstop - lstart + 1) > 2)
 
   #loop_coord <- loop_coord %>% dplyr::filter((lstop - lstart + 1) > 2)
@@ -207,8 +208,12 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     dplyr::rename("r1_start" = "start", "r1_end" = "stop")
   r2_seqs <- getFastas(geno_seq, read_pileups$r2_start, read_pileups$r2_end, nrow(read_pileups)) %>%
     dplyr::rename("r2_start" = "start", "r2_end" = "stop")
+  
+  geno_seq <- NULL
 
-  read_pileups <- read_pileups %>% dplyr::mutate(w_start = r1_start, w_stop = r2_end)
+  read_pileups <- read_pileups %>%
+    dplyr::mutate(w_start = r1_start,
+                  w_stop = r2_end)
 
   read_pileups$r1_seq <- r1_seqs$Seq
   read_pileups$r2_seq <- r2_seqs$Seq
@@ -238,13 +243,25 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   }
 
   most_abundant_idx <- which((read_pileups$r1_count_avg + read_pileups$r2_count_avg) == max(read_pileups$r1_count_avg + read_pileups$r2_count_avg))
-    most_abundant <- read_pileups[most_abundant_idx,]
+  most_abundant <- read_pileups[most_abundant_idx,]
 
   final <- most_abundant[1,]
+  final_seq <- final$whole_seq
 
+  
+  #RNAfold wants U's not T's, so convert to U
+  converted <- list(convertU(final_seq, 1))
+  
+  converted <- data.frame('V1' = unname(unlist(converted)))
+  
+  colnames(converted) <- paste0(">",chrom_name, "_", reg_start, "_", reg_stop)
+  final$converted <- converted$V1
+  
+  write.table(converted, file = paste0(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
+  
+  
   mx_idx <- which(c(final$r1_count_avg, final$r2_count_avg) == max(final$r1_count_avg, final$r2_count_avg))
   mx <- c(final$r1_count_avg, final$r2_count_avg)[mx_idx]
-
 
   if(length(mx_idx) < 2){
     #colors <- vector(mode = "character", length = 2)
@@ -261,182 +278,168 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   }
 
   # need to convert starts and stops of reads to 1-based for coloring structure
-
-  diff <- final$r1_start - reg_start
-
-  pos_df <- data.frame(r1_start = c(0), r1_end = c(0),
-                       r2_start = c(0), r2_end = c(0))
-  if(diff < 0){
-    #if final start coord is less than zero, add diff (+1 because R is 1-based)
-    pos_df$r1_start <- final$r1_start + abs(diff) - reg_start + 1
-    pos_df$r1_end <- final$r1_end + abs(diff) - reg_start + 1
-    pos_df$r2_start <- final$r2_start + abs(diff) - reg_start + 1
-    pos_df$r2_end <- final$r2_end + abs(diff) - reg_start + 1
-  } else {
-    pos_df$r1_start <- final$r1_start - reg_start + 1
-    pos_df$r1_end <- final$r1_end - reg_start + 1
-    pos_df$r2_start <- final$r2_start - reg_start + 1
-    pos_df$r2_end <- final$r2_end - reg_start + 1
-  }
+  # diff <- final$r1_start - reg_start
+  
+  # Get the relative start and stop positions of the reads in the context of final_seq for plotting purposes
+  pos_df <- data.frame(r1_start = stringr::str_locate(final_seq, final$r1_seq)[1],
+                       r1_end = stringr::str_locate(final_seq, final$r1_seq)[2],
+                       r2_start = stringr::str_locate(final_seq, final$r2_seq)[1],
+                       r2_end = stringr::str_locate(final_seq, final$r2_seq)[2])
+  
+  rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, strand)
 
 
-  #call rnaplot here
-  final_seq <- final$whole_seq
-  rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors)
-  #RNAfold wants U's not T's, so convert to U
-  converted <- list(convertU(final_seq, 1))
 
-  converted <- data.frame('V1' = unname(unlist(converted)))
-
-  colnames(converted) <- paste0(">",chrom_name, "_", reg_start, "_", reg_stop)
-  final$converted <- converted$V1
-
-  write.table(converted, file = paste0(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
-
-  geno_seq <- NULL
-
-
+  
+  
+  
+  
+  
+  
+  
+  
   print('making fold_list')
   ################################################################################################################
   #fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
-  fold_list <- mapply(fold_short_rna, final$w_start, final$w_stop, converted, path_to_RNAfold)
+  fold_list <- fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, reg_start, reg_stop, chrom_name, wkdir)[[1]]
+  fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
-  #extracts the needed fields from the fold list, store in more compact list
-  make_reduced_list <- function(x){
-    start <- fold_list[[1]][[2]]
-    stop <- fold_list[[1]][[3]]
-    mfe <- fold_list[[1]][[1]]
-    vienna <- fold_list[[1]][[5]]
-    helix <- R4RNA::viennaToHelix(vienna)
-    converted <- fold_list[[1]][[6]]
-    extracted_df <- fold_list[[1]][[4]]
-    return(list(start = start, stop = stop, mfe = mfe, vienna = vienna, helix = helix, converted = converted, extracted_df = extracted_df))
+  #make the plots for all the sequences in the "fold_list"
+  prefix <- paste0(wkdir, chrom_name, "-", (fold_list$start - 1), "-", (fold_list$stop - 1))
+  print(prefix)
+  
+  mfe <- fold_list$mfe
+  perc_paired <- (length(fold_list$helix$i)*2)/(fold_list$stop - fold_list$start)
+
+  
+  
+  
+  
+  
+  # transforms reads from one arm of hairpin to their paired position
+  # makes a table of reads which are overlapping
+  dicer_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, fold_list$start)
+  # summarize the counts by the # overlapping nucleotides
+  z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
+
+  # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
+  z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
+  # create empty z_df
+  z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
+
+  # calculate the zscores, if there are results
+  if (is.na(dicer_overlaps[1,1]) | dicer_overlaps[1,1] == 0) {
+    overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
+    overhangs$zscore <- calc_zscore(overhangs$proper_count)
+  } else {
+    #if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
+    print('making overhangs')
+    overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
+                                           dicer_overlaps$r2_start, dicer_overlaps$r2_width,
+                                           dupes_present = TRUE,
+                                           r1_dupes = dicer_overlaps$r1_dupes,
+                                           r2_dupes = dicer_overlaps$r2_dupes))
+    overhangs$zscore <- calc_zscore(overhangs$proper_count)
   }
 
-  reduced_list <- lapply(1:length(fold_list), make_reduced_list)
+  # transform data frame from table to row
+  overhang_output <- data.frame(t(overhangs$zscore))
+  colnames(overhang_output) <- overhangs$shift
+  overhang_output$locus <- paste0(chrom_name, "_", fold_list$start, "_", fold_list$stop)
+  overhang_output <- overhang_output[, c(10, 1:9)]
 
-
-  #make the plots for all the sequences in the "reduced_list"
- plot_rna_struct <- function(x){
-    pos <- count <- count.x <- NULL
-    prefix <- paste0(wkdir, chrom_name, "-", (reduced_list[[1]]$start - 1), "-", (reduced_list[[1]]$stop - 1))
-    mfe <- reduced_list[[1]]$mfe
-    print(prefix)
-
-    # put the helix table into a data.frame
-    helix_df <- data.frame(reduced_list[[1]]$helix)
-
-    perc_paired <- (length(reduced_list[[1]]$helix$i)*2)/(reduced_list[[1]]$stop - reduced_list[[1]]$start)
-
-    # transforms reads from one arm of hairpin to their paired position
-    # makes a table of reads which are overlapping
-    dicer_overlaps <- dicer_overlaps(r2_dt, reduced_list[[1]]$helix, chrom_name, reduced_list[[1]]$start)
-    # summarize the counts by the # overlapping nucleotides
-    z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
-
-    # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
-    z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
-    # create empty z_df
-    z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
-
-    # calculate the zscores, if there are results
-    if(is.na(dicer_overlaps[1,1]) | dicer_overlaps[1,1] == 0) {
-      overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-      overhangs$zscore <- calc_zscore(overhangs$proper_count)
+  dice_file <- paste0(wkdir, "miRNA_dicerz.txt")
+  suppressWarnings(
+    if (!file.exists(dice_file)) {
+      write.table(overhang_output,
+                  file = dice_file,
+                  sep = "\t",
+                  quote = FALSE,
+                  col.names = T,
+                  append = FALSE,
+                  na = "NA",
+                  row.names = F)
     } else {
-      #if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
-      print('making overhangs')
-      overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
-                                             dicer_overlaps$r2_start, dicer_overlaps$r2_width))
-      overhangs$zscore <- calc_zscore(overhangs$proper_count)
+      write.table(overhang_output,
+                  file = dice_file,
+                  sep = "\t",
+                  quote = FALSE,
+                  col.names = F,
+                  append = TRUE,
+                  na = "NA",
+                  row.names = F)
     }
+  )
 
-    # transform data frame from table to row
-    overhang_output <- data.frame(t(overhangs$zscore))
-    colnames(overhang_output) <- overhangs$shift
-    overhang_output$locus <- paste0(chrom_name, "_", reduced_list[[x]]$start, "_", reduced_list[[x]]$stop)
-    overhang_output <- overhang_output[, c(10, 1:9)]
 
-    dice_file <- paste0(wkdir, "miRNA_dicerz.txt")
-    suppressWarnings(
-      if(!file.exists(dice_file)){
-        utils::write.table(overhang_output, file = dice_file, sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+  if (plot_output == TRUE) {
+    #make the plots
+    dicer_sig <- plot_overhangz(overhangs, "+")
+    print(overhangs)
+    #make new pileups dt for structure
+
+    # get the per-base coverage
+    # returns a two column df with pos and coverage
+    new_pileups <- get_read_pileups(fold_list$start, fold_list$stop, bam_scan, bam_file)  %>%
+      dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
+
+    # make a table with the same positions but empty cov column for combining with pileups
+    # necessary because the pileups table doesn't have all positions from the first nt to the last because
+    # coverages of zero aren't reported
+    # set these to zero below
+    empty_table <- data.frame(pos = c(seq(fold_list$start, fold_list$stop)), count = c(0))
+
+
+
+    density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+    density_plot <- plot_density(density, reg_start, reg_stop)
+
+    dist_plot <- plot_sizes(read_dist)
+
+    zplot <- plot_overlapz(z_df)
+
+    if (reg_stop - reg_start <= 150) {
+      #if miRNA is long, use landscape orientation so the struct plot isn't squished.
+      left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+      right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+      #bottom <- cowplot::plot_grid(struct_plot)
+      #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+      #all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
+
+      all_plot <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+      if (out_type == "png" || out_type == "PNG") {
+        grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
+        print(all_plot)
+        grDevices::dev.off()
       } else {
-        utils::write.table(overhang_output, file = dice_file, quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+        grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
+        print(all_plot)
       }
-    )
+
+    } else {
+      all_plot <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
+      #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+      #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+      #bottom <- cowplot::plot_grid(struct_plot)
+      #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+      #all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
 
 
-    if(plot_output == TRUE){
-      #make the plots
-      dicer_sig <- plot_overhangz(overhangs, "+")
-      print(overhangs)
-      #make new pileups dt for structure
-
-      # get the per-base coverage
-      # returns a two column df with pos and coverage
-      new_pileups <- get_read_pileups(reduced_list[[1]]$start, reduced_list[[1]]$stop, bam_scan, bam_file)  %>%
-        dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
-
-      # make a table with the same positions but empty cov column for combining with pileups
-      # necessary because the pileups table doesn't have all positions from the first nt to the last because
-      # coverages of zero aren't reported
-      # set these to zero below
-      empty_table <- data.frame(pos = c(seq(reduced_list[[1]]$start, reduced_list[[1]]$stop)), count = c(0))
-
-
-
-      density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
-      density_plot <- plot_density(density, reg_start, reg_stop)
-
-      dist_plot <- plot_sizes(read_dist)
-
-      zplot <- plot_overlapz(z_df)
-
-      if(reg_stop - reg_start <= 150){
-        #if miRNA is long, use landscape orientation so the struct plot isn't squished.
-        left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-        right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-        #bottom <- cowplot::plot_grid(struct_plot)
-        #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-        #all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
-
-        all_plot <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-        if(out_type == "png" || out_type == "PNG"){
-          grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
-          print(all_plot)
-          grDevices::dev.off()
-        } else {
-          grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
-          print(all_plot)
-        }
-
+      if (out_type == "png" || out_type == "png") {
+        grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 7, width = 15, units = "in", res = 300)
+        print(all_plot)
+        grDevices::dev.off()
       } else {
-        all_plot <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
-        #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-        #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-        #bottom <- cowplot::plot_grid(struct_plot)
-        #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-        #all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
-
-
-        if(out_type == "png" || out_type == "png"){
-          grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 7, width = 15, units = "in", res = 300)
-          print(all_plot)
-          grDevices::dev.off()
-        } else {
-          grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 7, width = 15)
-          print(all_plot)
-          grDevices::dev.off()
-        }
-
+        grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 7, width = 15)
+        print(all_plot)
+        grDevices::dev.off()
       }
 
     }
-    return(list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs,z_df)))
+
   }
 
-  results <- lapply(1:length(reduced_list), plot_rna_struct)
+  results <- list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs, z_df))
 
   return(results)
 }
