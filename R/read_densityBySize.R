@@ -15,27 +15,34 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   
   filter_bamfile <- function(input_file, size1, size2,  strand) {
     seqnames <- NULL
-    which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
-    filters <- S4Vectors::FilterRules(list(MinWidth=function(x) (BiocGenerics::width(x$seq) >= size1 & BiocGenerics::width(x$seq) <= size2)))
+    which <- GenomicRanges::GRanges(seqnames=chrom_name,
+                                    IRanges::IRanges(reg_start, reg_stop))
+    filters <- S4Vectors::FilterRules(list(MinWidth=function(x) (BiocGenerics::width(x$seq) >= size1 &
+                                                                 BiocGenerics::width(x$seq) <= size2)))
+    
     if (strand == "+") {
-      filename <- paste0(bam_path, size1, "_", size2, "_pos.bam")
+      filename <- paste(size1, size2, "pos.bam", sep = "_")
+      filepath <- file.path(bam_path, filename)
+      
       Rsamtools::filterBam(file = input_file,
-                           destination = filename,
+                           destination = filepath,
                            filter = filters,
                            param = Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
                                                            what=c('rname', 'pos', 'qwidth', 'seq'),
                                                            which = which))
     } else {
-      filename <- paste0(bam_path, size1, "_", size2, "_neg.bam")
+      filename <- paste(size1, size2, "neg.bam", sep = "_")
+      filepath <- file.path(bam_path, filename)
+      
       Rsamtools::filterBam(file = input_file,
-                           destination = filename,
+                           destination = filepath,
                            filter = filters,
                            param = Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
                                                            what=c('rname', 'pos', 'qwidth', 'seq'),
                                                            which = which))
     }
     
-    new_bam_obj <- OpenBamFile(filename, logfile)
+    new_bam_obj <- OpenBamFile(filepath, logfile)
     return(new_bam_obj)
   }
 
@@ -49,7 +56,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   filtered_pos_26_32_bam <- filter_bamfile(input_file, 26, 32, "+")
   # filtered_pos_all_bam <- filter_bamfile(input_file, 18, 32, "+")
 
-  filtered_neg_18_19_bam <- filter_bamfile(input_file, 18,19, "-")
+  filtered_neg_18_19_bam <- filter_bamfile(input_file, 18, 19, "-")
   filtered_neg_20_22_bam <- filter_bamfile(input_file, 20, 22, "-")
   filtered_neg_23_25_bam <- filter_bamfile(input_file, 23, 25, "-")
   filtered_neg_26_32_bam <- filter_bamfile(input_file, 26, 32, "-")
