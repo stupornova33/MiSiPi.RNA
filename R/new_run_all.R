@@ -121,7 +121,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
-  
+
   size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
     dplyr::group_by(width) %>%
     dplyr::summarize(count = sum(count))
@@ -132,7 +132,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   chromP <- NULL
   chromM <- NULL
   size_dist <- NULL
-  
+
 ############################################################################ get extra metrics for ML ###################################################################
 
   # calculate
@@ -152,7 +152,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   sample <- head(sample, 5000)
   print(head(sample))
   sizes <- NULL
-  
+
   if((length(sample) > 3) && !(length(unique(sample)) == 1)){
     local_ml$log_shap_p <- log10(as.numeric(unlist(unname(shapiro.test(sample)))[2]))
   } else {
@@ -181,24 +181,24 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   print("about to do historgram")
   if (nrow(forward_dt) + nrow(reverse_dt) > 1) {
     all_widths <- c(forward_dt$width, reverse_dt$width)
-    
+
     m <- mean(all_widths)
     std <- sd(all_widths)
-    
+
     if (!(std == 0)) {
       bin_width <- KernSmooth::dpih(all_widths, scalest = "stdev")
-      
+
       nbins <- seq(min(all_widths) - bin_width,
                    max(all_widths) + bin_width,
                    by = bin_width)
-      
+
       hist(all_widths, density = 20, breaks = 5, prob = TRUE,
            xlab = "Read size", ylim = c(0, 2),
            main = "Normal curve over histogram")
-      
+
       curve <- curve(dnorm(x, mean = m, sd = std),
                      col = "darkblue", lwd = 2, add = TRUE, yaxt = "n")
-      
+
       local_ml$auc <- sum(diff(curve$x) * (head(curve$y, -1) + tail(curve$y, -1))) / 2
     } else {
       local_ml$auc <- 0
@@ -206,7 +206,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   } else {
     local_ml$auc <- -1
   }
-  
+
   all_widths <- NULL
 
   print("got past the histogram")
@@ -227,9 +227,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   all_seqs <- c(forward_dt$seq, reverse_dt$seq)
   local_ml$perc_GC <- get_GC_content(all_seqs)
-  
+
   read_dist <- get_read_size_dist(forward_dt, reverse_dt)
-  
+
   ave_size <- highest_sizes(read_dist)
 
   local_ml$ave_size <- ave_size
@@ -246,28 +246,28 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   }
 
   local_ml$perc_first_nucT <- first_nuc_T(forward_dt, reverse_dt)
-  
+
   all_nuc_10 <- all_seqs %>%
     stringr::str_sub(10, 10)
   all_nuc_10_A <- sum(all_nuc_10 == "A")
   local_ml$perc_A10 <- all_nuc_10_A / length(all_nuc_10)
-  
+
   all_seqs <- NULL
   all_nuc_10 <- NULL
   all_nuc_10_A <- NULL
   max_sizes <- NULL
   read_dist <- NULL
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
 
 ############################################################################ run siRNA function #######################################################################
   # calculate
@@ -279,15 +279,15 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   cat(file = logfile, "Begin siRNA function\n", append = TRUE)
   if(!dir.exists('run_all/siRNA_dir/')) {
     dir.create('run_all/siRNA_dir/')
-  } 
+  }
 
   si_dir <- 'run_all/siRNA_dir/'
   si_log <- 'si_logfile.txt'
-  
+
   if (!file.exists(file.path(si_dir, si_log))) {
     file.create(file.path(si_dir, si_log))
   }
-  
+
   si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop,
                                length, min_read_count, genome_file,
                                bam_file, si_log, si_dir,
@@ -373,16 +373,16 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   cat(file = logfile, "Begin miRNA function\n", append = TRUE)
   if(!dir.exists('run_all/miRNA_dir/')) {
-    dir.create('run_all/miRNA_dir/') 
+    dir.create('run_all/miRNA_dir/')
   }
-  
+
   miRNA_dir <- 'run_all/miRNA_dir/'
   mi_log <- 'mi_logfile.txt'
-  
+
   if (!file.exists(file.path(miRNA_dir, mi_log))) {
     file.create(paste0(miRNA_dir, mi_log))
   }
-  
+
   mi_res <- new_miRNA_function(chrom_name, reg_start, reg_stop,
                                chromosome, length, "+",
                                min_read_count, genome_file, bam_file,
@@ -393,9 +393,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
                                weight_reads,
                                write_fastas,
                                out_type)
-  
+
   #Look at first result
-  mi_res <- mi_res[[1]]
+  #mi_res <- mi_res[[1]]
   mirnaMFE_plus <- mi_res$mfe
 
   pp_plus <- mi_res$perc_paired
@@ -418,7 +418,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
                                write_fastas,
                                out_type)
 
-  mi_res <- mi_res[[1]]
+  #mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
   pp_minus <- mi_res$perc_paired
   mirna_dicerz_minus <- mi_res$overhangs$zscore[5]
@@ -472,7 +472,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   if (!file.exists(file.path(piRNA_dir, pi_log))) {
     file.create(paste0(piRNA_dir, pi_log))
   }
-  
+
   pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop,
                                length, bam_file, genome_file,
                                pi_log, piRNA_dir, pi_pal,

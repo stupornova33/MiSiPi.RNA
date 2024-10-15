@@ -2,8 +2,8 @@
 % Please edit documentation in R/MiSiPi.RNA-package.R
 \docType{package}
 \name{MiSiPi.RNA}
-\alias{MiSiPi.RNA-package}
 \alias{MiSiPi.RNA}
+\alias{MiSiPi.RNA-package}
 \title{MiSiPi.RNA: Characterization of Small RNA Pathways}
 \description{
 Creates plots and analyzes small RNA sequencing data.

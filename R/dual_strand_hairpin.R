@@ -120,7 +120,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   r2_dt_summarized <- r2_dt %>%
     dplyr::group_by_all() %>%
     dplyr::count()
-  
+
   # We're operating on a single strand but need one data frame where the reads aren't transformed, one where they are
   # so set the other dt to be the same as the first with transformed ends
   print("Transforming ends of reads.")
@@ -223,19 +223,19 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
                 phased_tbl.phased_z = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
   }
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
+
+
+
+
+
+
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
   print("Beginning minus strand.")
@@ -262,15 +262,15 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else {
     r2_dt <- no_weight(r2_dt, as.character(chrom_name))
   }
-  
+
   r2_dt <- na.omit(r2_dt)
-  
+
   # Now that the reads have been weighted,
   # Let's resummarize them for more efficient processing
   r2_dt_summarized <- r2_dt %>%
     dplyr::group_by_all() %>%
     dplyr::count()
-  
+
   # We're operating on a single strand but need one data frame where the reads aren't transformed, one where they are
   # so set the other dt to be the same as the first with transformed ends
   print("Transforming ends of reads.")
@@ -350,7 +350,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
         if (write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, all_overlaps, "_hairpin")
 
          minus_overhangs <- data.frame(calc_overhangs(all_overlaps$r1_start, all_overlaps$r1_end,
-                                                      all_overlaps$r2_start, all_overlaps$r2_width))
+                                                      all_overlaps$r2_start, all_overlaps$r2_width,
+                                                      dupes_present = TRUE,
+                                                      r1_dupes = all_overlaps$r1_dupes,
+                                                      r2_dupes = all_overlaps$r2_dupes))
          minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
          minus_hp_overhangz <- mean(minus_overhangs$zscore[5])
       } else {
