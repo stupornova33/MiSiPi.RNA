@@ -381,15 +381,14 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     # get the per-base coverage
     # returns a two column df with pos and coverage
     new_pileups <- get_read_pileups(fold_list$start, fold_list$stop, bam_scan, bam_file)  %>%
-      dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
+      dplyr::group_by(pos) %>%
+      dplyr::summarise(count = sum(count))
 
     # make a table with the same positions but empty cov column for combining with pileups
     # necessary because the pileups table doesn't have all positions from the first nt to the last because
     # coverages of zero aren't reported
     # set these to zero below
     empty_table <- data.frame(pos = c(seq(fold_list$start, fold_list$stop)), count = c(0))
-
-
 
     density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
     density_plot <- plot_density(density, reg_start, reg_stop)
@@ -398,45 +397,19 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
     zplot <- plot_overlapz(z_df)
 
-    if (reg_stop - reg_start <= 150) {
-      #if miRNA is long, use landscape orientation so the struct plot isn't squished.
-      left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-      right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-      #bottom <- cowplot::plot_grid(struct_plot)
-      #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-      #all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
-
-      all_plot <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-      if (out_type == "png" || out_type == "PNG") {
-        grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
-        print(all_plot)
-        grDevices::dev.off()
-      } else {
-        grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
-        print(all_plot)
-      }
-
+    left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+    right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+      
+    all_plot <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+    
+    if (out_type == "png" || out_type == "PNG") {
+      grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 8, width = 11, units = "in", res = 300)
+      print(all_plot)
+      grDevices::dev.off()
     } else {
-      all_plot <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
-      #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-      #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-      #bottom <- cowplot::plot_grid(struct_plot)
-      #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-      #all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
-
-
-      if (out_type == "png" || out_type == "png") {
-        grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 7, width = 15, units = "in", res = 300)
-        print(all_plot)
-        grDevices::dev.off()
-      } else {
-        grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 7, width = 15)
-        print(all_plot)
-        grDevices::dev.off()
-      }
-
+      grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 8, width = 11)
+      print(all_plot)
     }
-
   }
 
   results <- list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs, z_df))
