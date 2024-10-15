@@ -409,6 +409,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     } else {
       grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 8, width = 11)
       print(all_plot)
+      grDevices::dev.off()
     }
   }
 
