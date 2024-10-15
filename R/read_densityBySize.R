@@ -12,18 +12,18 @@
 
 read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_file, wkdir, logfile) {
   pos <- width <- rname <- NULL
-  
+
   filter_bamfile <- function(input_file, size1, size2,  strand) {
     seqnames <- NULL
     which <- GenomicRanges::GRanges(seqnames=chrom_name,
                                     IRanges::IRanges(reg_start, reg_stop))
     filters <- S4Vectors::FilterRules(list(MinWidth=function(x) (BiocGenerics::width(x$seq) >= size1 &
                                                                  BiocGenerics::width(x$seq) <= size2)))
-    
+
     if (strand == "+") {
       filename <- paste(size1, size2, "pos.bam", sep = "_")
       filepath <- file.path(bam_path, filename)
-      
+
       Rsamtools::filterBam(file = input_file,
                            destination = filepath,
                            filter = filters,
@@ -33,7 +33,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
     } else {
       filename <- paste(size1, size2, "neg.bam", sep = "_")
       filepath <- file.path(bam_path, filename)
-      
+
       Rsamtools::filterBam(file = input_file,
                            destination = filepath,
                            filter = filters,
@@ -41,7 +41,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
                                                            what=c('rname', 'pos', 'qwidth', 'seq'),
                                                            which = which))
     }
-    
+
     new_bam_obj <- OpenBamFile(filepath, logfile)
     return(new_bam_obj)
   }
@@ -49,7 +49,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   # Create a subdirectory for temp bam files
   bam_path <- file.path(wkdir, "tmp_bam")
   if (!dir.exists(bam_path)) dir.create(bam_path)
-   
+
   filtered_pos_18_19_bam <- filter_bamfile(input_file, 18, 19, "+")
   filtered_pos_20_22_bam <- filter_bamfile(input_file, 20, 22, "+")
   filtered_pos_23_25_bam <- filter_bamfile(input_file, 23, 25, "+")
@@ -65,7 +65,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
 
   make_bam_pileup <- function(bam, strand) {
     seqnames <- pos <- count <- NULL
-    
+
     which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
     if (strand == "-") {
       bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
@@ -89,7 +89,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
                                      left_bins=NULL,
                                      query_bins=NULL,
                                      cycle_bins=NULL)
-      
+
     pileups <- Rsamtools::pileup(bam,
                                  index=(stringr::str_c(input_file, '','.bai')),
                                  scanBamParam=bam_scan,
@@ -106,15 +106,15 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   ## 18-19 nt
   pos_18_19_pileup <- make_bam_pileup(filtered_pos_18_19_bam, "+")
   neg_18_19_pileup <- make_bam_pileup(filtered_neg_18_19_bam, "-")
-  
+
   ## 20-22 nt
   pos_20_22_pileup <- make_bam_pileup(filtered_pos_20_22_bam, "+")
   neg_20_22_pileup <- make_bam_pileup(filtered_neg_20_22_bam, "-")
-  
+
   ## 23-25nt
   pos_23_25_pileup <- make_bam_pileup(filtered_pos_23_25_bam, "+")
   neg_23_25_pileup <- make_bam_pileup(filtered_neg_23_25_bam, "_")
-  
+
   ## 26-32
   pos_26_32_pileup <- make_bam_pileup(filtered_pos_26_32_bam, "+")
   neg_26_32_pileup <- make_bam_pileup(filtered_neg_26_32_bam, "-")
@@ -134,7 +134,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   del_files <- list.files(path = bam_path, pattern = "\\.bam$")
   del_files <- append(del_files, list.files(path = bam_path, pattern = "\\.bai$"))
 
-  unlink(paste0(bam_path, del_files), force = TRUE)
+  unlink(file.path(bam_path, del_files), force = TRUE)
 
   empty_dat <- data.frame(pos = c(seq(reg_start, reg_stop)))
 
@@ -143,7 +143,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
     neg_res <- merge(empty_dat, res_dat, by = "pos", all.x = TRUE) %>%
       dplyr::mutate(count = count *-1) %>%
       dplyr::mutate(size = "all")
-    
+
     neg_res["count"][is.na(neg_res["count"])] <- 0
     return(neg_res)
   }
@@ -155,7 +155,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
 
     return(pos_res)
   }
-  
+
   pos_18_19_res <- merge_pos_table(empty_dat, pos_18_19_pileup)
   pos_18_19_res$size <- "18_19"
   neg_18_19_res <- merge_neg_table(empty_dat, neg_18_19_pileup)
