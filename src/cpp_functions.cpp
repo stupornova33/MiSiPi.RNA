@@ -69,7 +69,9 @@ DataFrame mergePileups(std::vector<int> start, std::vector<int> end, std::vector
 //' @export
 // [[Rcpp::export]]
 DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r_start, IntegerVector r_end, int max_dist, int dfsize){
-// Calculate the distance between overlapping read pairs
+  // To be deprecated - replaced with 2 lines of dplyr functions
+  
+  // Calculate the distance between overlapping read pairs
 
    int memory_reserve = dfsize;
 
@@ -94,10 +96,6 @@ DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r
    std::vector<int> res_dist;
    res_dist.reserve(memory_reserve);
 
-
-
-
-
    for(int i = 0; i < dfsize; i++){
       int r1_start = f_start[i];
       int r1_end = f_end[i];
@@ -121,16 +119,12 @@ DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r
          res_dist.emplace_back(abs(dist));
          res_wy.emplace_back(wy);
       }
-
-
    }
 
    DataFrame df = DataFrame::create(Named("start_r1") = res_start_r1, Named("end_r1") = res_end_r1, Named("widthx") = res_wx, Named("start_r2") = res_start_r2,
                                     Named("end_r2") = res_end_r2,
                                     Named("widthy") = res_wy, Named("dist") = res_dist);
    return df;
-
-
 }
 
 //' getFastas
@@ -338,8 +332,10 @@ std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
 //' @return A data.frame consisting of the average pileups in read 1 range and in read 2 range
 //' @export
 // [[Rcpp::export]]
-DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::vector<int> start_r1, std::vector<int> end_r1,
-                     std::vector<int> start_r2, std::vector<int> end_r2){
+DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount,
+                        std::vector<int> start_r1, std::vector<int> end_r1,
+                        std::vector<int> start_r2, std::vector<int> end_r2,
+                        std::vector<int> dupe_count_r1, std::vector<int> dupe_count_r2) {
    //calculates the average pileup for a read using counts at each nucleotide position
    //takes position from read pileups df, count at that position, start pos of candidate read, end pos of candidate read
 
@@ -366,8 +362,11 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
    for (int i = 0; i < r1_length; i++) {
       int r1_start = start_r1[i];
       int r1_end = end_r1[i];
+      int r1_dupes = dupe_count_r1[i];
       int r2_start = start_r2[i];
       int r2_end = end_r2[i];
+      int r2_dupes = dupe_count_r2[i];
+      
 
       //set read length to be read end - read start
       //set start to be read_start_vec at pos i
@@ -397,14 +396,14 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount, std::v
          // This was added in to reduce the number of iterations which was approaching 1 billion
          // Used dplyr to group all the duplicate overlap reads and mutate in a count column to keep track of the number of duplicates
          // That way we only have to iterate through each read range once and multiply the results by the number of duplicates
-         //r1_running_total *= duplicate_count;
+         r1_running_total *= r1_dupes;
          r1_count_average = r1_running_total / read_r1_length;
          res_start_r1.emplace_back(r1_start);
          res_end_r1.emplace_back(r1_end);
          res_r1_avg.emplace_back(r1_count_average);
       //}
       //if (r2_running_total != 0) {
-         //r2_running_total *= duplicate_count;
+         r2_running_total *= r2_dupes;
          r2_count_average = r2_running_total / read_r2_length;
          res_start_r2.emplace_back(r2_start);
          res_end_r2.emplace_back(r2_end);
@@ -492,11 +491,16 @@ DataFrame group_helix_res(std::vector<int> x, std::vector<int> y) {
 //' @param r1_end A vector of ints
 //' @param r2_start A vector of ints
 //' @param r2_end A vector of ints
+//' @param dupes_present A bool indicating if vectors of duplicate counts are supplied
+//' @param r1_dupes A vector of ints representing the number of duplicates
+//' @param r2_dupes A vector of ints representing the number of duplicates
 //' @return A data.frame representing the number of proper and improper overhangs calculated at each shift position
 //' @export
 // [[Rcpp::export]]
 DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
-                         std::vector<int> r2_start, std::vector<int> r2_width){
+                         std::vector<int> r2_start, std::vector<int> r2_width,
+                         bool dupes_present,
+                         std::vector<int> r1_dupes, std::vector<int> r2_dupes) {
   std::vector<int> shift_vec = {-4,-3,-2,-1,0,1,2,3,4};
   int vector_length = r1_start.size();
   int MEMORY_SIZE = 9;
@@ -517,12 +521,18 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
       int p3_overhang = new_r2_start - r1_start[j];
       int p5_overhang = new_r2_end - r1_end[j];
 
-      //int p3_overhang = r1_start[j] - new_r2_start;
-      //int p5_overhang = r1_end[j] - new_r2_end;
-      if (p5_overhang == 2 && p3_overhang == 2){
-        pcount++;
+      if (p5_overhang == 2 && p3_overhang == 2) {
+        if (dupes_present) {
+          pcount += r1_dupes[j] * r2_dupes[j];
+        } else {
+          pcount++;
+        }
       } else {
-        icount++;
+        if (dupes_present) {
+          icount += r1_dupes[j] * r2_dupes[j];
+        } else {
+          icount++;
+        }
       }
     }
     proper_count.emplace_back(pcount);
@@ -567,7 +577,7 @@ DataFrame calc_expand_overhangs(std::vector<int> r1_start, std::vector<int> r1_e
       int p3_overhang = new_r2_start - r1_start[j];
       int p5_overhang = new_r2_end - r1_end[j];
 
-    if((p5_overhang == 2 & p3_overhang == 2)){
+    if((p5_overhang == 2) & (p3_overhang == 2)){
           pcount += 1;
        } else {
           icount += 1;
@@ -829,48 +839,132 @@ DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
 //' @export
 // [[Rcpp::export]]
 DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
-                           std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
-   int res_size = 27;
+                           std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth) {
+  
+  int res_size = 27;
 
-   std::vector<int> overlap_res(res_size);
-   std::vector<int> counts_res(res_size);
+  std::vector<int> overlap_res(res_size);
 
-   int f_size = int(fdt_start.size());
-   int r_size = int(rdt_start.size());
-   for(int maxquery = 18; maxquery <= 30; maxquery ++){
-      for(int overlap = 4; overlap <= 30; overlap ++){
+  // Fill the vector with overlap values of 4 - 30
+  std::iota(std::begin(overlap_res), std::end(overlap_res), 4);
 
-         std::vector<int> fstart_res;
-         std::vector<int> fend_res;
-         std::vector<int> rstart_res;
-         std::vector<int> rend_res;
+  std::vector<int> counts_res(res_size);
 
-         for(int k = 0; k < f_size; k++){
-            //get reads of size i
-            if(fwidth[k] == maxquery){
-               fstart_res.push_back(fdt_start[k]);
-               fend_res.push_back(fdt_end[k]);
-            }
-         }
-         for(int l = 0; l < r_size; l++){
-            if(rwidth[l] == maxquery){
-               rstart_res.push_back(rdt_start[l]);
-               rend_res.push_back(rdt_end[l]);
-            }
-         }
-         overlap_res[overlap - 4] = overlap;
-         int c1 = overlap_counts(fstart_res, fstart_res.size(), rend_res, rend_res.size(), overlap);
-         counts_res[overlap - 4] = counts_res[overlap - 4] + c1;
+  int f_size = int(fdt_start.size());
+  int r_size = int(rdt_start.size());
+
+  std::cout << "f_size: " << f_size << std::endl;
+  std::cout << "r_size: " << r_size << std::endl;
+
+  std::vector<int> fstart_res;
+  fstart_res.reserve(f_size);
+  std::vector<int> fend_res;
+  fend_res.reserve(f_size);
+  std::vector<int> rstart_res;
+  rstart_res.reserve(r_size);
+  std::vector<int> rend_res;
+  rend_res.reserve(r_size);
+
+  std::cout << "Starting f_loop" << std::endl;
+
+  for (int i = 0; i < f_size; i++) {
+    //get reads of size i
+    if (fwidth[i] >= 18 && fwidth[i] <= 30) {
+      fstart_res.emplace_back(fdt_start[i]);
+      fend_res.emplace_back(fdt_end[i]);
+    }
+  }
+
+  std::cout << "Starting r_loop" << std::endl;
+
+  for (int i = 0; i < r_size; i++) {
+    if (rwidth[i] >= 18 && rwidth[i] <= 30) {
+      rstart_res.emplace_back(rdt_start[i]);
+      rend_res.emplace_back(rdt_end[i]);
+    }
+  }
+
+  int fstart_size = int(fstart_res.size());
+  //int rend_size = int(rend_res.size()); unused
+
+  // Make an unordered map of the rend_res vector for easy lookup
+  std::unordered_map<int, int> counts;
+  for (auto v : rend_res) {
+    ++counts[v];
+  }
+
+  for (int overlap = 4; overlap <= 30; overlap++) {
+    std::cout << "Overlap: " << overlap << std::endl;
+
+    int current_count = 0;
+
+    // Iterate through each fstart position and calculate the overlap position
+    // Then iterate through the map to see if that position exists
+    // If so, then add that count total to the running total plus one (for the forward position)
+    for (int i = 0; i < fstart_size; i++) {
+      int calculated_r_pos = fstart_res[i] + overlap - 1;
+      std::unordered_map<int, int>::const_iterator found = counts.find(calculated_r_pos);
+
+      if (found == counts.end()) {
+        continue;
+      } else {
+        current_count += found->second + 1;
       }
+    }
 
-   }
-   DataFrame df = DataFrame::create(Named("overlap") = overlap_res, Named("count")= counts_res);
-   return(df);
+    counts_res[overlap - 4] = current_count;
+  }
+
+  DataFrame df = DataFrame::create(Named("overlap") = overlap_res, Named("count") = counts_res);
+                                     std::cout << "Returning" << std::endl;
+                                     return(df);
 }
+
+//' map_and_count
+//'
+//' This function takes in a vector of start positions from read group 1 and
+//' a vector of stop positions from read group 2 along with an overlap width
+//' It calculates counts proper overlaps contained in the vectors and returns the count
+//'
+//' @param fstart A vector of ints
+//' @param fstart_size An integer
+//' @param rend A vector of ints
+//' @param proper_overlap An integer
+//' @return An integer represent the number of overlaps present between the input vectors
+//' @export
+// [[Rcpp::export]]
+ int map_and_count(std::vector<int> fstart, int fstart_size,
+                   std::vector<int> rend, int proper_overlap) {
+
+   int current_count = 0;
+
+   // Create an unordered map of the rend vector and counts
+   std::unordered_map<int, int> counts;
+   for (auto v : rend) {
+     ++counts[v];
+   }
+
+   // Iterate through each fstart position and calculate the overlap position
+   // Then iterate through the map to see if that position exists
+   // If so, then add that count total to the running total plus one (for the forward position)
+   for (int i = 0; i < fstart_size; i++) {
+     int calculated_r_pos = fstart[i] + proper_overlap - 1;
+     std::unordered_map<int, int>::const_iterator found = counts.find(calculated_r_pos);
+
+     if (found == counts.end()) {
+       continue;
+     } else {
+       current_count += found->second + 1;
+     }
+   }
+   return(current_count);
+ }
+
 
 //' get_pi_overlaps
 //'
-//' This function calculates the overlaps present at each width of reads from 15-32
+//' This function takes in vectors of start and stop positions for read groups 1 and 2
+//' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
 //'
 //' @param fdt_start A vector of ints
 //' @param fdt_end A vector of ints
@@ -884,89 +978,209 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
 NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth){
 
-   int m_size = 18;
-   NumericMatrix result(m_size);
-   //to avoid warnings about signed int to unsigned int conversion
-   int f_size = int(fdt_start.size());
-   int r_size = int(rdt_start.size());
+  int m_size = 18;
+  NumericMatrix result(m_size);
+  //to avoid warnings about signed int to unsigned int conversion
+  int f_size = int(fdt_start.size());
+  int r_size = int(rdt_start.size());
 
-   for(int i = 15; i <= 32; i++) {
-      for(int j = 15; j <= 32; j++) {
-         int p_overlap = 10;
-         int current_count = 0;
+  for(int i = 15; i <= 32; i++) {
+    for(int j = 15; j <= 32; j++) {
+      int p_overlap = 10;
+      int current_count = 0;
 
-         if(i == j){
-            std::vector<int> fstart_res;
-            std::vector<int> fend_res;
-            std::vector<int> rstart_res;
-            std::vector<int> rend_res;
-            //iterate through fdt
-            for(int k = 0; k < f_size; k++){
-               //get reads of size i
-               if(fwidth[k] == i){
-                  fstart_res.push_back(fdt_start[k]);
-                  fend_res.push_back(fdt_end[k]);
-               }
-            }
-            for(int l = 0; l < r_size; l++){
-               if(rwidth[l] == j){
-                  rstart_res.push_back(rdt_start[l]);
-                  rend_res.push_back(rdt_end[l]);
-               }
-            }
-            current_count = overlap_counts(fstart_res, fstart_res.size(), rend_res, rend_res.size(), p_overlap);
+      if(i == j){
+        std::vector<int> fstart_res;
+        std::vector<int> fend_res;
+        std::vector<int> rstart_res;
+        std::vector<int> rend_res;
+        //iterate through fdt
+        for(int k = 0; k < f_size; k++){
+          //get reads of size i
+          if(fwidth[k] == i){
+            fstart_res.push_back(fdt_start[k]);
+            fend_res.push_back(fdt_end[k]);
+          }
+        }
+        for(int l = 0; l < r_size; l++){
+          if(rwidth[l] == j){
+            rstart_res.push_back(rdt_start[l]);
+            rend_res.push_back(rdt_end[l]);
+          }
+        }
+        current_count = overlap_counts(fstart_res, fstart_res.size(), rend_res, rend_res.size(), p_overlap);
 
-         } else {
-            std::vector<int> fstart_res1;
-            std::vector<int> fend_res1;
-            std::vector<int> rstart_res1;
-            std::vector<int> rend_res1;
+      } else {
+        std::vector<int> fstart_res1;
+        std::vector<int> fend_res1;
+        std::vector<int> rstart_res1;
+        std::vector<int> rend_res1;
 
-            std::vector<int> fstart_res2;
-            std::vector<int> fend_res2;
-            std::vector<int> rstart_res2;
-            std::vector<int> rend_res2;
+        std::vector<int> fstart_res2;
+        std::vector<int> fend_res2;
+        std::vector<int> rstart_res2;
+        std::vector<int> rend_res2;
 
-            for(int k = 0; k < f_size; k++){
-               //get reads of size i
-               if(fwidth[k] == i){
-                  fstart_res1.push_back(fdt_start[k]);
-                  fend_res1.push_back(fdt_end[k]);
-               }
-            }
-            for(int l = 0; l < r_size; l++){
-               if(rwidth[l] == j){
-                  rstart_res1.push_back(rdt_start[l]);
-                  rend_res1.push_back(rdt_end[l]);
-               }
-            }
-            int c1 = overlap_counts(fstart_res1, fstart_res1.size(), rend_res1, rend_res1.size(), p_overlap);
+        for(int k = 0; k < f_size; k++){
+          //get reads of size i
+          if(fwidth[k] == i){
+            fstart_res1.push_back(fdt_start[k]);
+            fend_res1.push_back(fdt_end[k]);
+          }
+        }
+        for(int l = 0; l < r_size; l++){
+          if(rwidth[l] == j){
+            rstart_res1.push_back(rdt_start[l]);
+            rend_res1.push_back(rdt_end[l]);
+          }
+        }
+        int c1 = overlap_counts(fstart_res1, fstart_res1.size(), rend_res1, rend_res1.size(), p_overlap);
 
 
-            for(int k = 0; k < f_size; k++){
-               //get reads of size i
-               if(fwidth[k] == j){
-                  fstart_res2.push_back(fdt_start[k]);
-                  fend_res2.push_back(fdt_end[k]);
-               }
-            }
-            for(int l = 0; l < r_size; l++){
-               if(rwidth[l] == i){
-                  rstart_res2.push_back(rdt_start[l]);
-                  rend_res2.push_back(rdt_end[l]);
-               }
-            }
-            int c2 = overlap_counts(fstart_res2, fstart_res2.size(), rend_res2, rend_res2.size(), p_overlap);
+        for(int k = 0; k < f_size; k++){
+          //get reads of size i
+          if(fwidth[k] == j){
+            fstart_res2.push_back(fdt_start[k]);
+            fend_res2.push_back(fdt_end[k]);
+          }
+        }
+        for(int l = 0; l < r_size; l++){
+          if(rwidth[l] == i){
+            rstart_res2.push_back(rdt_start[l]);
+            rend_res2.push_back(rdt_end[l]);
+          }
+        }
+        int c2 = overlap_counts(fstart_res2, fstart_res2.size(), rend_res2, rend_res2.size(), p_overlap);
 
-            current_count = c1 + c2;
+        current_count = c1 + c2;
 
-         }
-         result(i - 15,j - 15) = current_count;
       }
+      result(i - 15,j - 15) = current_count;
+    }
 
-   }
-   return(result);
+  }
+  return(result);
 }
+
+//' get_overlap_counts
+//'
+//' This function takes in vectors of start and stop positions for read groups 1 and 2
+//' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
+//'
+//' @param fdt_start A vector of ints
+//' @param fdt_end A vector of ints
+//' @param fwidth An integer
+//' @param rdt_start A vector of ints
+//' @param rdt_end A vector of ints
+//' @param rwidth An integer
+//' @param check_pi A bool, if TRUE (1), the function will look for piRNA overlaps, if FALSE (0) it will check for siRNA overlaps
+//' @return result A matrix representing the overlaps present at each width of reads from 15-32
+//' @export
+// [[Rcpp::export]]
+NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
+                                  std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth,
+                                  bool check_pi) {
+ int M_SIZE = 18;
+ NumericMatrix result(M_SIZE);
+
+ //to avoid warnings about signed int to unsigned int conversion
+ int f_size = int(fdt_start.size());
+ int r_size = int(rdt_start.size());
+
+ for (int i = 15; i <= 32; i++) {
+   for (int j = 15; j <= 32; j++) {
+
+     int p_overlap;
+
+     // Check if we're counting piRNA or siRNA overlaps
+     if (check_pi) {
+       p_overlap = 10;
+     } else {
+       p_overlap = proper_overlap(i, j);
+     }
+
+     int current_count = 0;
+
+     if (i == j) {
+       std::vector<int> fstart_res;
+       std::vector<int> fend_res;
+       std::vector<int> rstart_res;
+       std::vector<int> rend_res;
+
+       // Iterate through fdt
+       for (int k = 0; k < f_size; k++) {
+         // Get reads of size i
+         if (fwidth[k] == i) {
+           fstart_res.push_back(fdt_start[k]);
+           fend_res.push_back(fdt_end[k]);
+         }
+       }
+
+       for (int l = 0; l < r_size; l++) {
+         // Get reads of size j
+         if (rwidth[l] == j) {
+           rstart_res.push_back(rdt_start[l]);
+           rend_res.push_back(rdt_end[l]);
+         }
+       }
+
+       int fstart_size = fstart_res.size();
+       current_count = map_and_count(fstart_res, fstart_size, rend_res, p_overlap);
+     } else {
+       std::vector<int> fstart_res1;
+       std::vector<int> fend_res1;
+       std::vector<int> rstart_res1;
+       std::vector<int> rend_res1;
+
+       std::vector<int> fstart_res2;
+       std::vector<int> fend_res2;
+       std::vector<int> rstart_res2;
+       std::vector<int> rend_res2;
+
+       for (int k = 0; k < f_size; k++) {
+         // Get reads of size i
+         if (fwidth[k] == i) {
+           fstart_res1.push_back(fdt_start[k]);
+           fend_res1.push_back(fdt_end[k]);
+         }
+       }
+
+       for (int l = 0; l < r_size; l++) {
+         if (rwidth[l] == j) {
+           rstart_res1.push_back(rdt_start[l]);
+           rend_res1.push_back(rdt_end[l]);
+         }
+       }
+
+       int fstart_size1 = fstart_res1.size();
+       current_count = map_and_count(fstart_res1, fstart_size1, rend_res1, p_overlap);
+
+       for (int k = 0; k < f_size; k++) {
+         // Get reads of size j
+         if (fwidth[k] == j) {
+           fstart_res2.push_back(fdt_start[k]);
+           fend_res2.push_back(fdt_end[k]);
+         }
+       }
+       for (int l = 0; l < r_size; l++) {
+         if (rwidth[l] == i) {
+           rstart_res2.push_back(rdt_start[l]);
+           rend_res2.push_back(rdt_end[l]);
+         }
+       }
+
+       int fstart_size2 = fstart_res2.size();
+       current_count += map_and_count(fstart_res2, fstart_size2, rend_res2, p_overlap);
+     }
+     result(i - 15,j - 15) = current_count;
+   }
+ }
+ return(result);
+}
+
+
+
+
 
 //' getLoopPileupsCPP
 //'
@@ -1168,3 +1382,171 @@ DataFrame rep_seq_reads(std::vector<int> rep_count, std::vector<std::string> rna
                                     Named("seq") = glob_seq_vec);
    return df;
  }
+
+
+//' new_get_si_overlaps
+//'
+//' This function takes in vectors of start and stop positions for read groups 1 and 2
+//' It calculates overlaps for each set of reads and stores them in a matrix based on the read widths
+//'
+//' @param fdt_start A vector of ints
+//' @param fdt_end A vector of ints
+//' @param fwidth An integer
+//' @param rdt_start A vector of ints
+//' @param rdt_end A vector of ints
+//' @param rwidth An integer
+//' @return result A matrix representing the overlaps present at each width of reads from 15-32
+//' @export
+// [[Rcpp::export]]
+NumericMatrix new_get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
+                              std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
+
+  int M_SIZE = 18;
+  NumericMatrix result(M_SIZE);
+
+  //to avoid warnings about signed int to unsigned int conversion
+  int f_size = int(fdt_start.size());
+  int r_size = int(rdt_start.size());
+
+  for (int i = 15; i <= 32; i++) {
+    for (int j = 15; j <= 32; j++) {
+
+      int p_overlap = proper_overlap(i,j);
+      int current_count = 0;
+
+      if (i == j) {
+        std::vector<int> fstart_res;
+        std::vector<int> fend_res;
+        std::vector<int> rstart_res;
+        std::vector<int> rend_res;
+        //iterate through fdt
+        for(int k = 0; k < f_size; k++){
+          //get reads of size i
+          if(fwidth[k] == i){
+            fstart_res.push_back(fdt_start[k]);
+            fend_res.push_back(fdt_end[k]);
+          }
+        }
+        for(int l = 0; l < r_size; l++){
+          if(rwidth[l] == j){
+            rstart_res.push_back(rdt_start[l]);
+            rend_res.push_back(rdt_end[l]);
+          }
+        }
+
+        // Create an unordered map of the rend vector and counts
+        std::unordered_map<int, int> counts;
+        for (auto v : rend_res) {
+          ++counts[v];
+        }
+
+        int fstart_size = fstart_res.size();
+
+        // Iterate through each fstart position and calculate the overlap position
+        // Then iterate through the map to see if that position exists
+        // If so, then add that count total to the running total plus one (for the forward position)
+        for (int i = 0; i < fstart_size; i++) {
+          int calculated_r_pos = fstart_res[i] + p_overlap - 1;
+          std::unordered_map<int, int>::const_iterator found = counts.find(calculated_r_pos);
+
+          if (found == counts.end()) {
+            continue;
+          } else {
+            current_count += found->second + 1;
+          }
+        }
+
+      } else {
+
+        std::vector<int> fstart_res1;
+        std::vector<int> fend_res1;
+        std::vector<int> rstart_res1;
+        std::vector<int> rend_res1;
+
+        std::vector<int> fstart_res2;
+        std::vector<int> fend_res2;
+        std::vector<int> rstart_res2;
+        std::vector<int> rend_res2;
+
+        for(int k = 0; k < f_size; k++){
+          //get reads of size i
+          if(fwidth[k] == i){
+            fstart_res1.push_back(fdt_start[k]);
+            fend_res1.push_back(fdt_end[k]);
+          }
+        }
+        for(int l = 0; l < r_size; l++){
+          if(rwidth[l] == j){
+            rstart_res1.push_back(rdt_start[l]);
+            rend_res1.push_back(rdt_end[l]);
+          }
+        }
+
+
+        // Create an unordered map of the rend_res1 vector and counts
+        std::unordered_map<int, int> counts;
+        for (auto v : rend_res1) {
+          ++counts[v];
+        }
+
+        int fstart_size = fstart_res1.size();
+
+        // Iterate through each fstart position and calculate the overlap position
+        // Then iterate through the map to see if that position exists
+        // If so, then add that count total to the running total plus one (for the forward position)
+        for (int i = 0; i < fstart_size; i++) {
+          int calculated_r_pos = fstart_res1[i] + p_overlap - 1;
+          std::unordered_map<int, int>::const_iterator found = counts.find(calculated_r_pos);
+
+          if (found == counts.end()) {
+            continue;
+          } else {
+            current_count += found->second + 1;
+          }
+        }
+
+
+        for(int k = 0; k < f_size; k++){
+          //get reads of size i
+          if(fwidth[k] == j){
+            fstart_res2.push_back(fdt_start[k]);
+            fend_res2.push_back(fdt_end[k]);
+          }
+        }
+        for(int l = 0; l < r_size; l++){
+          if(rwidth[l] == i){
+            rstart_res2.push_back(rdt_start[l]);
+            rend_res2.push_back(rdt_end[l]);
+          }
+        }
+
+        // Create an unordered map of the rend_res2 vector and counts
+        std::unordered_map<int, int> counts_2;
+        for (auto v : rend_res2) {
+          ++counts_2[v];
+        }
+
+        fstart_size = fstart_res2.size();
+
+        // Iterate through each fstart position and calculate the overlap position
+        // Then iterate through the map to see if that position exists
+        // If so, then add that count total to the running total plus one (for the forward position)
+        for (int i = 0; i < fstart_size; i++) {
+          int calculated_r_pos = fstart_res2[i] + p_overlap - 1;
+          std::unordered_map<int, int>::const_iterator found = counts_2.find(calculated_r_pos);
+
+          if (found == counts_2.end()) {
+            continue;
+          } else {
+            current_count += found->second + 1;
+          }
+        }
+
+
+      }
+      result(i - 15,j - 15) = current_count;
+    }
+
+  }
+  return(result);
+}

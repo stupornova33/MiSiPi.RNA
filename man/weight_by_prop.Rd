@@ -14,7 +14,7 @@ weight_by_prop(dt, chrom_name)
 \item{chrom_name}{a string}
 }
 \value{
-filter_dt
+expanded_dt
 }
 \description{
 function takes a data table of reads

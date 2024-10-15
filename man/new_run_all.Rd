@@ -19,6 +19,7 @@ new_run_all(
   pi_pal,
   plot_output,
   path_to_RNAfold,
+  path_to_RNAplot,
   annotate_region,
   weight_reads,
   gtf_file,
@@ -52,6 +53,8 @@ new_run_all(
 \item{plot_output}{a bool, TRUE or FALSE}
 
 \item{path_to_RNAfold}{a string}
+
+\item{path_to_RNAplot}{a string}
 
 \item{annotate_region}{a bool, TRUE or FALSE}
 

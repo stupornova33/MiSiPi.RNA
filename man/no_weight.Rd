@@ -14,7 +14,7 @@ no_weight(filter_dt, chrom_name)
 \item{chrom_name}{a string}
 }
 \value{
-filter_dt
+expanded_dt a dataframe
 }
 \description{
 function takes a data table of reads

@@ -6,12 +6,10 @@
 takes two data tables of reads with sequences
 returns GC percent}
 \usage{
-get_GC_content(data)
+get_GC_content(seqs)
 }
 \arguments{
-\item{dt1}{a data table of read data}
-
-\item{dt2}{a data table of read data}
+\item{seqs}{a vector of sequences}
 }
 \value{
 GC percent

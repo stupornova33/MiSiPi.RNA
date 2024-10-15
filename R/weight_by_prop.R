@@ -4,55 +4,36 @@
 #'
 #' @param dt a data table of reads
 #' @param chrom_name a string
-#' @return filter_dt
+#' @return expanded_dt
 #' @export
 
+weight_by_prop <- function(dt, chrom_name) {
+  width <- start <- end <- first <- count <- NULL
 
-weight_by_prop <- function(dt, chrom_name){
-  width <- pos <- start <- end <- first <- count <- NULL
-  dt$rname <- chrom_name
-
-  if(nrow(dt) < 1 ){
-    final_df <- data.frame(matrix(ncol = 3, nrow = 0))
-    return(final_df)
+  if(nrow(dt) < 1) {
+    blank_df <- data.frame(matrix(ncol = 3, nrow = 0))
+    return(blank_df)
   } else {
-    counts_dt <- dt
-     mn <- min(counts_dt$count)
-     mx <- max(counts_dt$count)
+    expanded_dt <- dt
+    mn <- min(counts_dt$count)
+    mx <- max(counts_dt$count)
 
-     counts_dt <- counts_dt %>% dplyr::mutate(prop = count/mx)
-     counts_dt <- counts_dt %>% dplyr::mutate(weighted_count = prop*count)
+    expanded_dt <- expanded_dt %>%
+      dplyr::mutate(prop = count/mx)
+    expanded_dt <- counts_dt %>%
+      dplyr::mutate(weighted_count = prop*count)
 
-     #remove values < 1?
-     counts_dt <- counts_dt[counts_dt$weighted_count > 1,]
+    #remove values < 1?
+    expanded_dt <- expanded_dt[expanded_dt$weighted_count > 1,]
 
+    if(nrow(expanded_dt) > 0) {
+      expanded_dt$weighted_count <- round(expanded_dt$weighted_count)
 
-     if(nrow(counts_dt) > 0){
-     counts_dt$weighted_count <- round(counts_dt$weighted_count)
-
-
-     res_df <- rep_seq_reads(counts_dt$weighted_count, counts_dt$rname, counts_dt$start, counts_dt$end, counts_dt$first, counts_dt$seq)
-
-     # speed things up by selecting random subset.
-     # find overlaps struggles with larger vectors
-
-     #shuffle order randomly
-     res_df <- res_df[sample(1:nrow(res_df)), ] %>%
-       dplyr::mutate(width = end - start + 1)
-
-     if(nrow(res_df) > 0){
-       #select a subset
-       final_df <- utils::head(res_df, 10000)
-     } else {
-       final_df <- counts_dt %>% dplyr::mutate(width = end - start + 1)
-     }
-
-     } else {
-       final_df <- data.frame(matrix(ncol = 3, nrow = 0))
+      expanded_dt <- rep_seq_reads(expanded_dt$weighted_count, expanded_dt$rname,
+                                   expanded_dt$start, expanded_dt$end,
+                                   expanded_dt$first, expanded_dt$seq) %>%
+        dplyr::mutate(width = end - start + 1)
+    }
   }
-
- }
-
-  return(final_df)
+  return(expanded_dt)
 }
-

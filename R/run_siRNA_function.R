@@ -21,118 +21,147 @@
 #' @export
 
 run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, logfile, wkdir,
-                           pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
-   print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
-   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-   width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
+                           pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type) {
+  print(paste0(chrom_name, "_", reg_start, "_", reg_stop))
+  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+  width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
 
-   # use Rsamtools to process the bam file
-   bam_obj <- OpenBamFile(bam_file, logfile)
-   bam_header <- Rsamtools::scanBamHeader(bam_obj)
-   chr_name <- names(bam_header[['targets']])
-   chr_length <- unname(bam_header[['targets']])
-   bam_header <- NULL
+  # use Rsamtools to process the bam file
+  bam_obj <- OpenBamFile(bam_file, logfile)
+  bam_header <- Rsamtools::scanBamHeader(bam_obj)
+  chr_name <- names(bam_header[['targets']])
+  chr_length <- unname(bam_header[['targets']])
+  bam_header <- NULL
 
-   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
-   cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
+  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+  cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
 
-   # extract reads by strand
-   # this creates a list object
-   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-   chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+  # extract reads by strand
+  # this creates a list object
+  chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
+  chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
-   # turn the list object into a more useable data frame and filter reads by length,
-   # bam only contains pos and width, need to add an end column
-    cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
-    forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
-     subset(width <= 32 & width >= 18) %>%
-      dplyr::mutate(start = pos, end = pos + width - 1) %>%
-      dplyr::select(-c(pos)) %>%
-      dplyr::group_by_all() %>%
-     # get the number of times a read occurs
-      dplyr::summarize(count = dplyr::n())
+  # turn the list object into a more useable data frame and filter reads by length,
+  # bam only contains pos and width, need to add an end column
+  cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
+  forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
+    subset(width <= 32 & width >= 18) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
+    dplyr::group_by_all() %>%
+    # get the number of times a read occurs
+    dplyr::summarize(count = dplyr::n())
 
-    cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
-    reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
-     subset(width <= 32 & width >= 18) %>%
-     dplyr::mutate(start = pos, end = pos + width - 1) %>%
-     dplyr::select(-c(pos)) %>%
-     dplyr::group_by_all() %>%
-     dplyr::summarize(count = dplyr::n())
+  cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
+  reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
+    subset(width <= 32 & width >= 18) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
+    dplyr::group_by_all() %>%
+    dplyr::summarize(count = dplyr::n())
 
-   chromP <- NULL
-   chromM <- NULL
+  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+    dplyr::group_by(width) %>%
+    dplyr::summarise(count = sum(count))
+   
+  output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
-   # If the data frames are empty there are no reads, can't do siRNA calculations
-   if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
-      print("f_dt and r_dt are not empty")
-      cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
+  chromP <- NULL
+  chromM <- NULL
+  size_dist <- NULL
 
-      if(weight_reads == "None" | weight_reads == "none"){
-        print("No weighting of reads applied.")
-        forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+  # If the data frames are empty there are no reads, can't do siRNA calculations
+  if (nrow(forward_dt) > 0 & nrow(reverse_dt) > 0) {
+    print("f_dt and r_dt are not empty")
+    cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
-      } else if(weight_reads == "weight_by_prop"){
-        forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
+    if (weight_reads == "None" | weight_reads == "none") {
+      print("No weighting of reads applied.")
+      forward_dt <- no_weight(forward_dt, as.character(chrom_name))
+      reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
 
+    } else if (weight_reads == "weight_by_prop") {
+      print("Weighting reads by proportion.")
+      forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name))
+      reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name))
 
-      } else if(weight_reads == "Locus_norm" | weight_reads == "locus_norm"){
-        forward_dt <- locus_norm(forward_dt, sum(forward_dt$count)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count)) %>% dplyr::mutate(width = end - start + 1)
+    } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
+      forward_dt <- locus_norm(forward_dt, sum(forward_dt$count)) %>% dplyr::mutate(width = end - start + 1)
+      reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count)) %>% dplyr::mutate(width = end - start + 1)
 
-      } else if(is.integer(weight_reads)){
-        print("User supplied custom weighting value for reads.")
-        forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
-        reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start)) %>% dplyr::mutate(width = end - start + 1)
+    } else if (is.integer(weight_reads)) {
+      print("User supplied custom weighting value for reads.")
+      forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start))
+      reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start))
 
-      } else {
-        cat(file = paste0(wkdir, logfile),"Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n", append = TRUE)
-      }
+    } else {
+      cat(file = paste0(wkdir, logfile),
+          "Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n",
+          append = TRUE)
+    }
+    
+    print("Completed getting weighted dataframes.")
+    
+    # check to see if subsetted dfs are empty
+    # have to keep doing this at each step otherwise errors will happen
+    if (nrow(forward_dt) > 0 & nrow(reverse_dt) > 0) {
 
-      print("Completed getting weighted dataframes.")
-      # check to see if subsetted dfs are empty
-      # have to keep doing this at each step otherwise errors will happen
-      if(nrow(forward_dt) > 0 & nrow(reverse_dt) > 0){
+      # Now that the DTs have been weighted and re-expanded,
+      # Let's summarize them again and keep track of the duplicates with the column "n"
+      # This will be crucial in keeping memory and cpu usage down during find_overlaps()
+      f_summarized <- forward_dt %>%
+        dplyr::group_by_all() %>%
+        dplyr::count()
+      
+      r_summarized <- reverse_dt %>%
+        dplyr::group_by_all() %>%
+        dplyr::count()
+      
+      # get overlapping reads
+      overlaps <- find_overlaps(f_summarized, r_summarized) %>%
+        dplyr::mutate(p5_overhang = r2_end - r1_end,
+                      p3_overhang = r2_start - r1_start) %>%
+        dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
 
-        # get overlapping reads
-        overlaps <- find_overlaps(forward_dt, reverse_dt) %>% dplyr::mutate(p5_overhang = r2_end - r1_end, p3_overhang = r2_start - r1_start) %>%
-         dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
-
-      if(write_fastas == TRUE) write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
+      # TODO This function runs very slowly on large loci
+      # See if it can be run on the summarized dts
+      if (write_fastas == TRUE) write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
 
       #calculate the number of dicer pairs for the zscore
-      dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end, overlaps$r2_start, overlaps$r2_width)
+      dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end,
+                                        overlaps$r2_start, overlaps$r2_width,
+                                        dupes_present = TRUE,
+                                        overlaps$r1_dupes, overlaps$r2_dupes)
 
       dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
 
       cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
       # calculate the siRNA pairs for the heatmap
 
-      results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
-                                forward_dt$start, forward_dt$end, forward_dt$width)
+      #system.time(results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
+      #                          forward_dt$start, forward_dt$end, forward_dt$width))
+
+      # TODO See if this can be run on the summarized dts for cpu time improvement
+      results <- new_get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
+                                     forward_dt$start, forward_dt$end, forward_dt$width)
 
       row.names(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
       colnames(results) <- c('15','','17','','19','','21','','23','','25','','27','','29','','31','')
-      } else {
-
-
-        # results are being stored also in case the run_all function is being used, at the end they will be written to a table
-        cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
-        #the data.frame should be modified if using calc_expand_overhangs
-        dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
-        #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
-        results <- 0
-      }
-
-   } else {
+    } else {
+      # results are being stored also in case the run_all function is being used, at the end they will be written to a table
       cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
-      #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+      #the data.frame should be modified if using calc_expand_overhangs
       dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
+      #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
       results <- 0
-   }
+    }
 
+  } else {
+    cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
+    #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
+    dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
+    results <- 0
+  }
 
    # transform the data frame for writing to table by row
    # output is the locus followed by all zscores
@@ -164,11 +193,9 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
 
    print("Beginning hairpin function.")
-
  #run the hairpin function on each strand separately
    dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
                               path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type)
-
 
  #if there are results then use the heat plot
 
@@ -213,7 +240,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         plus_phasedz <- dsh[[8]]
         minus_phasedz <- dsh[[9]]
 
-        gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+        #gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
 
         #if there are results for the heatmap, plot, otherwise omit
         if(!sum(results) == 0){

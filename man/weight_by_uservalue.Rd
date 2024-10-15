@@ -16,7 +16,7 @@ weight_by_uservalue(dt, norm, locus_length)
 \item{locus_length}{An integer corresponding to the length of the region of interest}
 }
 \value{
-final_df A dataframe of reads which have been "uncollapsed" and replicated by the normalization factor.
+expanded_dt A dataframe of reads which have been "uncollapsed" and replicated by the normalization factor.
 }
 \description{
 Weight_by_uservalue
