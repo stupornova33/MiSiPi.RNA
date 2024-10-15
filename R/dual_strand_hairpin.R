@@ -60,7 +60,6 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
   bam_obj <- OpenBamFile(bam_file, logfile)
-  bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
   #RNAfold can't fold things longer than 10kb
 
@@ -69,7 +68,6 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     res <- null_hp_res()
     return(res)
   }
-  bam_header <- NULL
 
   # Extract chromosome sequence from genome file
   mygranges <- GenomicRanges::GRanges(
@@ -223,18 +221,6 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
                 phased_tbl.phased_z = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
   }
-
-
-
-
-
-
-
-
-
-
-
-
 
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
@@ -396,11 +382,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #plus_overhang_out <- plus_overhang_out[, c(18, 1:17)]
 
   suppressWarnings(
-     if(!file.exists("plus_hp_dicerz.txt")){
-        write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
-     } else {
-        write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-     }
+    if(!file.exists("plus_hp_dicerz.txt")){
+      write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+    } else {
+      write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+    }
   )
 
   minus_overhang_out <- data.frame(t(minus_res$dicer_tbl.zscore))
@@ -411,11 +397,11 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #minus_overhang_out <- minus_overhang_out[, c(18, 1:18)]
 
   suppressWarnings(
-     if(!file.exists("minus_hp_dicerz.txt")){
-        write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
-     } else {
-        write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-     }
+    if(!file.exists("minus_hp_dicerz.txt")){
+      write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+    } else {
+      write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+    }
   )
 
   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
@@ -425,25 +411,25 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
   suppressWarnings(
-     if(!file.exists("plus_hp_phasedz.txt")){
-        write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
-     } else {
-        write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-     }
+    if(!file.exists("plus_hp_phasedz.txt")){
+      write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+    } else {
+      write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+    }
   )
 
   suppressWarnings(
-     if(!file.exists("minus_hp_phasedz")){
-        write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
-     } else {
-        write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+    if (!file.exists("minus_hp_phasedz")) {
+      write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+    } else {
+      write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
     }
   )
 
   ### 7/4/24 refactor to combine siRNA and hairpin functions
 
 
-  if(plot_output == TRUE){
+  if (plot_output == TRUE) {
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
     plus_overhangs$zscore[is.na(plus_overhangs$zscore)] <- 0
 
@@ -457,30 +443,14 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- plot_density(data, reg_start, reg_stop)
-    #arc_plot <- plot_helix("helix.txt")
 
-    if(!Sys.info()['sysname'] == "Windows"){
-      #grDevices::dev.control("enable")
-      #R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-      #arc_plot <- grDevices::recordPlot()
-
-      arc_plot <- plot_helix("helix.txt")
+    if (!Sys.info()['sysname'] == "Windows") {
+      arc_plot <- plot_helix(file.path(wkdir, "helix.txt"))
       grDevices::dev.control("enable")
-      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-
-      arc_plot <- grDevices::recordPlot()
-
-      #print("Outputting arc plot only with grDevices.")
-
-      #grDevices::png(file = "helix_grDevice_arc.png", height = 10, width = 10, units = "in", res = 200)
-      #print(arc_plot)
-      #grDevices::dev.off()
-
-
+      R4RNA::plotHelix(helix = R4RNA::readHelix(file.path(wkdir, "helix.txt")), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+      arc_plot <- grDevices::recordPlot() # don't touch this...the boss gets mad
     } else {
-      R4RNA::plotHelix(helix = R4RNA::readHelix("helix.txt"), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-
-      #arc_plot <- plot_helix("helix.txt")
+      R4RNA::plotHelix(helix = R4RNA::readHelix(file.path(wkdir, "helix.txt")), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
       arc_plot <- grDevices::recordPlot()
     }
 
@@ -490,45 +460,19 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
 
-
     ## plot genome annotations (optional)
-    if(annotate_region == TRUE){
+    if (annotate_region == TRUE) {
       gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
       return(list(minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
                   arc_plot, gtf_plot, plus_phasedz, minus_phasedz))
     } else {
-
       return(list(minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
                   arc_plot, plus_phasedz, minus_phasedz))
-
     }
-      #left <- cowplot::plot_grid(arc_plot, gtf_plot, density_plot, rel_widths = c(1,1,1), ncol = 1, align = "vh", axis = "lrtb")
 
-      # Draw combined plot
-      #right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot, plus_phasedz, minus_phasedz, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1), rel_heights = c(1, 1, 1, 1))
-      #} else {
-      #left <- cowplot::plot_grid(arc_plot, NULL, density_plot, rel_widths = c(0.9,1,1), rel_heights = c(1,0.1,1), ncol = 1, align = "vh", axis = "lrtb")
-      # Draw combined plot
-      #right <- cowplot::plot_grid(plus_overhang_plot, minus_overhang_plot,plus_phasedz, minus_phasedz, ncol = 1, rel_heights = c(1,1,1,1), rel_widths = c(1,1,1,1), align = "vh", axis = "l")
-      #}
-
-      #final_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_heights = c(1,0.1,1), rel_widths = c(1,0.1, 1))
-
-      #prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
-
-      #if(out_type == "png" || out_type == "PNG"){
-      #  grDevices::png(file = paste0(prefix, "_hairpin_fold.png"), height = 9, width = 9, units = "in", res = 300)
-      #  print(final_plot)
-      #  grDevices::dev.off()
-      #} else {
-      #  grDevices::pdf(file = paste0(prefix, "_hairpin_fold.pdf"), height = 9, width = 9)
-      #  print(final_plot)
-      #  grDevices::dev.off()
-      #}
   } else {
      #if plot == FALSE just return ML res
 
     return(list(minus_res, plus_res))
   }
-
 }
