@@ -23,11 +23,12 @@ plot_gtf <- function(gtf_file, chrom_name, reg_start, reg_stop){
 
       gtf <- gtf %>% dplyr::filter(gtf$V1 == df$V1)
       rng <- seq(df$start, df$end)
-      idx <- which(gtf$V3 %in% rng | gtf$V4 %in% rng)
+      idx <- which(gtf$V4 %in% rng | gtf$V5 %in% rng)
       return(idx)
    }
 
    idx <- unlist(lapply(seq(nrow(df)), get_matches))
+
 
    gtf <- gtf[idx,] %>% dplyr::distinct()
 
@@ -73,14 +74,14 @@ plot_gtf <- function(gtf_file, chrom_name, reg_start, reg_stop){
       coord_df <- data.frame(ids = numeric(0), xvals = numeric(0), yvals = numeric(0), midx = numeric(0), midy = numeric(0), fill_col = numeric(0))
       calculate_coordinates <- function(gtf) {
          #take a data frame with multiple regions, determine coordinates of points, return as list
-         start <- as.numeric(gtf[3])
-         stop <- as.numeric(gtf[4])
-         if (gtf[5] == "+") {
+         start <- as.numeric(gtf[4])
+         stop <- as.numeric(gtf[5])
+         if (gtf[7] == "+") {
             ymin <- 3
             ymax <- 4
             perc_length <- (stop - start)*0.15
             xvals <- c(start, start, stop, stop + perc_length, stop)
-            ids <- c(rep(gtf[6], times = length(xvals)))
+            ids <- c(rep(gtf[3], times = length(xvals)))
             yvals <- c(ymin, ymax, ymax, ymin + 0.5, ymin)
             #midx <- start + 14
             midx <- ((stop - start)/2) + start
@@ -92,7 +93,7 @@ plot_gtf <- function(gtf_file, chrom_name, reg_start, reg_stop){
             perc_length <- (stop - start)*0.05
             xvals <- c(start, start - perc_length, start, stop, stop)
             yvals <- c(ymin, ymin + 0.5, ymax, ymax, ymin)
-            ids <- c(rep(gtf[6], times = length(xvals)))
+            ids <- c(rep(gtf[3], times = length(xvals)))
             midx <- ((stop - start)/2) + start
             #midx <- start + 14
             midy <- ymin + 0.5

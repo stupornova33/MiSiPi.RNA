@@ -5,6 +5,7 @@
 #' @param min_read_count An integer. Default is 1
 #' @param plot_output Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.
 #' @param path_to_RNAfold The full path to the RNAfold binary executable.
+#' @param path_to_RNAplot The full path to the RNAplot binary executable.
 #' @param pi_pal The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
 #' @param si_pal The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
 #' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
@@ -16,7 +17,7 @@
 #' @export
 
 set_vars <- function(roi, bam_file, genome, min_read_count = 1,
-                     plot_output = TRUE, path_to_RNAfold,
+                     plot_output = TRUE, path_to_RNAfold, path_to_RNAplot,
                      pi_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      annotate_region = FALSE,
@@ -44,6 +45,7 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
   stopifnot("Parameter `plot_output` only accepts TRUE or FALSE." = is.logical(plot_output))
   # path_to_RNAfold
   stopifnot("Parameter `path_to_RNAfold` must be a valid filepath to RNAfold." = file.exists(path_to_RNAfold))
+  stopifnot("Parameter `path_to_RNAplot` must be a valid filepath to RNAplot." = file.exists(path_to_RNAplot))
   # pi_pal - Dependent on plot_output
   pi_pal <- match.arg(pi_pal)
   # si_pal - Dependent on plot_output
@@ -124,6 +126,7 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
                    chromosome = chromosome,
                    plot_output = plot_output,
                    path_to_RNAfold = path_to_RNAfold,
+                   path_to_RNAplot = path_to_RNAplot,
                    min_read_count = min_read_count,
                    genome= genome,
                    bam_file = bam_file,

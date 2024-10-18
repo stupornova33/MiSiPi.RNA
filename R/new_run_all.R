@@ -13,6 +13,7 @@
 #' @param pi_pal a string
 #' @param plot_output a bool, TRUE or FALSE
 #' @param path_to_RNAfold a string
+#' @param path_to_RNAplot a string
 #' @param annotate_region a bool, TRUE or FALSE
 #' @param weight_reads a bool, TRUE or FALSE
 #' @param gtf_file a string
@@ -24,12 +25,24 @@
 
 
 
-new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-                        plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
+new_run_all <- function(chrom_name, reg_start, reg_stop,
+                        chromosome, length, bam_file,
+                        roi, genome_file, min_read_count,
+                        si_pal, pi_pal, plot_output,
+                        path_to_RNAfold, path_to_RNAplot,
+                        annotate_region,
+                        weight_reads, gtf_file,
+                        write_fastas, out_type) {
 
 
-  wrapped <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-                      plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type){
+  #wrapped <- function(chrom_name, reg_start, reg_stop,
+  #                    chromosome, length, bam_file,
+  #                    roi, genome_file, min_read_count,
+  #                    si_pal, pi_pal, plot_output,
+  #                    path_to_RNAfold, path_to_RNAplot,
+  #                    annotate_region,
+  #                    weight_reads, gtf_file,
+  #                    write_fastas, out_type) {
 
   width <- pos <- start <- end <- NULL
 
@@ -60,12 +73,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
                                      pi_phasedz = numeric(1),
                                      pi_phased26z = numeric(1))
 
-
+  print("setting locus")
   local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
 
-  local_ml$locus_length <- reg_stop - reg_start
+  local_ml$locus_length <- reg_stop - reg_start + 1
 
   print(local_ml$locus_length)
+  print("setting prefix")
   prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
 ####################################################################### process bam input files #############################################################################
@@ -90,23 +104,35 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
   chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
 
+  print("filtering forward and reverse dts")
   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
     # get the number of times a read occurs
-    dplyr::summarize(count = dplyr::n())
+    dplyr::summarize(count = dplyr::n()) %>%
+    na.omit()
 
   reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
     subset(width <= 32 & width >= 18) %>%
-    dplyr::mutate(start = pos, end = pos + width - 1) %>%
-    dplyr::select(-c(pos)) %>%
+    dplyr::rename(start = pos) %>%
+    dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
-    dplyr::summarize(count = dplyr::n())
+    dplyr::summarize(count = dplyr::n()) %>%
+    na.omit()
+
+  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+    dplyr::group_by(width) %>%
+    dplyr::summarize(count = sum(count))
+
+  print("output_readsize_dist")
+  output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
 
   chromP <- NULL
   chromM <- NULL
+  size_dist <- NULL
+
 ############################################################################ get extra metrics for ML ###################################################################
 
   # calculate
@@ -117,6 +143,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # ave_size
   # perc_first_nucT
   # perc_A10
+  print('Getting extra metrics for ML')
 
   sizes <- data.frame(width = c(forward_dt$width, reverse_dt$width))
 
@@ -124,6 +151,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   sample <- sizes[sample(1:nrow(sizes)),]
   sample <- head(sample, 5000)
   print(head(sample))
+  sizes <- NULL
 
   if((length(sample) > 3) && !(length(unique(sample)) == 1)){
     local_ml$log_shap_p <- log10(as.numeric(unlist(unname(shapiro.test(sample)))[2]))
@@ -137,41 +165,49 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   local_ml$unique_read_bias <- unique_read_count/total_read_count
 
+  if(nrow(forward_dt) > 0){
+    forward_dt <- no_weight(forward_dt, as.character(chrom_name))
+  } else {
+    forward_dt <- forward_dt %>%
+      dplyr::select(-c(count))
+  }
 
-  forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
-  reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
-  all_data <- rbind(forward_dt, reverse_dt)
+  if(nrow(reverse_dt) > 0){
+    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
+  } else {
+    reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
+  }
 
+  print("about to do historgram")
+  if (nrow(forward_dt) + nrow(reverse_dt) > 1) {
+    all_widths <- c(forward_dt$width, reverse_dt$width)
 
-  #d <- density.default(all_data$width)
-  print("about to do the histogram")
-  if(nrow(all_data) > 1){
-    m <- mean(all_data$width)
-    std <- sqrt(var(all_data$width))
+    m <- mean(all_widths)
+    std <- sd(all_widths)
 
-    if(!std == 0){
-      bin_width <- KernSmooth::dpih(all_data$width, scalest = "stdev")
+    if (!(std == 0)) {
+      bin_width <- KernSmooth::dpih(all_widths, scalest = "stdev")
 
-      nbins <- seq(min(all_data$width) - bin_width,
-             max(all_data$width) + bin_width,
-             by = bin_width)
+      nbins <- seq(min(all_widths) - bin_width,
+                   max(all_widths) + bin_width,
+                   by = bin_width)
 
-      hist(all_data$width, density=20, breaks = 5, prob=TRUE,
-       xlab="read size", ylim=c(0, 2),
-      main="normal curve over histogram")
+      hist(all_widths, density = 20, breaks = 5, prob = TRUE,
+           xlab = "Read size", ylim = c(0, 2),
+           main = "Normal curve over histogram")
 
-      curve <- curve(dnorm(x, mean=m, sd=std),
-        col="darkblue", lwd=2, add=TRUE, yaxt="n")
+      curve <- curve(dnorm(x, mean = m, sd = std),
+                     col = "darkblue", lwd = 2, add = TRUE, yaxt = "n")
 
-      local_ml$auc <- sum(diff(curve$x) * (head(curve$y,-1)+tail(curve$y,-1)))/2
-     } else {
-         local_ml$auc <- 0
-     }
-
+      local_ml$auc <- sum(diff(curve$x) * (head(curve$y, -1) + tail(curve$y, -1))) / 2
     } else {
-       local_ml$auc <- -1
+      local_ml$auc <- 0
     }
+  } else {
+    local_ml$auc <- -1
+  }
 
+  all_widths <- NULL
 
   print("got past the histogram")
 
@@ -189,8 +225,10 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
      local_ml$strand_bias <- perc_minus
   }
 
-  local_ml$perc_GC <- get_GC_content(all_data)
-  read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  all_seqs <- c(forward_dt$seq, reverse_dt$seq)
+  local_ml$perc_GC <- get_GC_content(all_seqs)
+
+  read_dist <- get_read_size_dist(forward_dt, reverse_dt)
 
   ave_size <- highest_sizes(read_dist)
 
@@ -198,7 +236,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
 
   cat(file = logfile, "Creating size plots\n", append = TRUE)
 
-  if(!dir.exists('run_all/size_plots/')) dir.create('run_all/size_plots/')
+  if (!dir.exists('run_all/size_plots/')) {
+    dir.create('run_all/size_plots/')
+  }
 
   if(plot_output == TRUE){
     size_dir <- 'run_all/size_plots/'
@@ -206,10 +246,28 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   }
 
   local_ml$perc_first_nucT <- first_nuc_T(forward_dt, reverse_dt)
-  local_ml$perc_A10 <- get_nuc_10(forward_dt, reverse_dt)
 
+  all_nuc_10 <- all_seqs %>%
+    stringr::str_sub(10, 10)
+  all_nuc_10_A <- sum(all_nuc_10 == "A")
+  local_ml$perc_A10 <- all_nuc_10_A / length(all_nuc_10)
+
+  all_seqs <- NULL
+  all_nuc_10 <- NULL
+  all_nuc_10_A <- NULL
   max_sizes <- NULL
   read_dist <- NULL
+
+
+
+
+
+
+
+
+
+
+
 
 ############################################################################ run siRNA function #######################################################################
   # calculate
@@ -219,14 +277,23 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # hp_perc_paired
 
   cat(file = logfile, "Begin siRNA function\n", append = TRUE)
-  if(!dir.exists('run_all/siRNA_dir/')) dir.create('run_all/siRNA_dir/')
+  if(!dir.exists('run_all/siRNA_dir/')) {
+    dir.create('run_all/siRNA_dir/')
+  }
 
   si_dir <- 'run_all/siRNA_dir/'
-  si_log <- file.create('si_logfile.txt')
+  si_log <- 'si_logfile.txt'
 
+  if (!file.exists(file.path(si_dir, si_log))) {
+    file.create(file.path(si_dir, si_log))
+  }
 
-  si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, si_log, si_dir, si_pal, plot_output, path_to_RNAfold,
-                           annotate_region, weight_reads, gtf_file, write_fastas, out_type)
+  si_res <- run_siRNA_function(chrom_name, reg_start, reg_stop,
+                               length, min_read_count, genome_file,
+                               bam_file, si_log, si_dir,
+                               si_pal, plot_output, path_to_RNAfold,
+                               annotate_region, weight_reads, gtf_file,
+                               write_fastas, out_type)
 
   max_si_heat <- get_max_si_heat(si_res)
 
@@ -254,7 +321,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # hp_phasedz [ maximum value of plus_phasedz[1:4] and minus_phasedz[1:4] ]
   # MFE change to hp_mfe
   # hp_dicerz [ maximum value of plus_dicerz and minus_dicerz]
-
+  print("getting hairpin-specific results")
   #plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
   plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
   #if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
@@ -305,13 +372,30 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   # mirna_overlapz
 
   cat(file = logfile, "Begin miRNA function\n", append = TRUE)
-  if(!dir.exists('run_all/miRNA_dir/')) dir.create('run_all/miRNA_dir/')
+  if(!dir.exists('run_all/miRNA_dir/')) {
+    dir.create('run_all/miRNA_dir/')
+  }
+
   miRNA_dir <- 'run_all/miRNA_dir/'
-  mi_log <- file.create(paste0(miRNA_dir, 'mi_logfile.txt'))
-  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "+", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads, write_fastas, out_type)
+  mi_log <- 'mi_logfile.txt'
+
+  if (!file.exists(file.path(miRNA_dir, mi_log))) {
+    file.create(paste0(miRNA_dir, mi_log))
+  }
+
+  mi_res <- new_miRNA_function(chrom_name, reg_start, reg_stop,
+                               chromosome, length, "+",
+                               min_read_count, genome_file, bam_file,
+                               mi_log, miRNA_dir,
+                               plot_output,
+                               path_to_RNAfold,
+                               path_to_RNAplot,
+                               weight_reads,
+                               write_fastas,
+                               out_type)
 
   #Look at first result
-  mi_res <- mi_res[[1]]
+  #mi_res <- mi_res[[1]]
   mirnaMFE_plus <- mi_res$mfe
 
   pp_plus <- mi_res$perc_paired
@@ -323,9 +407,18 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
     plus_overlapz <- NA
   }
 
-  mi_res <- run_miRNA_function(chrom_name, reg_start, reg_stop, chromosome, length, "-", min_read_count, genome_file, bam_file, mi_log, miRNA_dir, plot_output, path_to_RNAfold, weight_reads, write_fastas, out_type)
+  mi_res <- new_miRNA_function(chrom_name, reg_start, reg_stop,
+                               chromosome, length, "-",
+                               min_read_count, genome_file, bam_file,
+                               mi_log, miRNA_dir,
+                               plot_output,
+                               path_to_RNAfold,
+                               path_to_RNAplot,
+                               weight_reads,
+                               write_fastas,
+                               out_type)
 
-  mi_res <- mi_res[[1]]
+  #mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
   pp_minus <- mi_res$perc_paired
   mirna_dicerz_minus <- mi_res$overhangs$zscore[5]
@@ -375,8 +468,18 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   if(!dir.exists('run_all/piRNA_dir/')) dir.create('run_all/piRNA_dir/')
 
   piRNA_dir <- 'run_all/piRNA_dir/'
-  pi_log <- file.create(paste0(piRNA_dir, 'pi_logfile.txt'))
-  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, pi_log, piRNA_dir, pi_pal, plot_output = FALSE, weight_reads, write_fastas, out_type)
+  pi_log <- "pi_logfile.txt"
+  if (!file.exists(file.path(piRNA_dir, pi_log))) {
+    file.create(paste0(piRNA_dir, pi_log))
+  }
+
+  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop,
+                               length, bam_file, genome_file,
+                               pi_log, piRNA_dir, pi_pal,
+                               plot_output = plot_output,
+                               weight_reads,
+                               write_fastas,
+                               out_type)
 
 
   #if(!is.na(pi_res[[1]])){
@@ -471,15 +574,21 @@ new_run_all <- function(chrom_name, reg_start, reg_stop, chromosome, length, bam
   utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 
   print("file has been written.")
-  }
+  #}
 
-  tryCatch(
-    wrapped(chrom_name, reg_start, reg_stop, chromosome, length, bam_file, roi, genome_file, min_read_count, si_pal, pi_pal,
-            plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type),
-    error = function(e) {
-      message(conditionMessage(e))
-    }
-  )
+  #tryCatch(
+  #  wrapped(chrom_name, reg_start, reg_stop,
+  #          chromosome, length, bam_file,
+  #          roi, genome_file, min_read_count,
+  #          si_pal, pi_pal, plot_output,
+  #          path_to_RNAfold, path_to_RNAplot,
+  #          annotate_region,
+  #          weight_reads, gtf_file,
+  #          write_fastas, out_type),
+  #  error = function(e) {
+  #    message(paste("Uh oh boss:", conditionMessage(e)))
+  #  }
+  #)
 
 
 }

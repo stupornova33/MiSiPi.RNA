@@ -64,6 +64,7 @@ plot_sizes_only <- function(wkdir,geno, bam_file, bed_file){
    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>% dplyr::mutate(width = end - start + 1)
 
    all_data <- rbind(forward_dt, reverse_dt)
+   all_data <- na.omit(all_data)
 
    if(nrow(all_data) > 0){
      png(paste0(wkdir, prefix, "_", geno, "_density.png"), height = 5, width = 5, units = "in", res = 300)

@@ -8,13 +8,14 @@
 #' @param reg_stop a whole number
 #' @return GRobj
 
-
-
 #' @export
 
-
-
-makeGRobj <- function(data, name, reg_start, reg_stop){
-   GRobj <- GenomicRanges::makeGRangesFromDataFrame(data, keep.extra.columns=TRUE, ignore.strand=TRUE, seqnames.field = name, start.field=reg_start, end.field=reg_stop)
-   return(GRobj)
+makeGRobj <- function(data, name, reg_start, reg_stop) {
+  GRobj <- GenomicRanges::makeGRangesFromDataFrame(data,
+                                                   keep.extra.columns=TRUE,
+                                                   ignore.strand=TRUE,
+                                                   seqnames.field = name,
+                                                   start.field=reg_start,
+                                                   end.field=reg_stop)
+  return(GRobj)
 }

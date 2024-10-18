@@ -3,67 +3,56 @@
 #' takes two read dataframes
 #' returns table of phasing scores
 #'
-#' @param df1 a character passed in, either "+" or "-"
-#' @param df2 a string
+#' @param df1 a dataframe of summarized reads with a duplicates column
+#' @param df2 a dataframe of summarized reads with a duplicates column
 #' @param n the number of bases to transform the read by
 #' @return phased_counts
 
 #' @export
 
+calc_phasing <- function(df1, df2, n) {
 
-calc_phasing <- function(df1, df2, n){
-
-
-dist <- start_r1 <- widthx <- start_r2 <- widthy <- num.y <- num.x <- Zscore <- num <- NULL
-
-
-# subsample dfs with more than 4000 reads for find overlaps
-
-df1 <- df1[sample(1:nrow(df1)),]
-df2 <- df2[sample(1:nrow(df2)),]
-df1 <- utils::head(df1, 4000)
-df2 <- utils::head(df2, 4000)
-phased <- find_hp_overlaps(df1, df2, n)
-
-phased <- phased %>%
-  dplyr::filter(dist >= 0) %>%
-  dplyr::mutate(r1_end = r1_start + r1_width - 1, r2_end = r2_start + r2_width - 1)
-
-if(!nrow(phased) == 0){
-  print('making phased_counts')
-  #filter_dt <- NULL
-  phased_counts <- phased %>%
-    dplyr::group_by(dist) %>%
-    dplyr::summarize(num= dplyr::n()) %>%
-    dplyr::mutate(dist = abs(dist)) %>%
-    #dplyr::filter(dist <= 50)
-    dplyr::filter(dist <= 50)
-
-
-  #filter_r1_dt <- NULL
-  #filter_r2_dt <- NULL
-} else {
-  print('setting phased_counts to zero')
-  phased_counts <- data.table::data.table(dist = 1, num = 0L)
-}
-
-
-#make the results data table
-print('making all_table')
-all_table <- data.table::data.table(dist=seq(0,50), num=rep(0, 51))
-
-if(nrow(phased_counts) >= 1){
-  phased_counts <- data.table::setDT(dplyr::full_join(phased_counts, all_table, by = "dist", "num"))
-  phased_counts[is.na(phased_counts)] <- 0
-  phased_counts <- phased_counts %>% dplyr::select(-c(num.y))
-  phased_counts$Zscore <- calc_zscore(phased_counts$num.x)
-  phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num.x, phased_z = Zscore)
-} else {
-  phased_counts <- data.table::data.table(dist=seq(0,50), num=rep(0, 51))
-  phased_counts$Zscore <- calc_zscore(phased_counts$num)
-  phased_counts <- phased_counts %>% dplyr::rename(phased_dist = dist, phased_num = num, phased_z = Zscore)
-}
-
-return(phased_counts)
-
+  dist <- num.y <- num.x <- Zscore <- num <- NULL
+  
+  phased <- find_hp_overlaps(df1, df2, n)
+  
+  if (!nrow(phased) == 0) {
+    print('making phased_counts')
+    phased <- phased %>%
+      dplyr::mutate(total_dupes = r1_dupes * r2_dupes) %>%
+      dplyr::group_by(dist) %>%
+      dplyr::summarize(num = sum(total_dupes)) %>%
+      dplyr::mutate(dist = abs(dist))
+  } else {
+    print('setting phased_counts to zero')
+    phased <- data.table::data.table(dist = 1, num = 0L)
+  }
+  
+  #make the results data table
+  print('making all_table')
+  all_table <- data.table::data.table(dist = seq(0,50),
+                                      num = rep(0, 51))
+  
+  if (nrow(phased) >= 1) {
+    phased <- data.table::setDT(dplyr::full_join(phased,
+                                                 all_table,
+                                                 by = "dist", "num"))
+    phased[is.na(phased)] <- 0
+    phased <- phased %>%
+      dplyr::select(-num.y)
+    phased$Zscore <- calc_zscore(phased$num.x)
+    phased <- phased %>%
+      dplyr::rename(phased_dist = dist,
+                    phased_num = num.x,
+                    phased_z = Zscore)
+  } else {
+    phased <- data.table::data.table(dist=seq(0,50), num=rep(0, 51))
+    phased$Zscore <- calc_zscore(phased$num)
+    phased <- phased_counts %>%
+      dplyr::rename(phased_dist = dist,
+                    phased_num = num,
+                    phased_z = Zscore)
+  }
+  
+  return(phased)
 }

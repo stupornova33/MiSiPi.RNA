@@ -10,9 +10,9 @@ returns table of phasing scores}
 calc_phasing(df1, df2, n)
 }
 \arguments{
-\item{df1}{a character passed in, either "+" or "-"}
+\item{df1}{a dataframe of summarized reads with a duplicates column}
 
-\item{df2}{a string}
+\item{df2}{a dataframe of summarized reads with a duplicates column}
 
 \item{n}{the number of bases to transform the read by}
 }

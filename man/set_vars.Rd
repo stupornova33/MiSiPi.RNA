@@ -11,6 +11,7 @@ set_vars(
   min_read_count = 1,
   plot_output = TRUE,
   path_to_RNAfold,
+  path_to_RNAplot,
   pi_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
   si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
   annotate_region = FALSE,
@@ -32,6 +33,8 @@ set_vars(
 \item{plot_output}{Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.}
 
 \item{path_to_RNAfold}{The full path to the RNAfold binary executable.}
+
+\item{path_to_RNAplot}{The full path to the RNAplot binary executable.}
 
 \item{pi_pal}{The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
 
