@@ -236,13 +236,25 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   cat(file = logfile, "Creating size plots\n", append = TRUE)
 
-  if (!dir.exists('run_all/size_plots/')) {
-    dir.create('run_all/size_plots/')
-  }
-
-  if(plot_output == TRUE){
-    size_dir <- 'run_all/size_plots/'
-    size_plots <- plot_sizes(read_dist)
+  if (plot_output == TRUE) {
+    size_dir <- file.path(getwd(), "run_all", "size_plots")
+    
+    if (!dir.exists(size_dir)) {
+      dir.create(size_dir)
+    }
+    
+    plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
+    
+    size_plot <- plot_sizes(read_dist)
+    plot_filename <- paste("read_size_distribution", out_type, sep = ".")
+    plot_file <- file.path(size_dir, plot_filename)
+    ggplot2::ggsave(plot = size_plot,
+                    filename = plot_file,
+                    device = out_type,
+                    height = 8,
+                    width = 11,
+                    units = "in"
+                    )
   }
 
   local_ml$perc_first_nucT <- first_nuc_T(forward_dt, reverse_dt)
