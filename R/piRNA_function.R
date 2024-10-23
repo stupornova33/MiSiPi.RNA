@@ -14,8 +14,8 @@ piRNA_function <- function(vars){
    if(!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
 
                             #chrom_name  reg_start  reg_stop   length     bam_file    genome     logfile  wikdir  pal
-   mapply(run_piRNA_function, vars[[1]], vars[[2]], vars[[3]], vars[[4]], vars[[10]], vars[[9]], logfile, wkdir, vars[[12]],
+   mapply(run_piRNA_function, vars$chrom_name, vars$reg_start, vars$reg_stop, vars$length, vars$bam_file, vars$genome, logfile, wkdir, vars$pi_pal,
             #plot_output weight_reads write_fastas out_type
-           vars[[6]], vars[[15]], vars[[17]], vars[[18]])
+           vars$plot_output, vars$weight_reads, vars$write_fastas, vars$out_type)
 
 }

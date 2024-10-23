@@ -63,7 +63,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
   size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
     dplyr::group_by(width) %>%
     dplyr::summarise(count = sum(count))
-   
+
   output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
   chromP <- NULL
@@ -99,9 +99,9 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
           "Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n",
           append = TRUE)
     }
-    
+
     print("Completed getting weighted dataframes.")
-    
+
     # check to see if subsetted dfs are empty
     # have to keep doing this at each step otherwise errors will happen
     if (nrow(forward_dt) > 0 & nrow(reverse_dt) > 0) {
@@ -112,11 +112,11 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       f_summarized <- forward_dt %>%
         dplyr::group_by_all() %>%
         dplyr::count()
-      
+
       r_summarized <- reverse_dt %>%
         dplyr::group_by_all() %>%
         dplyr::count()
-      
+
       # get overlapping reads
       overlaps <- find_overlaps(f_summarized, r_summarized) %>%
         dplyr::mutate(p5_overhang = r2_end - r1_end,
@@ -172,10 +172,10 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
    overhang_output <- overhang_output[, c(10, 1:9)]
 
    suppressWarnings(
-      if(!file.exists("siRNA_dicerz.txt")){
-         utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+      if(!file.exists(paste0(wkdir, "siRNA_dicerz.txt"))){
+         utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = F)
       } else {
-         utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+         utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = F)
       }
    )
 
@@ -184,12 +184,13 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
    heat_output <- t(c(prefix, as.vector(results)))
 
    suppressWarnings(
-      if(!file.exists("siRNA_heatmap.txt")){
-         utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
-      } else {
-         utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-      }
+     if(!file.exists(paste0(wkdir, "siRNA_heatmap.txt"))){
+       utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
+     } else {
+       utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+     }
    )
+   print("heatmap has been written.")
 
 
    print("Beginning hairpin function.")

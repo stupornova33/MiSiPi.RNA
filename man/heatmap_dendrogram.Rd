@@ -5,7 +5,7 @@
 \title{extracts read data and plots counts by read size
 for multiple loci in a bed file}
 \usage{
-heatmap_dendrogram(bam_file, logfile, chrom_name, reg_start, reg_stop)
+heatmap_dendrogram(bam_file, logfile, bedfile)
 }
 \arguments{
 \item{bam_file}{a a string}
