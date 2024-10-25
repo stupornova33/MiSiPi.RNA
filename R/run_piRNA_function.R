@@ -229,7 +229,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   } else {
     z_df <- data.frame(Overlap = c(seq(4,30)), Z_score = c(rep(0, times = 27)))
-    heat_results <- matrix(data = 0, nrow = 18, ncol = 18)
+    heat_results <- matrix(data = 0, nrow = 17, ncol = 17)
     row.names(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
     colnames(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
   }
@@ -329,7 +329,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
 
   suppressWarnings(
-    if (!file.exists("phased_plus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir,"phased_plus_piRNA_zscores.txt"))){
       write.table(phased_plus_output,
                   file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -351,7 +351,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   suppressWarnings(
-    if (!file.exists("phased26_plus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir,"phased26_plus_piRNA_zscores.txt"))){
       write.table(phased26_plus_output,
                   file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -459,7 +459,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   tbl <- dplyr::select(tbl,52,1:51)
 
   suppressWarnings(
-    if (!file.exists("phased_minus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir, "phased_minus_piRNA_zscores.txt"))){
       write.table(phased_minus_output,
                   file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -481,7 +481,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   suppressWarnings(
-    if (!file.exists("phased26_minus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir,"phased26_minus_piRNA_zscores.txt"))){
       write.table(phased26_minus_output,
                   file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -503,7 +503,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   suppressWarnings(
-    if(!file.exists("all_phased_piRNA_zscores.txt")){
+    if(!file.exists(paste0(wkdir,"all_phased_piRNA_zscores.txt"))){
       write.table(tbl,
                   file = paste0(wkdir, "all_phased_piRNA_zscores.txt"),
                   sep = "\t",
