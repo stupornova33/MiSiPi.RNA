@@ -270,17 +270,6 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   max_sizes <- NULL
   read_dist <- NULL
 
-
-
-
-
-
-
-
-
-
-
-
 ############################################################################ run siRNA function #######################################################################
   # calculate
   # highest_si_col
@@ -289,7 +278,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   # hp_perc_paired
 
   cat(file = logfile, "Begin siRNA function\n", append = TRUE)
-  if(!dir.exists('run_all/siRNA_dir/')) {
+  if (!dir.exists('run_all/siRNA_dir/')) {
     dir.create('run_all/siRNA_dir/')
   }
 
