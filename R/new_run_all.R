@@ -246,7 +246,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
     plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
     
     size_plot <- plot_sizes(read_dist)
-    plot_filename <- paste("read_size_distribution", out_type, sep = ".")
+    plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
     plot_file <- file.path(size_dir, plot_filename)
     ggplot2::ggsave(plot = size_plot,
                     filename = plot_file,
