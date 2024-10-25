@@ -19,7 +19,6 @@
 #'
 run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal,
                                plot_output, weight_reads, write_fastas, out_type) {
-  message("Started run_piRNA_function()")
   
   prefix <- get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
@@ -51,7 +50,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
 
   # for the read size dist plot
-  message("Getting read size distribution")
   cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
 
   read_dist <- get_read_size_dist(forward_dt, reverse_dt)
@@ -224,7 +222,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       })
     output <- NULL
 
-    message("Making z_df")
     # Put results into table
     z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
     #z_res <- NULL
@@ -248,9 +245,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   ################## compute plus strand
 
-  #message("Setting chrom with getChrPlus")
-  #chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-  #message("Setting chrom: Success")
   cat(file = paste0(wkdir, logfile), paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
   print("Calculating phasing on plus strand.")
   
@@ -642,7 +636,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     ave_minus_26z <- -33
   }
 
-  message("Made it to the return statement of run_piRNA_function")
   #return(c(ave_z, ave_26z))
   #cat(file = paste0(wkdir, logfile), paste0("Returning results for ML table.", "\n"), append = TRUE)
   #results for ML table
