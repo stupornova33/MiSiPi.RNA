@@ -12,7 +12,7 @@
 
 
 fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold, wkdir){
-   prefix <- paste0(chrom_name,"-", start, "-", stop)
+   # prefix <- get_region_string(chrom_name, start, stop) # Commented out as it wasn't being used
    cat(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE)
 
    syscheck <- unlist(unname(Sys.info()[1]))

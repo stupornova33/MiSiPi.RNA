@@ -21,7 +21,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                                plot_output, weight_reads, write_fastas, out_type) {
   message("Started run_piRNA_function()")
   
-  prefix <- paste0(chrom_name, ":", reg_start, "_", reg_stop)
+  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
 
@@ -208,8 +208,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
     colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
 
-    prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-
     output <- t(c(prefix, as.vector(heat_results)))
 
     suppressWarnings(
@@ -313,9 +311,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   #combine the results tables
   plus_df <- cbind(phased_plus_counts, phased_26_plus_counts)
-
-  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-
 
   phased_plus_output <- phased_plus_counts %>%
     dplyr::select(phased_z)
@@ -436,8 +431,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                   phased26_z = phased_z)
 
   minus_df <- cbind(phased_minus_counts, phased_26_minus_counts)
-
-  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
   phased_minus_output <- phased_minus_counts %>%
     dplyr::select(phased_z)

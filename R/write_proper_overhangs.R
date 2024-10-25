@@ -99,8 +99,10 @@ write_proper_overhangs <- function(dt1, dt2, wkdir, prefix, overlaps, suffix) {
   rreads <- NULL
   freads <- NULL
 
+  filename <- paste0(prefix, "_dicer", suffix, ".fa")
+  
   write.table(unlist(fastas),
-              file = paste0(prefix, "_dicer", suffix, ".fa"),
+              file = file.path(wkdir, filename),
               sep = " ",
               quote = FALSE,
               row.names = FALSE,

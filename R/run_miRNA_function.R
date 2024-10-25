@@ -91,7 +91,7 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    size_dist <- chrom_df %>%
      dplyr::group_by(width) %>% dplyr::summarise(count = sum(count))
 
-   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+   prefix <- get_region_string(chrom_name, reg_start, reg_stop)
    output_readsize_dist(size_dist, prefix, wkdir, strand = strand, type = "miRNA")
 
 
@@ -323,7 +323,8 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
    #make the plots for all the sequences in the "reduced_list"
    plot_rna_struct <- function(x){
       pos <- count <- count.x <- NULL
-      prefix <- paste0(wkdir, chrom_name, "-", reduced_list[[x]]$start, "-", reduced_list[[x]]$stop)
+      #prefix <- paste0(wkdir, chrom_name, "-", reduced_list[[x]]$start, "-", reduced_list[[x]]$stop)
+      prefix <- get_region_string(chrom_name, reduced_list[[x]]$start, reduced_list[[x]]$stop)
       mfe <- reduced_list[[x]]$mfe
       print(prefix)
 
@@ -371,50 +372,50 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       )
 
 
-      if(plot_output == TRUE){
-         #make the plots
-         dicer_sig <- plot_overhangz(overhangs, "+")
-         print(overhangs)
-         #make new pileups dt for structure
+      if (plot_output == TRUE) {
+        #make the plots
+        dicer_sig <- plot_overhangz(overhangs, "+")
+        print(overhangs)
+        #make new pileups dt for structure
 
-         # get the per-base coverage
-         # returns a two column df with pos and coverage
-         new_pileups <- get_read_pileups(reduced_list[[x]]$start, reduced_list[[x]]$stop, bam_scan, bam_file)  %>%
+        # get the per-base coverage
+        # returns a two column df with pos and coverage
+        new_pileups <- get_read_pileups(reduced_list[[x]]$start, reduced_list[[x]]$stop, bam_scan, bam_file)  %>%
             dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
 
-         # make a table with the same positions but empty cov column for combining with pileups
-         # necessary because the pileups table doesn't have all positions from the first nt to the last because
-         # coverages of zero aren't reported
-         # set these to zero below
-         empty_table <- data.frame(pos = c(seq(reduced_list[[x]]$start, reduced_list[[x]]$stop)), count = c(0))
+        # make a table with the same positions but empty cov column for combining with pileups
+        # necessary because the pileups table doesn't have all positions from the first nt to the last because
+        # coverages of zero aren't reported
+        # set these to zero below
+        empty_table <- data.frame(pos = c(seq(reduced_list[[x]]$start, reduced_list[[x]]$stop)), count = c(0))
 
 
-         struct_table <- merge(empty_table, new_pileups, by = 'pos', all.x = TRUE) %>%
+        struct_table <- merge(empty_table, new_pileups, by = 'pos', all.x = TRUE) %>%
             dplyr::select(-c(count.x)) %>% dplyr::rename('count' = count.y)
-         #set NA to zero
-         struct_table[is.na(struct_table)] = 0
+        #set NA to zero
+        struct_table[is.na(struct_table)] = 0
 
-         # the pileup df is the whole region of interest, so subset the df to match
-         # the coordinates of the reduced_list (potential miRNAs)
-         seq_cov_dat <- subset(struct_table, pos >= reduced_list[[x]]$start & pos <= reduced_list[[x]]$stop)
+        # the pileup df is the whole region of interest, so subset the df to match
+        # the coordinates of the reduced_list (potential miRNAs)
+        seq_cov_dat <- subset(struct_table, pos >= reduced_list[[x]]$start & pos <= reduced_list[[x]]$stop)
 
-         seq_cov_dat$count <- seq_cov_dat$count + 1
-         seq_cov_dat$logcount <- log2(seq_cov_dat$count)
-         # assign colors to the coverage values
-         dat_with_colorvals <- data.table::as.data.table(colorNtByDepth(seq_cov_dat))
+        seq_cov_dat$count <- seq_cov_dat$count + 1
+        seq_cov_dat$logcount <- log2(seq_cov_dat$count)
+        # assign colors to the coverage values
+        dat_with_colorvals <- data.table::as.data.table(colorNtByDepth(seq_cov_dat))
 
-         #######################################################################################
-         graphics::par(mar = c(1,1,1,1))
-         #print(reduced_list)
+        #######################################################################################
+        graphics::par(mar = c(1,1,1,1))
+        #print(reduced_list)
 
-         # assign the color values to each nucloeotide in the predicted structure
-         # this function is obscenely complicated
-         # creates a 5-line text output for plotting similar to miRBase plots
-         miRNA_list <- process_miRNA_struct(reduced_list[[x]]$vienna, reduced_list[[x]]$converted)
+        # assign the color values to each nucloeotide in the predicted structure
+        # this function is obscenely complicated
+        # creates a 5-line text output for plotting similar to miRBase plots
+        miRNA_list <- process_miRNA_struct(reduced_list[[x]]$vienna, reduced_list[[x]]$converted)
 
 
-         # function to place dashes in the correct place
-         insert_vector <- function(input, position, values) {
+        # function to place dashes in the correct place
+        insert_vector <- function(input, position, values) {
             options(warn=-1)
             #Create result vector
             res <- numeric(length(input) + length(values))
@@ -426,137 +427,133 @@ run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
             #Insert input vector
             res[inds2] <- input
             return(res)
-         }
+        }
 
-         ### replace paired bases with their respective nucleotide and unpaired bases with "-"
-         ### get positions where there is only a space
-         ### combine color values with this data
+        ### replace paired bases with their respective nucleotide and unpaired bases with "-"
+        ### get positions where there is only a space
+        ### combine color values with this data
 
-         top <- unname(unlist(miRNA_list$top[3]))
-         mid_top <- unname(unlist(miRNA_list$mid_top[3]))
-         mid_bottom <- unname(unlist(miRNA_list$mid_bottom[3]))
-         bottom <- unname(unlist(miRNA_list$bottom[3]))
-         char <- unname(unlist(miRNA_list$char_df[3]))
+        top <- unname(unlist(miRNA_list$top[3]))
+        mid_top <- unname(unlist(miRNA_list$mid_top[3]))
+        mid_bottom <- unname(unlist(miRNA_list$mid_bottom[3]))
+        bottom <- unname(unlist(miRNA_list$bottom[3]))
+        char <- unname(unlist(miRNA_list$char_df[3]))
 
-         #get the positions of paired bases on each line
-         top_pos <- which(top == "U" | top == "C" | top == "G" | top == "A")
+        #get the positions of paired bases on each line
+        top_pos <- which(top == "U" | top == "C" | top == "G" | top == "A")
 
-         mid_top_pos <- which(mid_top == "U" | mid_top == "C" | mid_top == "G" | mid_top == "A")
+        mid_top_pos <- which(mid_top == "U" | mid_top == "C" | mid_top == "G" | mid_top == "A")
 
-         char_pos <- which(char == "U" | char == "C" | char == "G" | char == "A")
+        char_pos <- which(char == "U" | char == "C" | char == "G" | char == "A")
 
-         bottom_pos <- which(bottom == "U" | bottom == "C" | bottom == "G" | bottom == "A")
+        bottom_pos <- which(bottom == "U" | bottom == "C" | bottom == "G" | bottom == "A")
 
-         mid_bottom_pos <- which(mid_bottom == "U" | mid_bottom == "C" | mid_bottom == "G" | mid_bottom == "A")
+        mid_bottom_pos <- which(mid_bottom == "U" | mid_bottom == "C" | mid_bottom == "G" | mid_bottom == "A")
 
-         # get the position of unpaired bases on each line that has them
-         top_dash_pos <- which(top == "-")
-         bottom_dash_pos <- which(bottom == "-")
+        # get the position of unpaired bases on each line that has them
+        top_dash_pos <- which(top == "-")
+        bottom_dash_pos <- which(bottom == "-")
 
-         # reverse the bottom half of the data because they will be reversed!
-         rev_color_dat <- rev(dat_with_colorvals$bin)
-         # this is the top half
-         color_half1 <- dat_with_colorvals$bin[1:(length(mid_top_pos) + length(top_pos))]
-         # this is the bottom half
-         color_half2 <- rev_color_dat[1:(length(mid_bottom_pos) + length(bottom_pos))]
+        # reverse the bottom half of the data because they will be reversed!
+        rev_color_dat <- rev(dat_with_colorvals$bin)
+        # this is the top half
+        color_half1 <- dat_with_colorvals$bin[1:(length(mid_top_pos) + length(top_pos))]
+        # this is the bottom half
+        color_half2 <- rev_color_dat[1:(length(mid_bottom_pos) + length(bottom_pos))]
 
-         # put the dashes in their place
-         color_half1 <- insert_vector(color_half1, top_dash_pos, rep("-", length(top_dash_pos)))
-         color_half2 <- insert_vector(color_half2, bottom_dash_pos, rep("-", length(bottom_dash_pos)))
+        # put the dashes in their place
+        color_half1 <- insert_vector(color_half1, top_dash_pos, rep("-", length(top_dash_pos)))
+        color_half2 <- insert_vector(color_half2, bottom_dash_pos, rep("-", length(bottom_dash_pos)))
 
-         # get the number of unique expression values so we know how many colors to use
-         num_uniq <- length(unique(dat_with_colorvals$bin)) + 1
+        # get the number of unique expression values so we know how many colors to use
+        num_uniq <- length(unique(dat_with_colorvals$bin)) + 1
 
-         # use the positions gotten earler to create a vector containing the color by position
-         mid_color_vec <- dat_with_colorvals$bin[char_pos]
+        # use the positions gotten earler to create a vector containing the color by position
+        mid_color_vec <- dat_with_colorvals$bin[char_pos]
 
-         top_vec <- numeric(length(top))
-         top_vec[top_pos] <- color_half1[top_pos]
-         top_vec[(top_vec == 0)] <- num_uniq
+        top_vec <- numeric(length(top))
+        top_vec[top_pos] <- color_half1[top_pos]
+        top_vec[(top_vec == 0)] <- num_uniq
 
-         mid_top_vec <- numeric(length(mid_top))
-         mid_top_vec[mid_top_pos] <- color_half1[mid_top_pos]
-         mid_top_vec[(mid_top_vec == 0)] <- num_uniq
+        mid_top_vec <- numeric(length(mid_top))
+        mid_top_vec[mid_top_pos] <- color_half1[mid_top_pos]
+        mid_top_vec[(mid_top_vec == 0)] <- num_uniq
 
-         char_vec <- numeric(length(char))
-         char_vec[char_pos] <- mid_color_vec
-         char_vec[(char_vec == 0)] <- num_uniq
+        char_vec <- numeric(length(char))
+        char_vec[char_pos] <- mid_color_vec
+        char_vec[(char_vec == 0)] <- num_uniq
 
-         mid_bottom_vec <- numeric(length(mid_bottom))
-         mid_bottom_vec[mid_bottom_pos] <- color_half2[mid_bottom_pos]
-         mid_bottom_vec[(mid_bottom_vec == 0)] <- num_uniq
+        mid_bottom_vec <- numeric(length(mid_bottom))
+        mid_bottom_vec[mid_bottom_pos] <- color_half2[mid_bottom_pos]
+        mid_bottom_vec[(mid_bottom_vec == 0)] <- num_uniq
 
-         bottom_vec <- numeric(length(bottom))
-         bottom_vec[bottom_pos] <- color_half2[bottom_pos]
-         bottom_vec[(bottom_vec == 0)] <- num_uniq
+        bottom_vec <- numeric(length(bottom))
+        bottom_vec[bottom_pos] <- color_half2[bottom_pos]
+        bottom_vec[(bottom_vec == 0)] <- num_uniq
 
 
-         # now put them all together in the correct order into a data frame for plotting
-         top_df <- data.frame(x = unname(unlist(miRNA_list$top[1])), y = unname(unlist(miRNA_list$top[2])), text = unname(unlist(miRNA_list$top[3])),
+        # now put them all together in the correct order into a data frame for plotting
+        top_df <- data.frame(x = unname(unlist(miRNA_list$top[1])), y = unname(unlist(miRNA_list$top[2])), text = unname(unlist(miRNA_list$top[3])),
                               color_bins = top_vec)
 
-         mid_top_df <- data.frame(x = unname(unlist(miRNA_list$mid_top[1])), y = unname(unlist(miRNA_list$mid_top[2])), text = unname(unlist(miRNA_list$mid_top[3])),
+        mid_top_df <- data.frame(x = unname(unlist(miRNA_list$mid_top[1])), y = unname(unlist(miRNA_list$mid_top[2])), text = unname(unlist(miRNA_list$mid_top[3])),
                               color_bins = mid_top_vec)
-         char_df <- data.frame(x = unname(unlist(miRNA_list$char[1])), y = unname(unlist(miRNA_list$char[2])), text = unname(unlist(miRNA_list$char[3])),
+        char_df <- data.frame(x = unname(unlist(miRNA_list$char[1])), y = unname(unlist(miRNA_list$char[2])), text = unname(unlist(miRNA_list$char[3])),
                               color_bins = char_vec)
-         mid_bottom_df <- data.frame(x = unname(unlist(miRNA_list$mid_bottom[1])), y = unname(unlist(miRNA_list$mid_bottom[2])), text = unname(unlist(miRNA_list$mid_bottom[3])),
+        mid_bottom_df <- data.frame(x = unname(unlist(miRNA_list$mid_bottom[1])), y = unname(unlist(miRNA_list$mid_bottom[2])), text = unname(unlist(miRNA_list$mid_bottom[3])),
                               color_bins = mid_bottom_vec)
-         bottom_df <- data.frame(x = unname(unlist(miRNA_list$bottom[1])), y = unname(unlist(miRNA_list$bottom[2])), text = unname(unlist(miRNA_list$bottom[3])),
+        bottom_df <- data.frame(x = unname(unlist(miRNA_list$bottom[1])), y = unname(unlist(miRNA_list$bottom[2])), text = unname(unlist(miRNA_list$bottom[3])),
                               color_bins = bottom_vec)
 
-         # rbind the results
-         # this results in a 4-column df with x-coordinate, y-coordinate (chosen by me), the text character to use, and the color bin
-         miRNA_df <- rbind(top_df, mid_top_df, char_df, mid_bottom_df, bottom_df)
-         ########################################################################################
-         struct_plot <- plot_miRNA_struct(miRNA_df)
+        # rbind the results
+        # this results in a 4-column df with x-coordinate, y-coordinate (chosen by me), the text character to use, and the color bin
+        miRNA_df <- rbind(top_df, mid_top_df, char_df, mid_bottom_df, bottom_df)
+        ########################################################################################
+        struct_plot <- plot_miRNA_struct(miRNA_df)
 
-         density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
-         density_plot <- plot_density(density, reg_start, reg_stop)
+        density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+        density_plot <- plot_density(density, reg_start, reg_stop)
 
-         dist_plot <- plot_sizes(read_dist)
+        dist_plot <- plot_sizes(read_dist)
 
-         zplot <- plot_overlapz(z_df)
+        zplot <- plot_overlapz(z_df)
 
-         if(reg_stop - reg_start <= 150){
-           #if miRNA is long, use landscape orientation so the struct plot isn't squished.
-           left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-           right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-           bottom <- cowplot::plot_grid(struct_plot)
-           top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+        if (reg_stop - reg_start <= 150) {
+          #if miRNA is long, use landscape orientation so the struct plot isn't squished.
+          left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
+          right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+          bottom <- cowplot::plot_grid(struct_plot)
+          top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
 
+          all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
 
-           all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,1), ncol = 1, rel_heights = c(1,0.1,0.5), align = "vh", axis = "lrtb")
-
-           if(out_type == "png" || out_type == "PNG"){
-             grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 11, width = 8, units = "in", res = 300)
-             print(all_plot)
-             grDevices::dev.off()
-           } else {
-             grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 11, width = 8)
-             print(all_plot)
-           }
+          if (out_type == "png" || out_type == "PNG") {
+            grDevices::png(file = file.path(wkdir, paste(prefix, strand, "combined.png", sep = "_")), height = 11, width = 8, units = "in", res = 300)
+            print(all_plot)
+            grDevices::dev.off()
+          } else {
+            grDevices::pdf(file = file.path(wkdir, paste(prefix, strand, "combined.pdf", sep = "_")), height = 11, width = 8)
+            print(all_plot)
+          }
 
           } else {
             top <- cowplot::plot_grid(dist_plot, dicer_sig, density_plot, zplot, ncol = 4, rel_widths = c(1,1,1.4,1), align = "vh", axis = "lrtb")
             #left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
-             #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-             bottom <- cowplot::plot_grid(struct_plot)
-             #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-             all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
+            #right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
+            bottom <- cowplot::plot_grid(struct_plot)
+            #top <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
+            all_plot <- cowplot::plot_grid(top,NULL, bottom, rel_widths = c(1,1,0.6), ncol = 1, rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
 
-
-           if(out_type == "png" || out_type == "png"){
-            grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 7, width = 15, units = "in", res = 300)
-            print(all_plot)
-            grDevices::dev.off()
-           } else {
-            grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 7, width = 15)
-            print(all_plot)
-            grDevices::dev.off()
-           }
-
-         }
-
+            if (out_type == "png" || out_type == "png") {
+              grDevices::png(file = file.path(wkdir, paste(prefix, strand, "combined.png", sep = "_")), height = 7, width = 15, units = "in", res = 300)
+              print(all_plot)
+              grDevices::dev.off()
+            } else {
+              grDevices::pdf(file = file.path(wkdir, paste(prefix, strand, "combined.pdf", sep = "_")), height = 7, width = 15)
+              print(all_plot)
+              grDevices::dev.off()
+            }
+          }
       }
       return(list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs,z_df)))
    }

@@ -33,29 +33,28 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   # the dot thing and the mfe
   # R4RNA viennaToHelix is used to create the helix from the dot
   fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir) {
+    dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
 
-     dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
+    converted <- convertU(dna_vec, 1)
+    #writeLines(converted, con = file.path(wkdir, "converted.txt")) # This is written in fold_long_rna as converted.fasta
+    dna_vec <- NULL
 
-     converted <- convertU(dna_vec, 1)
-     #writeLines(converted, con = file.path(wkdir, "converted.txt")) # This is written in fold_long_rna as converted.fasta
-     dna_vec <- NULL
+    # use
+    fold_list <- mapply(fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold, wkdir)
+    fold_list <- t(fold_list)
+    MFE <- unlist(unname(fold_list[,3]))
+    vienna <- fold_list[,5]
+    extracted_df <- fold_list[4][[1]]
 
-     # use
-     fold_list <- mapply(fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold, wkdir)
-     fold_list <- t(fold_list)
-     MFE <- unlist(unname(fold_list[,3]))
-     vienna <- fold_list[,5]
-     extracted_df <- fold_list[4][[1]]
+    writeLines(as.character(vienna), con = file.path(wkdir, "vienna.txt"))
 
-     writeLines(as.character(vienna), con = file.path(wkdir, "vienna.txt"))
+    prefix <- get_region_string(chrom_name, reg_start, reg_stop)
 
-     prefix <- paste0(wkdir, chrom_name, "-", reg_start, "_", reg_stop, "_", strand)
+    helix <- R4RNA::viennaToHelix(unlist(fold_list[,5]))
 
-     helix <- R4RNA::viennaToHelix(unlist(fold_list[,5]))
-
-     filepath = file.path(wkdir, "helix.txt")
-     R4RNA::writeHelix(helix, file = filepath)
-     return(list(MFE = MFE, vienna = vienna, extracted_df = extracted_df, helix = helix))
+    filepath = file.path(wkdir, "helix.txt")
+    R4RNA::writeHelix(helix, file = filepath)
+    return(list(MFE = MFE, vienna = vienna, extracted_df = extracted_df, helix = helix))
   }
 
 
@@ -404,7 +403,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     }
   )
 
-  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
 
   plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.phased_z)))
   minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.phased_z)))

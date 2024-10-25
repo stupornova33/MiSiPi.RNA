@@ -24,7 +24,7 @@
 new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
                                strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, path_to_RNAplot,
                                write_fastas, weight_reads, out_type){
-  print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
+  print(get_region_string(chrom_name, reg_start, reg_stop))
   cat(file = paste0(wkdir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
@@ -305,7 +305,8 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   #make the plots for all the sequences in the "fold_list"
-  prefix <- paste0(wkdir, chrom_name, "-", (fold_list$start - 1), "-", (fold_list$stop - 1))
+  #prefix <- paste0(wkdir, chrom_name, "-", (fold_list$start - 1), "-", (fold_list$stop - 1))
+  prefix <- get_region_string(chrom_name, fold_list$start, fold_list$stop)
   print(prefix)
   
   mfe <- fold_list$mfe
@@ -403,11 +404,11 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     all_plot <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
     
     if (out_type == "png" || out_type == "PNG") {
-      grDevices::png(file = paste0(prefix,"_", strand, "_combined.png"), height = 8, width = 11, units = "in", res = 300)
+      grDevices::png(file = file.path(wkdir, paste(prefix, strand, "combined.png", sep = "_")), height = 8, width = 11, units = "in", res = 300)
       print(all_plot)
       grDevices::dev.off()
     } else {
-      grDevices::pdf(file = paste0(prefix,"_", strand, "_combined.pdf"), height = 8, width = 11)
+      grDevices::pdf(file = file.path(wkdir, paste(prefix, strand, "combined.pdf", sep = "_")), height = 8, width = 11)
       print(all_plot)
       grDevices::dev.off()
     }
