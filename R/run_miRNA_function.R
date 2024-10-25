@@ -24,7 +24,7 @@
 run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
                            strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, write_fastas, weight_reads, out_type){
    print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
-   cat(file = paste0(wkdir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+   cat(file = paste0(wkdir,logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
    pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
    # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.

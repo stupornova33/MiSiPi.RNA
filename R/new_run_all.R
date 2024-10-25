@@ -98,7 +98,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   bam_header <- NULL
   chromosome <- which(chr_name == chrom_name)
 
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
