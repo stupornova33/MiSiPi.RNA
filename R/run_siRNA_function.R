@@ -275,12 +275,12 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       if (out_type == "png" || out_type == "PNG") {
         cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
-        grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 16, width = 14, units = "in", res = 300)
+        grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 16, width = 14, units = "in", res = 300)
         print(all_plot)
         grDevices::dev.off()
       } else {
         cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
-        grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 16, width = 14)
+        grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 16, width = 14)
         print(all_plot)
         grDevices::dev.off()
       }
@@ -319,12 +319,12 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
         if (out_type == "png" || out_type == "PNG") {
           cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
-          grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 9, width = 14, units = "in", res = 300)
+          grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 9, width = 14, units = "in", res = 300)
           print(all_plot)
           grDevices::dev.off()
         } else {
           cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
-          grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 9, width = 14)
+          grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 9, width = 14)
           print(all_plot)
           grDevices::dev.off()
         }
@@ -348,12 +348,12 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       if (out_type == "png" || out_type == "PNG") {
         cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
-        grDevices::png(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.png"), height = 13, width = 13, units = "in", res = 300)
+        grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 13, width = 13, units = "in", res = 300)
         print(all_plot)
         grDevices::dev.off()
       } else {
         cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
-        grDevices::pdf(file = paste0(wkdir, chrom_name, "_", reg_start, "_", reg_stop, "_si_plot.pdf"), height = 13, width = 13)
+        grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 13, width = 13)
         print(all_plot)
         grDevices::dev.off()
       }
