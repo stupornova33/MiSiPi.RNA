@@ -171,25 +171,26 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
   overhang_output <- overhang_output %>% dplyr::mutate(locus = prefix)
   overhang_output <- overhang_output[, c(10, 1:9)]
 
-  suppressWarnings(
-    if (!file.exists("siRNA_dicerz.txt")) {
-      utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
-    } else {
-      utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-    }
-  )
+   suppressWarnings(
+      if(!file.exists(paste0(wkdir, "siRNA_dicerz.txt"))){
+         utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = F)
+      } else {
+         utils::write.table(overhang_output, file = paste0(wkdir, "siRNA_dicerz.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = F)
+      }
+   )
 
 
   #heat output nees to be a matrix, so transform
   heat_output <- t(c(prefix, as.vector(results)))
 
-  suppressWarnings(
-    if (!file.exists("siRNA_heatmap.txt")) {
-      utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
-    } else {
-      utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-    }
-  )
+   suppressWarnings(
+     if(!file.exists(paste0(wkdir, "siRNA_heatmap.txt"))){
+       utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = T, col.names = F, na = "NA", row.names = F)
+     } else {
+       utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+     }
+   )
+   print("heatmap has been written.")
 
 
   print("Beginning hairpin function.")

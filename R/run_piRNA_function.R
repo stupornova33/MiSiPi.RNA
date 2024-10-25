@@ -40,24 +40,28 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   # Make forward and reverse dataframes filtered for width
   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 18) %>%
+    subset(width <= 32 & width >= 16) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1)
-  
+
   reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 18) %>%
+    subset(width <= 32 & width >= 16) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1)
-  
-  
+
+
   # for the read size dist plot
   message("Getting read size distribution")
   cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
-  
+
   read_dist <- get_read_size_dist(forward_dt, reverse_dt)
-  
+
   # Summarize data frames into unique reads with a column of duplicates
   forward_dt <- forward_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::summarize(count = dplyr::n())
+
+  reverse_dt <- reverse_dt %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
   
@@ -119,6 +123,8 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     #get the overlapping read pairs
     overlaps <- find_overlaps(r_summarized, f_summarized)
     
+    print("Completed find_overlaps.")
+
     print("Completed find_overlaps.")
 
     #1/9/24 now make_BamDF returns sequence too, so read sequences can be extracted from that
@@ -194,7 +200,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     overlap_counts <- overlaps %>%
       dplyr::group_by(overlap) %>%
       dplyr::summarize(num = sum(total_dupes))
-    
+
     suppressWarnings(
       if(!file.exists("piRNA_alloverlaps_counts.txt")){
         utils::write.table(overlap_counts, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = T, na = "NA", row.names = F)
@@ -204,9 +210,9 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
     #forward_dt <- NULL
     #reverse_dt <- NULL
+    row.names(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
 
-    row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
-    colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
+    colnames(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
 
     output <- t(c(prefix, as.vector(heat_results)))
 
@@ -227,9 +233,9 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   } else {
     z_df <- data.frame(Overlap = c(seq(4,30)), Z_score = c(rep(0, times = 27)))
-    heat_results <- matrix(data = 0, nrow = 18, ncol = 18)
-    row.names(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
-    colnames(heat_results) <- c('15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
+    heat_results <- matrix(data = 0, nrow = 17, ncol = 17)
+    row.names(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
+    colnames(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
   }
 
 
@@ -324,7 +330,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
 
   suppressWarnings(
-    if (!file.exists("phased_plus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir,"phased_plus_piRNA_zscores.txt"))){
       write.table(phased_plus_output,
                   file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -346,7 +352,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   suppressWarnings(
-    if (!file.exists("phased26_plus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir,"phased26_plus_piRNA_zscores.txt"))){
       write.table(phased26_plus_output,
                   file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -452,7 +458,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   tbl <- dplyr::select(tbl,52,1:51)
 
   suppressWarnings(
-    if (!file.exists("phased_minus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir, "phased_minus_piRNA_zscores.txt"))){
       write.table(phased_minus_output,
                   file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -474,7 +480,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   suppressWarnings(
-    if (!file.exists("phased26_minus_piRNA_zscores.txt")) {
+    if (!file.exists(paste0(wkdir,"phased26_minus_piRNA_zscores.txt"))){
       write.table(phased26_minus_output,
                   file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"),
                   sep = "\t",
@@ -496,7 +502,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   )
 
   suppressWarnings(
-    if(!file.exists("all_phased_piRNA_zscores.txt")){
+    if(!file.exists(paste0(wkdir,"all_phased_piRNA_zscores.txt"))){
       write.table(tbl,
                   file = paste0(wkdir, "all_phased_piRNA_zscores.txt"),
                   sep = "\t",
@@ -519,7 +525,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   print("Completed calculations. Making plots.")
   print(paste0("sum heat results: ", sum(heat_results)))
-  
+
 #################################################################################################
 ### make plots
 #  if(!sum(heat_results) == 0 && plot_output == TRUE){

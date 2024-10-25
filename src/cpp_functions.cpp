@@ -73,6 +73,8 @@ DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r
   
   // Calculate the distance between overlapping read pairs
 
+  // Calculate the distance between overlapping read pairs
+
    int memory_reserve = dfsize;
 
    std::vector<int> res_start_r1;
@@ -367,6 +369,7 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount,
       int r2_end = end_r2[i];
       int r2_dupes = dupe_count_r2[i];
       
+
 
       //set read length to be read end - read start
       //set start to be read_start_vec at pos i
@@ -1080,15 +1083,15 @@ NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                                   std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth,
                                   bool check_pi) {
- int M_SIZE = 18;
+ int M_SIZE = 17;
  NumericMatrix result(M_SIZE);
 
  //to avoid warnings about signed int to unsigned int conversion
  int f_size = int(fdt_start.size());
  int r_size = int(rdt_start.size());
 
- for (int i = 15; i <= 32; i++) {
-   for (int j = 15; j <= 32; j++) {
+ for (int i = 16; i <= 32; i++) {
+   for (int j = 16; j <= 32; j++) {
 
      int p_overlap;
 
@@ -1172,7 +1175,7 @@ NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fd
        int fstart_size2 = fstart_res2.size();
        current_count += map_and_count(fstart_res2, fstart_size2, rend_res2, p_overlap);
      }
-     result(i - 15,j - 15) = current_count;
+     result(i - 16,j - 16) = current_count;
    }
  }
  return(result);

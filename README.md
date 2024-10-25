@@ -41,6 +41,7 @@ passed to set_vars(). These should be changed based on your needs.
 - **min_read_count**  - This filters out loci with low mapping reads. Defaults to 1
 - **plot_output**     - (TRUE or FALSE) If TRUE, MiSiPi.RNA will output plots as pdfs
 - **path_to_RNAfold** - Full path to RNAfold executable
+- **path_to_RNAplot** - Full path to RNAplot executable
 - **pi_pal**          - Palette option for the generated piRNA heatmap (see below)
 - **si_pal**          - Palette option for the generated siRNA heatmap (see below)
 - **annotate_region** - (TRUE or FALSE) Plots annotated gene features below the hairpin arc plot which is useful for characterizing cisNAT loci
@@ -57,6 +58,7 @@ vars <- set_vars(roi = "path/to/bed",
                 min_read_count = 1,
                 plot_output = TRUE, 
                 path_to_RNAfold = "path/to/ViennaRNA/RNAfold.exe",
+                path_to_RNAplot = "path/to/ViennaRNA/RNAplot.exe",
                 pi_pal = "BlYel",
                 si_pal = "RdYlBl",
                 annotate_region = TRUE,
@@ -76,7 +78,7 @@ Palette options are:
 - "Greens"
 
 
-## To run all lines of bed file:
+## Provide the vars object to the function of your choice and all lines contained in BED file will be run:
 
 ```
 miRNA_function(vars)
@@ -86,8 +88,9 @@ piRNA_function(vars)
 
 
 siRNA_function(vars)
+```
 
-# To run the above functions all at once
+## To run the above functions all at once and get a handy table of scores and statistics about each region of interest:
 misipi_rna(vars)
 
 ```
