@@ -524,7 +524,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 ### make plots
 #  if(!sum(heat_results) == 0 && plot_output == TRUE){
 
-   if(plot_output == TRUE){
+  if (plot_output == TRUE) {
     cat(file = paste0(wkdir, logfile), paste0("Generating plots.", "\n"), append = TRUE)
     ### ping pong plots
     read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
@@ -537,10 +537,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     z <- plot_overlapz(z_df)
     dist_plot <- plot_sizes(read_dist)
 
-
-
-    if((reg_stop - reg_start) > 7000){
-      print("TRUE")
+    if ((reg_stop - reg_start) > 7000) {
       density_plot <- plot_large_density(data, reg_start, reg_stop)
     } else {
       density_plot <- plot_density(data, reg_start, reg_stop)
@@ -557,7 +554,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     minus_phased_plot <- plot_phasedz(minus_df, "-")
 
 
-    if(sum(heat_results) > 0){
+    if (sum(heat_results) > 0) {
       options(scipen = 999)
       heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
 
@@ -575,62 +572,55 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                                      rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
       #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
 
-
-
     } else {
-       top_left <- cowplot::plot_grid(dist_plot, ncol = 1, rel_widths = c(1),
+      top_left <- cowplot::plot_grid(dist_plot, ncol = 1, rel_widths = c(1),
                                    rel_heights = c(0.8,0.1,1), align = "vh", axis = "lrtb")
-       top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
+      top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
                                    rel_heights = c(1,0.1,1,0.1,1), align = "vh", axis = "lrtb")
 
-       top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
+      top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
 
-       bottom <- cowplot::plot_grid(density_plot)
+      bottom <- cowplot::plot_grid(density_plot)
       ## phased plots
                                                                                                                      #left null right null bottom
-       all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
+      all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
                                    rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
      #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
 
     }
-    if(out_type == "png" || out_type == "PNG"){
-      grDevices::png(file=paste0(wkdir, chrom_name, "_", reg_start, "-", reg_stop, "_pi-zscore.png"), width = 10, height = 11, bg = "white", units = "in", res = 300)
+    
+    if (out_type == "png" || out_type == "PNG") {
+      grDevices::png(file = file.path(wkdir, paste0(prefix, "_pi-zscore.png")), width = 10, height = 11, bg = "white", units = "in", res = 300)
       print(all_plot)
       grDevices::dev.off()
     } else {
-      grDevices::pdf(file=paste0(wkdir, chrom_name, "_", reg_start, "-", reg_stop, "_pi-zscore.pdf"), width = 10, height = 11)
+      grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_pi-zscore.pdf")), width = 10, height = 11)
       print(all_plot)
       grDevices::dev.off()
     }
-
   }
 
 
-  if(!is.na(sum(phased_plus_counts$phased_z))){
-
+  if (!is.na(sum(phased_plus_counts$phased_z))) {
     # get average zscore for first 4 distances (1-4nt)
     ave_plus_z <- mean(phased_plus_counts$phased_z[1:4])
   } else {
     ave_plus_z <- -33
   }
 
-
-  if(!is.na(sum(phased_26_plus_counts$phased26_z))){
+  if (!is.na(sum(phased_26_plus_counts$phased26_z))) {
     ave_plus_26z <- mean(phased_26_plus_counts$phased26_z[1:4])
   } else {
     ave_plus_26z <- -33
   }
 
-
-  if(!is.na(sum(phased_minus_counts$phased_z))){
-
+  if (!is.na(sum(phased_minus_counts$phased_z))) {
     ave_minus_z <- mean(phased_minus_counts$phased_z[1:4])
   } else {
     ave_minus_z <- -33
   }
 
-
-  if(!is.na(sum(phased_26_minus_counts$phased26_z))){
+  if (!is.na(sum(phased_26_minus_counts$phased26_z))) {
     ave_minus_26z <- mean(phased_26_minus_counts$phased26_z[1:4])
   } else {
     ave_minus_26z <- -33
