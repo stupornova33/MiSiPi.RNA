@@ -301,7 +301,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   local_ml$highest_si_col <- max_si_heat$highest_si_col
   si_dicerz <- si_res$si_dicer$Z_score[5]
 
-  if(is.na(si_dicerz)){
+  if (is.na(si_dicerz)) {
     local_ml$si_dicerz <- -33
   } else {
     local_ml$si_dicerz <- si_dicerz
@@ -326,16 +326,16 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   #plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
   plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
   #if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
-  if(!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)){
+  if (!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)) {
     plus_mean <- mean(plus_phasedz[1:4])
   } else {
     plus_mean <- -33
   }
 
-   #minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
+  #minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
   minus_phasedz <- si_res[[3]][[1]]$phased_tbl.phased_z
   #if(!minus_phasedz[1] == "NaN" && !minus_phasedz[1] == -33){
-   if(!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)){
+  if (!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)) {
     minus_mean <- mean(minus_phasedz[1:4])
   } else {
     minus_mean <- -33
@@ -347,11 +347,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   plus_dicerz <- si_res[[3]][[2]]$plus_hp_overhangz
   minus_dicerz <- si_res[[3]][[1]]$minus_hp_overhangz
 
-  if(is.na(plus_dicerz)){
+  if (is.na(plus_dicerz)) {
     plus_dicerz <- -33
   }
 
-  if(is.na(minus_dicerz)){
+  if (is.na(minus_dicerz)) {
     minus_dicerz <- -33
   }
 
@@ -402,7 +402,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   pp_plus <- mi_res$perc_paired
   mirna_dicerz_plus <- mi_res$overhangs$zscore[5]
 
-  if(mi_res$overhangs$zscore[1] != "NaN"){
+  if (mi_res$overhangs$zscore[1] != "NaN") {
     plus_overlapz <- mean(mi_res$overhangs$Z_score[17:19])
   } else {
     plus_overlapz <- NA
