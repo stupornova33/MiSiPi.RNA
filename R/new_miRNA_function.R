@@ -167,7 +167,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
   overlaps <- NULL
 
-  if(nrow(read_pileups) == 0){
+  if (nrow(read_pileups) == 0) {
     return(null_mi_res())
   }
 
@@ -220,8 +220,9 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   read_pileups$loop_seq <- loop_seqs$Seq
 
   read_pileups$whole_seq <- stringr::str_c(read_pileups$r1_seq, read_pileups$loop_seq, read_pileups$r2_seq)
-  read_pileups <- read_pileups %>% dplyr::mutate(width = w_stop - w_start + 1) %>%
-                     dplyr::distinct()
+  read_pileups <- read_pileups %>%
+    dplyr::mutate(width = w_stop - w_start + 1) %>%
+    dplyr::distinct()
 
   #final_coord <- test
 
@@ -233,11 +234,12 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     dplyr::select(c(r1_start, r1_end, r1_count_avg, r2_start, r2_end, r2_count_avg)) %>%
     dplyr::rename("r1_alt_start" = "r1_start", "r1_alt_end" = "r1_end", "r2_alt_start" = "r2_start", "r2_alt_end" = "r2_end")
 
-  grouped <- grouped %>% dplyr::mutate(Chrom = chrom_name, Reg_start = reg_start, Reg_stop = reg_stop) %>%
+  grouped <- grouped %>%
+    dplyr::mutate(Chrom = chrom_name, Reg_start = reg_start, Reg_stop = reg_stop) %>%
     dplyr::select(c(Chrom, Reg_start, Reg_stop, r1_alt_start, r1_alt_end, r1_count_avg, r2_alt_start, r2_alt_end))
 
 
-  if(nrow(grouped > 1)){
+  if (nrow(grouped > 1)) {
     write.table(grouped, file = paste0(wkdir, "alt_miRNAs_coord.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
     cat(file = paste0(wkdir,logfile), "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
   }
@@ -254,7 +256,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   
   converted <- data.frame('V1' = unname(unlist(converted)))
   
-  colnames(converted) <- paste0(">",chrom_name, "_", reg_start, "_", reg_stop)
+  colnames(converted) <- paste0(">", chrom_name, "-", final$r1_start - 1, "_", final$r2_end - 1)
   final$converted <- converted$V1
   
   write.table(converted, file = paste0(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
@@ -286,7 +288,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
                        r2_start = stringr::str_locate(final_seq, final$r2_seq)[1],
                        r2_end = stringr::str_locate(final_seq, final$r2_seq)[2])
   
-  rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, strand)
+  rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, final$r1_start - 1, final$r2_end - 1, strand)
 
 
 
@@ -301,7 +303,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   print('making fold_list')
   ################################################################################################################
   #fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
-  fold_list <- fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, reg_start, reg_stop, chrom_name, wkdir)[[1]]
+  fold_list <- fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, chrom_name, wkdir)[[1]]
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   #make the plots for all the sequences in the "fold_list"
