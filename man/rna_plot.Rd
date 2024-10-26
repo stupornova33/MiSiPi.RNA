@@ -12,8 +12,8 @@ rna_plot(
   pos_df,
   colors,
   chrom_name,
-  reg_start,
-  reg_stop,
+  most_abundant_start,
+  most_abundant_stop,
   strand
 )
 }
@@ -30,9 +30,9 @@ rna_plot(
 
 \item{chrom_name}{a string}
 
-\item{reg_start}{an integer}
+\item{most_abundant_start}{an integer}
 
-\item{reg_stop}{an integer}
+\item{most_abundant_stop}{an integer}
 
 \item{strand}{a character}
 }

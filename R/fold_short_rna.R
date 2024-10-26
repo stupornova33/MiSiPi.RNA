@@ -1,5 +1,16 @@
+#' function to run RNAfold
+#' processes output of RNA fold to get MFE and vien struct
+#' returns list of values for each region
+#' @param start an integer
+#' @param stop an integer
+#' @param converted a vector containing a sequence
+#' @param path_to_RNAfold a string
+#' @param chrom_name a string
+#' @param wkdir a string
+#' @return list
+#' @export
 
-fold_short_rna <- function(start, stop, converted, path_to_RNAfold, reg_start, reg_stop, chrom_name, wkdir) {
+fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, wkdir) {
   write.table(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
   #fold <- system2(command = path_to_RNAfold, args = "converted.fasta", stdout= TRUE, wait = TRUE, invisible = TRUE)
 
@@ -19,7 +30,7 @@ fold_short_rna <- function(start, stop, converted, path_to_RNAfold, reg_start, r
   }
 
   # Delete unwanted .ps file
-  ps_filename_to_remove <- paste(chrom_name, reg_start, reg_stop, "ss.ps", sep = "_")
+  ps_filename_to_remove <- paste0(chrom_name, "-", start - 1, "_", stop - 1, "_ss.ps")
   file.remove(file.path(ps_filename_to_remove))
   
   pos_vec <- seq(2, length(fold), by = 2)
