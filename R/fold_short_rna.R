@@ -11,10 +11,15 @@
 #' @export
 
 fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, wkdir) {
-  write.table(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
-  #fold <- system2(command = path_to_RNAfold, args = "converted.fasta", stdout= TRUE, wait = TRUE, invisible = TRUE)
+  
+  write.table(converted,
+              file = file.path(wkdir, "converted.fasta"),
+              sep = "\n",
+              append = FALSE,
+              row.names = FALSE,
+              quote = FALSE)
 
-  syscheck <- unlist(unname(Sys.info()[1]))
+  syscheck <- Sys.info()['sysname']
 
   if (syscheck == "Windows") {
     fold <- system2(command = path_to_RNAfold,
