@@ -382,7 +382,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #plus_overhang_out <- plus_overhang_out[, c(18, 1:17)]
 
   suppressWarnings(
-    if(!file.exists("plus_hp_dicerz.txt")){
+    if(!file.exists(paste0(wkdir, "plus_hp_dicerz.txt"))){
       write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
     } else {
       write.table(plus_overhang_out, file = paste0(wkdir, "plus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
@@ -397,10 +397,10 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #minus_overhang_out <- minus_overhang_out[, c(18, 1:18)]
 
   suppressWarnings(
-    if(!file.exists("minus_hp_dicerz.txt")){
-      write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = T, col.names = T, na = "NA", row.names = F)
+    if(!file.exists(paste0("minus_hp_dicerz.txt"))){
+      write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = FALSE)
     } else {
-      write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(minus_overhang_out, file = paste0(wkdir, "minus_hp_dicerz.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = FALSE)
     }
   )
 
@@ -411,18 +411,18 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
 
   suppressWarnings(
-    if(!file.exists("plus_hp_phasedz.txt")){
-      write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+    if(!file.exists(paste0(wkdir, "plus_hp_phasedz.txt"))){
+      write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names =TRUE, na = "NA", row.names = FALSE)
     } else {
-      write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(plus_phased_out, file = paste0(wkdir, "plus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = FALSE)
     }
   )
 
   suppressWarnings(
-    if (!file.exists("minus_hp_phasedz")) {
-      write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
+    if (!file.exists(paste0(wkdir, "minus_hp_phasedz"))) {
+      write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = FALSE)
     } else {
-      write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+      write.table(minus_phased_out, file = paste0(wkdir, "minus_hp_phasedz.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = FALSE)
     }
   )
 
