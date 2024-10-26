@@ -23,10 +23,15 @@ fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, 
                     wait = TRUE,
                     invisible = TRUE)
   } else if (syscheck == "Linux" | syscheck == "Darwin") {
-    fold <- system(command = path_to_RNAfold, input = converted, intern = TRUE)
+    # linux is complaining that converted is not a character vector or null
+    # I think it's currently a list
+    # Going to attempt to just give it the file name instead of contents of the file
+    #fold <- system(command = path_to_RNAfold, input = converted, intern = TRUE)
+    fold <- system(command = paste(path_to_RNAfold, file.path(wkdir, "converted.fasta"), sep = " "),
+                   intern = TRUE)
   } else {
-    print("Operating system is not Windows or Linux. Halt.")
-    return()
+    print("Operating system is not Windows or Linux/Darwin. Returning empty handed")
+    return(NULL)
   }
 
   # Delete unwanted .ps file
