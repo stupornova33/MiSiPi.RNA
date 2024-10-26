@@ -25,7 +25,7 @@ rna_plot <- function(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, ch
     fold <- system(command = paste(path_to_RNAfold, file.path(wkdir, "converted.fasta"), "--outfile=converted.txt", sep = " "),
                    intern = TRUE)
   } else {
-    print("Operating system is not Windows or Linux. Returning empty handed.")
+    print("Operating system is not Windows or Linux/Darwin. Returning empty handed.")
     return(NULL)
   }
   
@@ -51,11 +51,19 @@ rna_plot <- function(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, ch
                       pos1, ' ', pos2, ' ', 8, ' ', colors[1], ' ', 'omark ',
                       pos3, ' ', pos4, ' ', 9, ' ', colors[2], ' ', 'omark"')
 
-  system2(command = path_to_RNAplot,
-          args = final_arg,
-          stdout = TRUE,
-          wait = TRUE,
-          invisible = TRUE)
+  if (syscheck == "Windows") {
+    system2(command = path_to_RNAplot,
+            args = final_arg,
+            stdout = TRUE,
+            wait = TRUE,
+            invisible = TRUE)
+  } else if (syscheck == "Linux" | syscheck == "Darwin") {
+    system(command = paste(path_to_RNAplot, final_arg, sep = " "),
+           intern = TRUE)
+  } else {
+    print("Operating system is not Windows or Linux/Darwin. Returning empty handed.")
+    return(NULL)
+  }
   
   # move the ps file to the miRNA directory
   new_filename <- paste0(chrom_name, "-", most_abundant_start, "_", most_abundant_stop, "_", strand, "_", "ss.ps")
