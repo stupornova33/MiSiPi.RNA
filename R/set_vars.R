@@ -106,7 +106,11 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
     )
   }
 
-  test_list <- test_list %>% dplyr::mutate(V2 = V2 + 1, V3 = V3 + 1)
+  # Convert the bed file coordinates to 1 based for compatibility with other tools
+  # This will be converted back using revert_positions() when writing results that reference the coordinates
+  test_list <- test_list %>%
+    dplyr::mutate(V2 = V2 + 1,
+                  V3 = V3 + 1)
 
   test_list <- test_list %>%
     dplyr::mutate(chromosome = res_list) %>%

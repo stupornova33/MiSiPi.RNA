@@ -135,6 +135,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   del_files <- append(del_files, list.files(path = bam_path, pattern = "\\.bai$"))
 
   unlink(file.path(bam_path, del_files), force = TRUE)
+  fs::dir_delete(bam_path)
 
   empty_dat <- data.frame(pos = c(seq(reg_start, reg_stop)))
 

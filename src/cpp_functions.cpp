@@ -70,6 +70,8 @@ DataFrame mergePileups(std::vector<int> start, std::vector<int> end, std::vector
 // [[Rcpp::export]]
 DataFrame get_nearby(IntegerVector f_start, IntegerVector f_end, IntegerVector r_start, IntegerVector r_end, int max_dist, int dfsize){
   // To be deprecated - replaced with 2 lines of dplyr functions
+  
+  // Calculate the distance between overlapping read pairs
 
   // Calculate the distance between overlapping read pairs
 
@@ -366,6 +368,7 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount,
       int r2_start = start_r2[i];
       int r2_end = end_r2[i];
       int r2_dupes = dupe_count_r2[i];
+      
 
 
       //set read length to be read end - read start
@@ -840,7 +843,7 @@ DataFrame get_phased_dist(IntegerVector startX, IntegerVector endX,
 // [[Rcpp::export]]
 DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                            std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth) {
-
+  
   int res_size = 27;
 
   std::vector<int> overlap_res(res_size);

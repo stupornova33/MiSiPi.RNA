@@ -74,13 +74,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
                                      pi_phased26z = numeric(1))
 
   print("setting locus")
-  local_ml$locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
+  local_ml$locus <- get_region_string(chrom_name, reg_start, reg_stop)
 
   local_ml$locus_length <- reg_stop - reg_start + 1
 
   print(local_ml$locus_length)
   print("setting prefix")
-  prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
+  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
 
 ####################################################################### process bam input files #############################################################################
   #
@@ -98,7 +98,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   bam_header <- NULL
   chromosome <- which(chr_name == chrom_name)
 
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
   chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
@@ -236,13 +236,25 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   cat(file = logfile, "Creating size plots\n", append = TRUE)
 
-  if (!dir.exists('run_all/size_plots/')) {
-    dir.create('run_all/size_plots/')
-  }
+  if (plot_output == TRUE) {
+    size_dir <- file.path(getwd(), "run_all", "size_plots")
 
-  if(plot_output == TRUE){
-    size_dir <- 'run_all/size_plots/'
-    size_plots <- plot_sizes(read_dist)
+    if (!dir.exists(size_dir)) {
+      dir.create(size_dir)
+    }
+
+    plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
+
+    size_plot <- plot_sizes(read_dist)
+    plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
+    plot_file <- file.path(size_dir, plot_filename)
+    ggplot2::ggsave(plot = size_plot,
+                    filename = plot_file,
+                    device = out_type,
+                    height = 8,
+                    width = 11,
+                    units = "in"
+                    )
   }
 
   local_ml$perc_first_nucT <- first_nuc_T(forward_dt, reverse_dt)
@@ -258,17 +270,6 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   max_sizes <- NULL
   read_dist <- NULL
 
-
-
-
-
-
-
-
-
-
-
-
 ############################################################################ run siRNA function #######################################################################
   # calculate
   # highest_si_col
@@ -277,7 +278,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   # hp_perc_paired
 
   cat(file = logfile, "Begin siRNA function\n", append = TRUE)
-  if(!dir.exists('run_all/siRNA_dir/')) {
+  if (!dir.exists('run_all/siRNA_dir/')) {
     dir.create('run_all/siRNA_dir/')
   }
 
@@ -300,7 +301,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   local_ml$highest_si_col <- max_si_heat$highest_si_col
   si_dicerz <- si_res$si_dicer$Z_score[5]
 
-  if(is.na(si_dicerz)){
+  if (is.na(si_dicerz)) {
     local_ml$si_dicerz <- -33
   } else {
     local_ml$si_dicerz <- si_dicerz
@@ -325,16 +326,16 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   #plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
   plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
   #if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
-  if(!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)){
+  if (!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)) {
     plus_mean <- mean(plus_phasedz[1:4])
   } else {
     plus_mean <- -33
   }
 
-   #minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
+  #minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
   minus_phasedz <- si_res[[3]][[1]]$phased_tbl.phased_z
   #if(!minus_phasedz[1] == "NaN" && !minus_phasedz[1] == -33){
-   if(!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)){
+  if (!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)) {
     minus_mean <- mean(minus_phasedz[1:4])
   } else {
     minus_mean <- -33
@@ -346,11 +347,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   plus_dicerz <- si_res[[3]][[2]]$plus_hp_overhangz
   minus_dicerz <- si_res[[3]][[1]]$minus_hp_overhangz
 
-  if(is.na(plus_dicerz)){
+  if (is.na(plus_dicerz)) {
     plus_dicerz <- -33
   }
 
-  if(is.na(minus_dicerz)){
+  if (is.na(minus_dicerz)) {
     minus_dicerz <- -33
   }
 
@@ -401,7 +402,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   pp_plus <- mi_res$perc_paired
   mirna_dicerz_plus <- mi_res$overhangs$zscore[5]
 
-  if(mi_res$overhangs$zscore[1] != "NaN"){
+  if (mi_res$overhangs$zscore[1] != "NaN") {
     plus_overlapz <- mean(mi_res$overhangs$Z_score[17:19])
   } else {
     plus_overlapz <- NA
@@ -558,6 +559,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 ####################################################################### add results to table ########################################################################
 
   tbl_pref <- strsplit(roi, "[.]")[[1]][1]
+  tbl_pref <- unlist(strsplit(tbl_pref, '[/]'))
+  tbl_pref <- tbl_pref[length(tbl_pref)]
+
   tmp <- unlist(strsplit(bam_file, "[/]"))
   input_pref <- tmp[length(tmp)]
   input_pref2 <- strsplit(input_pref, "[.]")[[1]][1]
@@ -569,9 +573,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   cat(file = logfile, "Writing results to table\n", append = TRUE)
 
   ml_file <- paste0(tbl_name, "_ml.txt")
-  col_status <- ifelse(exists_not_empty(ml_file), FALSE, TRUE)
+  col_status <- ifelse(exists_not_empty(paste0(all_dir, ml_file)), FALSE, TRUE)
   print(paste0("col_status: ", col_status))
-  utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
+  utils::write.table(df, paste0(all_dir, ml_file), sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 
   print("file has been written.")
   #}
