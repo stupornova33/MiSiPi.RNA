@@ -261,11 +261,10 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   
   write.table(converted, file = paste0(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
   
-  
   mx_idx <- which(c(final$r1_count_avg, final$r2_count_avg) == max(final$r1_count_avg, final$r2_count_avg))
   mx <- c(final$r1_count_avg, final$r2_count_avg)[mx_idx]
 
-  if(length(mx_idx) < 2){
+  if (length(mx_idx) < 2) {
     #colors <- vector(mode = "character", length = 2)
     colors <- c(NA, NA)
     #set max value color to YELLOW
@@ -288,17 +287,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
                        r2_start = stringr::str_locate(final_seq, final$r2_seq)[1],
                        r2_end = stringr::str_locate(final_seq, final$r2_seq)[2])
   
-  rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, final$r1_start - 1, final$r2_end - 1, strand)
-
-
-
-  
-  
-  
-  
-  
-  
-  
+  rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
   
   print('making fold_list')
   ################################################################################################################
@@ -308,16 +297,11 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
   #make the plots for all the sequences in the "fold_list"
   #prefix <- paste0(wkdir, chrom_name, "-", (fold_list$start - 1), "-", (fold_list$stop - 1))
-  prefix <- get_region_string(chrom_name, fold_list$start, fold_list$stop)
+  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
   print(prefix)
   
   mfe <- fold_list$mfe
   perc_paired <- (length(fold_list$helix$i)*2)/(fold_list$stop - fold_list$start)
-
-  
-  
-  
-  
   
   # transforms reads from one arm of hairpin to their paired position
   # makes a table of reads which are overlapping
