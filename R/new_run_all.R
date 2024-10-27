@@ -238,13 +238,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   if (plot_output == TRUE) {
     size_dir <- file.path(getwd(), "run_all", "size_plots")
-    
+
     if (!dir.exists(size_dir)) {
       dir.create(size_dir)
     }
-    
+
     plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
-    
+
     size_plot <- plot_sizes(read_dist)
     plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
     plot_file <- file.path(size_dir, plot_filename)
@@ -559,6 +559,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 ####################################################################### add results to table ########################################################################
 
   tbl_pref <- strsplit(roi, "[.]")[[1]][1]
+  tbl_pref <- unlist(strsplit(tbl_pref, '[/]'))
+  tbl_pref <- tbl_pref[length(tbl_pref)]
+
   tmp <- unlist(strsplit(bam_file, "[/]"))
   input_pref <- tmp[length(tmp)]
   input_pref2 <- strsplit(input_pref, "[.]")[[1]][1]
@@ -570,9 +573,9 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   cat(file = logfile, "Writing results to table\n", append = TRUE)
 
   ml_file <- paste0(tbl_name, "_ml.txt")
-  col_status <- ifelse(exists_not_empty(ml_file), FALSE, TRUE)
+  col_status <- ifelse(exists_not_empty(paste0(all_dir, ml_file)), FALSE, TRUE)
   print(paste0("col_status: ", col_status))
-  utils::write.table(df, ml_file, sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
+  utils::write.table(df, paste0(all_dir, ml_file), sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 
   print("file has been written.")
   #}

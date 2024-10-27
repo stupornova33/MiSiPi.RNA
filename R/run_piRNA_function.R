@@ -195,20 +195,10 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                     total_dupes = r1_dupes * r2_dupes)
     # call new_pi_overlaps
 
-    overlap_counts <- overlaps %>%
-      dplyr::group_by(overlap) %>%
-      dplyr::summarize(num = sum(total_dupes))
 
-    if(nrow(overlap_counts) < 25){
-      empty_tab <- data.frame(overlap = c(seq(3,27,1)), num = 0)
-      overlap_counts <- merge(overlap_counts, empty_tab, by = "overlap", .all = TRUE) %>%
-        dplyr::mutate(num = num.x + num.y) %>% dplyr::select(-c(num.x, num.y))
-    }
-
-
-    overlap_counts <- overlap_counts %>% dplyr::select(-overlap)
-    overlap_out <- t(data.frame(overlap_counts))
-    colnames(overlap_out) <- c(seq(3,27, by = 1))
+    overlap_out <- data.frame(t(z_res))
+    colnames(overlap_out) <- overlap_out[1,]
+    overlap_out <- overlap_out[-1,]
 
     suppressWarnings(
       if(!file.exists(paste0(wkdir, "piRNA_alloverlaps_counts.txt"))){
