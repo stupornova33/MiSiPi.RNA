@@ -29,10 +29,8 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
 
    chromosome <- which(chr_name == chrom_name)
 
-   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
    cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
-
-   prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
    #for the read size dist plot
 
@@ -117,7 +115,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
 
    df <- cbind(phased_counts, phased_26_counts)
 
-   prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+   prefix <- get_region_string(chrom_name, reg_start, reg_stop)
 
 
    phased_output <- phased_counts %>% dplyr::select(c(phased_z))

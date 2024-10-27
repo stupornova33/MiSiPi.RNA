@@ -19,9 +19,8 @@
 #'
 run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal,
                                plot_output, weight_reads, write_fastas, out_type) {
-  message("Started run_piRNA_function()")
-
-  prefix <- paste0(chrom_name, ":", reg_start, "_", reg_stop)
+  
+  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
 
@@ -34,7 +33,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   print("Finished making chromP and chromM. Filtering forward and reverse reads by length.")
 
   ################################################################# ping pong piRNA ##############################################################
-  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start, " reg_stop: ", reg_stop, "\n"), append = TRUE)
+  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = paste0(wkdir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
 
@@ -51,7 +50,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
 
   # for the read size dist plot
-  message("Getting read size distribution")
   cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
 
   read_dist <- get_read_size_dist(forward_dt, reverse_dt)
@@ -61,6 +59,10 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
+  reverse_dt <- reverse_dt %>%
+    dplyr::group_by_all() %>%
+    dplyr::summarize(count = dplyr::n())
+  
   reverse_dt <- reverse_dt %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
@@ -111,13 +113,15 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     f_summarized <- forward_dt %>%
       dplyr::group_by_all() %>%
       dplyr::count()
-
+    
     r_summarized <- reverse_dt %>%
       dplyr::group_by_all() %>%
       dplyr::count()
-
+    
     #get the overlapping read pairs
     overlaps <- find_overlaps(r_summarized, f_summarized)
+    
+    print("Completed find_overlaps.")
 
     print("Completed find_overlaps.")
 
@@ -171,7 +175,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     }
 
     cat(file = paste0(wkdir, logfile), paste0("Making counts table.", "\n"), append = TRUE)
-
+    
     z_res <- make_count_table(forward_dt$start, forward_dt$end, forward_dt$width,
                               reverse_dt$start, reverse_dt$end, reverse_dt$width)
 
@@ -215,11 +219,9 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
     #forward_dt <- NULL
     #reverse_dt <- NULL
-
     row.names(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
-    colnames(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
 
-    prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+    colnames(heat_results) <- c('16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32')
 
     output <- t(c(prefix, as.vector(heat_results)))
 
@@ -231,7 +233,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       })
     output <- NULL
 
-    message("Making z_df")
     # Put results into table
     z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
     #z_res <- NULL
@@ -249,18 +250,15 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   f_summarized <- NULL
   r_summarized <- NULL
   overlaps <- NULL
-
+  
 ################################################################### phased piRNAs #########################################################################
   #prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
 
   ################## compute plus strand
 
-  #message("Setting chrom with getChrPlus")
-  #chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-  #message("Setting chrom: Success")
   cat(file = paste0(wkdir, logfile), paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
   print("Calculating phasing on plus strand.")
-
+  
   # Processing unistrand, so make copy of original read df to transform
   filter_r1_dt <- forward_dt %>%
     dplyr::filter(first == "T") %>%
@@ -303,7 +301,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     dplyr::select(-first) %>%
     dplyr::group_by_all() %>%
     dplyr::count()
-
+  
   if (!nrow(over_26_dt) == 0) {
     phased_26_plus_counts <- calc_phasing(over_26_dt, over_26_dt, 59)
   } else {
@@ -324,9 +322,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   #combine the results tables
   plus_df <- cbind(phased_plus_counts, phased_26_plus_counts)
-
-  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-
 
   phased_plus_output <- phased_plus_counts %>%
     dplyr::select(phased_z)
@@ -386,14 +381,14 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   ################ run minus strand
   cat(file = paste0(wkdir, logfile), paste0("Running minus strand phasing.", "\n"), append = TRUE)
   print("Running minus strand phasing.")
-
+  
   filter_r1_dt <- reverse_dt %>%
     dplyr::filter(first == "T") %>%
     dplyr::mutate(end = start + (width - 1) + 59) %>%
     dplyr::select(-first) %>%
     dplyr::group_by_all() %>%
     dplyr::count()
-
+  
   filter_r2_dt <- reverse_dt %>%
     dplyr::filter(first == "T") %>%
     dplyr::select(-first) %>%
@@ -447,8 +442,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                   phased26_z = phased_z)
 
   minus_df <- cbind(phased_minus_counts, phased_26_minus_counts)
-
-  prefix <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
 
   phased_minus_output <- phased_minus_counts %>%
     dplyr::select(phased_z)
@@ -543,7 +536,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 ### make plots
 #  if(!sum(heat_results) == 0 && plot_output == TRUE){
 
-   if(plot_output == TRUE){
+  if (plot_output == TRUE) {
     cat(file = paste0(wkdir, logfile), paste0("Generating plots.", "\n"), append = TRUE)
     ### ping pong plots
     read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
@@ -556,10 +549,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     z <- plot_overlapz(z_df)
     dist_plot <- plot_sizes(read_dist)
 
-
-
-    if((reg_stop - reg_start) > 7000){
-      print("TRUE")
+    if ((reg_stop - reg_start) > 7000) {
       density_plot <- plot_large_density(data, reg_start, reg_stop)
     } else {
       density_plot <- plot_density(data, reg_start, reg_stop)
@@ -576,7 +566,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     minus_phased_plot <- plot_phasedz(minus_df, "-")
 
 
-    if(sum(heat_results) > 0){
+    if (sum(heat_results) > 0) {
       options(scipen = 999)
       heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
 
@@ -594,68 +584,60 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                                      rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
       #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
 
-
-
     } else {
-       top_left <- cowplot::plot_grid(dist_plot, ncol = 1, rel_widths = c(1),
+      top_left <- cowplot::plot_grid(dist_plot, ncol = 1, rel_widths = c(1),
                                    rel_heights = c(0.8,0.1,1), align = "vh", axis = "lrtb")
-       top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
+      top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot, ncol = 1, rel_widths = c(1,1,1,1,1),
                                    rel_heights = c(1,0.1,1,0.1,1), align = "vh", axis = "lrtb")
 
-       top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
+      top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1,0.1,1))
 
-       bottom <- cowplot::plot_grid(density_plot)
+      bottom <- cowplot::plot_grid(density_plot)
       ## phased plots
                                                                                                                      #left null right null bottom
-       all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
+      all_plot <- cowplot::plot_grid(top, NULL, bottom, nrow = 3,  ncol = 1, rel_widths = c(0.9,0.9,0.9),
                                    rel_heights = c(1,0.1,0.8), align = "vh", axis = "lrtb")
      #grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
 
     }
-    if(out_type == "png" || out_type == "PNG"){
-      grDevices::png(file=paste0(wkdir, chrom_name, "_", reg_start, "-", reg_stop, "_pi-zscore.png"), width = 10, height = 11, bg = "white", units = "in", res = 300)
+    
+    if (out_type == "png" || out_type == "PNG") {
+      grDevices::png(file = file.path(wkdir, paste0(prefix, "_pi-zscore.png")), width = 10, height = 11, bg = "white", units = "in", res = 300)
       print(all_plot)
       grDevices::dev.off()
     } else {
-      grDevices::pdf(file=paste0(wkdir, chrom_name, "_", reg_start, "-", reg_stop, "_pi-zscore.pdf"), width = 10, height = 11)
+      grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_pi-zscore.pdf")), width = 10, height = 11)
       print(all_plot)
       grDevices::dev.off()
     }
-
   }
 
 
-  if(!is.na(sum(phased_plus_counts$phased_z))){
-
+  if (!is.na(sum(phased_plus_counts$phased_z))) {
     # get average zscore for first 4 distances (1-4nt)
     ave_plus_z <- mean(phased_plus_counts$phased_z[1:4])
   } else {
     ave_plus_z <- -33
   }
 
-
-  if(!is.na(sum(phased_26_plus_counts$phased26_z))){
+  if (!is.na(sum(phased_26_plus_counts$phased26_z))) {
     ave_plus_26z <- mean(phased_26_plus_counts$phased26_z[1:4])
   } else {
     ave_plus_26z <- -33
   }
 
-
-  if(!is.na(sum(phased_minus_counts$phased_z))){
-
+  if (!is.na(sum(phased_minus_counts$phased_z))) {
     ave_minus_z <- mean(phased_minus_counts$phased_z[1:4])
   } else {
     ave_minus_z <- -33
   }
 
-
-  if(!is.na(sum(phased_26_minus_counts$phased26_z))){
+  if (!is.na(sum(phased_26_minus_counts$phased26_z))) {
     ave_minus_26z <- mean(phased_26_minus_counts$phased26_z[1:4])
   } else {
     ave_minus_26z <- -33
   }
 
-  message("Made it to the return statement of run_piRNA_function")
   #return(c(ave_z, ave_26z))
   #cat(file = paste0(wkdir, logfile), paste0("Returning results for ML table.", "\n"), append = TRUE)
   #results for ML table
