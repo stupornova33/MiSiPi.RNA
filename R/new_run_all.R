@@ -238,13 +238,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   if (plot_output == TRUE) {
     size_dir <- file.path(getwd(), "run_all", "size_plots")
-
+    
     if (!dir.exists(size_dir)) {
       dir.create(size_dir)
     }
-
+    
     plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
-
+    
     size_plot <- plot_sizes(read_dist)
     plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
     plot_file <- file.path(size_dir, plot_filename)
