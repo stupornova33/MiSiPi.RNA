@@ -195,15 +195,16 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                     total_dupes = r1_dupes * r2_dupes)
     # call new_pi_overlaps
 
-    overlap_counts <- overlaps %>%
-      dplyr::group_by(overlap) %>%
-      dplyr::summarize(num = sum(total_dupes))
+
+    overlap_out <- data.frame(t(z_res))
+    colnames(overlap_out) <- overlap_out[1,]
+    overlap_out <- overlap_out[-1,]
 
     suppressWarnings(
-      if(!file.exists("piRNA_alloverlaps_counts.txt")){
-        utils::write.table(overlap_counts, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = T, na = "NA", row.names = F)
+      if(!file.exists(paste0(wkdir, "piRNA_alloverlaps_counts.txt"))){
+        utils::write.table(overlap_out, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = FALSE)
       } else {
-        utils::write.table(overlap_counts, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
+        utils::write.table(overlap_out, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = FALSE)
     })
 
     #forward_dt <- NULL
@@ -215,7 +216,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     output <- t(c(prefix, as.vector(heat_results)))
 
     suppressWarnings(
-    if(!file.exists("piRNA_heatmap.txt")){
+    if(!file.exists(paste0(wkdir, "piRNA_heatmap.txt"))){
         utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = F)
       } else {
         utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
@@ -495,6 +496,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     }
   )
 
+  #all phased is the sum of zscores for both plus and minus strand
   suppressWarnings(
     if(!file.exists(paste0(wkdir,"all_phased_piRNA_zscores.txt"))){
       write.table(tbl,
