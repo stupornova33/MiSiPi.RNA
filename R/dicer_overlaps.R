@@ -60,22 +60,14 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
     final_helix_df <- helix_df
   }
 
-
-  
-  
-  
-  
-  
-  
-  
-  
   #remove results where segment of paired bases is less than 15nt
   # for example the loop sequence
-  final_helix_df <- final_helix_df %>% dplyr::filter(j - i > 15)
+  final_helix_df <- final_helix_df %>%
+    dplyr::filter(j - i > 15)
 
   if (nrow(final_helix_df) == 0){
-    i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
-                               r2_start = 0, r2_width = 0, r2_end = 0)
+    i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0, r1_dupes = 0,
+                               r2_start = 0, r2_width = 0, r2_end = 0, r2_dupes = 0)
     return(i_j_overlaps)
   }
 
@@ -84,17 +76,15 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
   filter_helix <- grouped_helix %>%
     dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
   #write.table(grouped_helix, "grouped_helix.txt", sep = "\t", row.names = FALSE, quote = FALSE)
+  
+  # 10/28/24 removed num_shifted column from i_dat as it appears to never be used in the package
+  i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), n = numeric(0), paired_start = numeric(0), paired_end = numeric(0))
+  j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), n = numeric(0), paired_start = numeric(0), paired_end = numeric(0))
 
-  i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_start = numeric(0), paired_end = numeric(0), num_shifted = numeric(0))
-  j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), paired_start = numeric(0), paired_end = numeric(0))
-
-  #print('dicer_dt')
-  #print(head(dicer_dt))
   dicer_dt <- dicer_dt %>%
     data.frame() %>%
-    dplyr::select(c(start, end, rname))
+    dplyr::select(c(start, end, rname, n))
 
-  #i = 13
   ## Start
   if (nrow(filter_helix) > 0) {
     for (i in 1:nrow(filter_helix)) {
@@ -111,7 +101,8 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
       x_dat <- dicer_dt[x_idx,]
 
       #eliminate reads which extend to a highly unpaired region
-      x_dat <- x_dat %>% dplyr::filter(start >= filter_helix$X.Start[i])
+      x_dat <- x_dat %>%
+        dplyr::filter(start >= filter_helix$X.Start[i])
 
       y_idx <- which(dicer_dt$start %in% y_rng | dicer_dt$end %in% y_rng)
 
@@ -255,10 +246,10 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
       }
     } # End 'i' for loop
   }
-
+  
   i_dat <- i_dat %>%
     dplyr::mutate(paired_width = paired_end - paired_start + 1) %>%
-    dplyr::select(rname, paired_start, paired_end, paired_width) %>%
+    dplyr::select(rname, paired_start, paired_end, paired_width, n) %>%
     dplyr::rename(start = paired_start, end = paired_end, width = paired_width)
 
   # filter out transformed reads that are shorter than 18 and longer than 32
@@ -269,23 +260,24 @@ dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
   
   j_dat <- j_dat %>%
     dplyr::relocate(rname)
-
   
   # Summarize the data for faster processing
-  i_dat <- i_dat %>%
-    dplyr::group_by_all() %>%
-    dplyr::count()
+  # 10/28/24 removed the summarizing here as it had to be added in earlier in this function
+  # TODO need to ensure that the call from new_miRNA_function still works with this change
+  #i_dat <- i_dat %>%
+  #  dplyr::group_by_all() %>%
+  #  dplyr::count()
   
-  j_dat <- j_dat %>%
-    dplyr::group_by_all() %>%
-    dplyr::count()
+  #j_dat <- j_dat %>%
+  #  dplyr::group_by_all() %>%
+  #  dplyr::count()
   
 
   if (!nrow(i_dat) == 0 && !nrow(j_dat) == 0) {
     i_j_overlaps <- new_find_overlaps(i_dat, j_dat)
   } else {
-    i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
-                               r2_start = 0, r2_width = 0, r2_end = 0)
+    i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0, r1_dupes = 0,
+                             r2_start = 0, r2_width = 0, r2_end = 0, r2_dupes = 0)
   }
 
   #return table of overlapping read pairs
