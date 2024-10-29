@@ -305,7 +305,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   
   # transforms reads from one arm of hairpin to their paired position
   # makes a table of reads which are overlapping
-  dicer_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, fold_list$start)
+  dicer_overlaps <- dicer_overlaps(r2_summarized, fold_list$helix, chrom_name, fold_list$start)
   # summarize the counts by the # overlapping nucleotides
   z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
 

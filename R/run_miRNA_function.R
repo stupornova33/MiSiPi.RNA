@@ -21,6 +21,7 @@
 #' @return plots
 #' @export
 
+# This function currently doesn't have any of the summarization built in
 run_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, length,
                            strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, write_fastas, weight_reads, out_type){
    print(paste0(chrom_name, "-",reg_start,"-", reg_stop))
