@@ -63,7 +63,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
   size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
     dplyr::group_by(width) %>%
     dplyr::summarise(count = sum(count))
-   
+
   output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
   chromP <- NULL
@@ -99,9 +99,9 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
           "Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n",
           append = TRUE)
     }
-    
+
     print("Completed getting weighted dataframes.")
-    
+
     # check to see if subsetted dfs are empty
     # have to keep doing this at each step otherwise errors will happen
     if (nrow(forward_dt) > 0 & nrow(reverse_dt) > 0) {
@@ -112,11 +112,11 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       f_summarized <- forward_dt %>%
         dplyr::group_by_all() %>%
         dplyr::count()
-      
+
       r_summarized <- reverse_dt %>%
         dplyr::group_by_all() %>%
         dplyr::count()
-      
+
       # get overlapping reads
       overlaps <- find_overlaps(f_summarized, r_summarized) %>%
         dplyr::mutate(p5_overhang = r2_end - r1_end,
@@ -153,14 +153,14 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       #the data.frame should be modified if using calc_expand_overhangs
       dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
       #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
-      results <- 0
+      results <- rep(0, times = 324)
     }
 
   } else {
     cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
     #dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
     dicer_overhangs <- data.frame(shift = seq(-4,4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
-    results <- 0
+    results <- rep(0, times = 324)
   }
 
   # transform the data frame for writing to table by row
@@ -253,7 +253,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
           right <- cowplot::plot_grid(plus_hp_overhangs, minus_hp_overhangs, plus_phasedz, minus_phasedz, dicer_plot, ncol = 1, align = "vh", axis = "l", rel_widths = c(1,1,1,1,1), rel_heights = c(1,1,1,1,1))
 
         }
-        
+
         all_plot <- cowplot::plot_grid(left, NULL, right, ncol = 3, rel_widths = c(0.9, 0.01,0.7), align = "vh", axis = "lrtb")
 
 
