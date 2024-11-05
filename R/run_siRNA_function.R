@@ -183,16 +183,15 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
   #heat output nees to be a matrix, so transform
   heat_output <- t(c(prefix, as.vector(results)))
 
-   suppressWarnings(
-     if(!file.exists(paste0(wkdir, "siRNA_heatmap.txt"))){
-       utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = FALSE)
-     } else {
-       utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = FALSE)
-     }
-   )
-   print("heatmap has been written.")
-
-
+  suppressWarnings(
+    if (!file.exists(paste0(wkdir, "siRNA_heatmap.txt"))) {
+      utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = FALSE)
+    } else {
+      utils::write.table(heat_output, file = paste0(wkdir, "siRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = FALSE)
+    }
+  )
+  print("heatmap has been written.")
+  
   print("Beginning hairpin function.")
   #run the hairpin function on each strand separately
   dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,

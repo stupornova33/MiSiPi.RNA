@@ -16,6 +16,14 @@ calc_phasing <- function(df1, df2, n) {
   
   phased <- find_hp_overlaps(df1, df2, n)
   
+  # Convert the dupes columns to numeric so they can handle larger numbers
+  # A few loci were giving combined duplicate counts into the trillions
+  # The largest number R can store in an integer is system dependant,
+  # but it is usually around 2 billion
+  
+  phased$r1_dupes <- as.numeric(phased$r1_dupes)
+  phased$r2_dupes <- as.numeric(phased$r2_dupes)
+  
   if (!nrow(phased) == 0) {
     print('making phased_counts')
     phased <- phased %>%
