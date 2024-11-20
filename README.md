@@ -9,7 +9,9 @@ For more details about the package or to cite, please visit https://www.biorxiv.
 ## MiSiPi.RNA
 Characterization of small RNA pathways
 
-### Installation
+### Installation and Basic Usage
+You can find the full documentation and examples ![here](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html).
+
 In order to install MiSiPi.RNA, you must first install devtools and BiocManager:
 
 ```
@@ -29,11 +31,16 @@ In order for this package to work, you must also have RNAfold from the ViennaRNA
 package installed. You will need the path to the RNAfold executable.
 See https://www.tbi.univie.ac.at/RNA/ for installation.
 
+#### Optional dependencies 
+For converting the .ps output files from the miRNA module to .png, install [ImageMagick](https://imagemagick.org/index.php) and [ghostscript](https://www.ghostscript.com/), 
+then run 
+```
+ps2png(ps2png(path_to_magick_exe, file_dir)
+```
+where path_to_magick_exe is the full path to the binary executable and file_dir is the folder containing the .ps files. This will also be the output folder.
+
 ### Input
-The input for any of MiSiPi.RNA's main functions is an object created by the
-set_vars() function. Running set_vars will always be the first step in using
-this package. Below is a description of each of the parameters that will be
-passed to set_vars(). These should be changed based on your needs.
+The input for any of MiSiPi.RNA's main functions is an object created by theset_vars() function. Running set_vars will always be the first step in using this package. Below is a description of each of the parameters that will be passed to set_vars(). These should be changed based on your needs.
 
 - **roi**             - A bed file listing your regions of interest
 - **bam_file**        - A BAM file of aligned reads. Index file must also be present
@@ -90,7 +97,29 @@ piRNA_function(vars)
 siRNA_function(vars)
 ```
 
-## To run the above functions all at once and get a handy table of scores and statistics about each region of interest:
+## To run the above functions all at once:
+This outputs a table with metrics and statistics which can be used for summarization or machine learning. See the [documentation](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html) for more details regarding values in table.
+
+```
 misipi_rna(vars)
 
 ```
+## To make a plot summary and sortable table of results:
+
+```
+# ml_plots is for users who have already run machine learning 
+make_html_summary("full/path/to/run_all/", type = (one of "siRNA", "piRNA" or "miRNA"), ml_plots = FALSE)
+```
+
+## Use built-in machine learning model to characterize loci:
+See full [documentation](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html) for more details. 
+
+```
+#give the path to the directory that contains the folder and the name of the table
+ml_probability("full/path/to/table/directory/", "table_ml.txt")
+```
+
+
+
+
+
