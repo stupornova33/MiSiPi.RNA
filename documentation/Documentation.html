@@ -1649,8 +1649,8 @@ Linux, and Mac operating systems.</p>
 reference genome, convert to BAM format, and index.</p></li>
 <li><p>If you are interested in characterizing novel or un-annotated
 species, you should create a BED file of regions of interest using a
-pipeline similar to the method shown here (link to cluster calling).
-Otherwise, reference annotations can be used.</p></li>
+pipeline similar to the method shown in the Cluster Calling section of
+this document. Otherwise, reference annotations can be used.</p></li>
 <li><p>The regions of interest should be formatted as a 3-column BED
 file (but if there are more columns, they will be ignored) and all lines
 must contain the same number of fields. Chromosome names in the BED file
@@ -5240,6 +5240,48 @@ of partial annotations, it may be beneficial to include flanking regions
 of each locus (adding x bases to the stop and subtracting x bases from
 the start).</p></li>
 </ol>
+</div>
+<div id="cluster-calling-pipeline" class="section level2">
+<h2>Cluster calling pipeline</h2>
+<p>This basic pipeline can be used to create a list of regions of
+interest in under-annotated genomes for which small RNA is available.
+The suggested computational environment required to run this script is a
+high performance compute cluster with the following programs installed
+in your path:</p>
+<ul>
+<li>samtools</li>
+<li>bowtie (not bowtie2)</li>
+<li>bedtools</li>
+</ul>
+<pre class="bash"><code>
+#Identifying small RNA regions of interest
+#miRNAs &amp; siRNAs: get reads of only miRNA and siRNA length
+awk &#39;BEGIN {OFS = &quot;\n&quot;} {header = $0; getline seq; getline qheader ; getline qseq ; if (length(seq) &gt;= 19 &amp;&amp; length(seq) &lt;= 23) {print header, seq, qheader, qseq}}&#39; \ &lt; trimmed.fq &gt; small.fastq
+
+#piRNAs: get reads of piRNA length
+awk &#39;BEGIN {OFS = &quot;\n&quot;} {header = $0; getline seq; getline qheader ; getline qseq ; if(length(seq) &gt;= 23 &amp;&amp; length(seq) &lt;= 30) {print header, seq, qheader, qseq}}&#39; \
+&lt; trimmed.fq &gt; large.fastq
+
+#Align reads to genome
+bowtie -p 10 -a -m 100 --best --strata --no-unal genome.fna small.fastq -S | samtools view -@ 10 -q 10 -b |samtools sort -@ 10 -m 6G &gt; small.bam
+
+samtools index small.bam
+
+bowtie -p 20 -a -m 100 --no-unal genome.fna large.fastq -S | samtools view -@ 10 -q 10 -b | samtools sort -@ 10 -m 6G &gt; large.bam
+samtools index large.bam
+
+#Calculate coverage of all reads over genome
+bedtools genomecov -bg -ibam all.bam | awk &#39;$4 &gt; 100&#39; &gt; HE.tmp.bedgraph
+
+#Get large regions of high expression
+bedtools merge -d 500 -i HE.tmp.bedgraph &gt; HE.tmp.merge.bed
+awk &#39;{n=$2; x=$3; print $1&quot;\t&quot;$2&quot;\t&quot;$3&quot;\t&quot;x-n}&#39; &lt; HE.tmp.merge.bed | awk &#39;$4 &gt; 40&#39; &gt; HE.all.bed #all highly expressed
+
+#Get potential regions of high miRNA/siRNA RNA expresssion
+bedtools multicov -bams small.bam all.bam -bed HE.all.bed | awk &#39;{n=$5; x=$6; print $1&quot;\t&quot;$2&quot;\t&quot;$3&quot;\t&quot;n/x}&#39; | awk &#39;$4 &gt; 0.5&#39; &gt; HE.small.bed # only high expressed 21-23 nt
+
+#Get potential regions of high piRNA expression
+bedtools multicov -bams large.bam all.bam -bed HE.all.bed | awk &#39;{n=$5; x=$6; print $1&quot;\t&quot;$2&quot;\t&quot;$3&quot;\t&quot;n/x}&#39; | awk &#39;$4 &gt; 0.5&#39; &gt; HE.large.bed #only high expressed 23-30 nt</code></pre>
 </div>
 
 
