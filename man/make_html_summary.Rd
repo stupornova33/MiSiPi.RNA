@@ -5,12 +5,14 @@
 \title{Make_html_summary
 Takes a file path and creates a graphic summary of all loci from a MiSiPi run}
 \usage{
-make_html_summary(path_to_tables, type)
+make_html_summary(path_to_tables, type, ml_plots = FALSE)
 }
 \arguments{
 \item{path_to_tables}{A string specifying the full path to the folder containing the table outputs from MiSiPi.RNA}
 
 \item{type}{A string specifying which module of MiSiPi.RNA should be plotted in the summary. Options are one of: "miRNA", "siRNA", or "piRNA"}
+
+\item{ml_plots}{A string specifying whether probability plots are available in the directory and should be included in the outputs.}
 }
 \value{
 nothing

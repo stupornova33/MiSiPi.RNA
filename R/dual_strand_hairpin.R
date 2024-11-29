@@ -103,7 +103,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   if (weight_reads == "weight_by_prop") {
     r2_dt <- weight_by_prop(r2_dt, chrom_name)
   } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-    r2_dt <- locus_norm(r2_dt, sum(r2_dt$count))
+    r2_dt <- locus_norm(r2_dt, sum(r2_dt$n))
   } else if (is.integer(weight_reads)) {
     r2_dt <- weight_by_uservalue(r2_dt, weight_reads, (reg_stop - reg_start + 1))
   } else {
@@ -170,7 +170,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
     dicer_dt <- r2_dt %>%
       dplyr::group_by(rname, start, end, width, first) %>%
-      dplyr::summarize(count = dplyr::n())
+      dplyr::count()
 
     all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
     # dicer_overlaps() returns zero values if there are no valid overlaps
@@ -207,7 +207,6 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       perc_paired <- -33
   }
 
-
   # results for the ML table
   print("Creating plus_res")
   if (exists("plus_null_res")) {
@@ -220,7 +219,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
                 phased_tbl.phased_z = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
   }
-
+  
   ############################################################# compute minus strand ############################################################
   # do the same thing for the minus strand
   print("Beginning minus strand.")
@@ -241,7 +240,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   if (weight_reads == "weight_by_prop") {
     r2_dt <- weight_by_prop(r2_dt, chrom_name)
   } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-    r2_dt <- locus_norm(r2_dt, sum(r2_dt$count))
+    r2_dt <- locus_norm(r2_dt, sum(r2_dt$n))
   } else if (is.integer(weight_reads)) {
     r2_dt <- weight_by_uservalue(r2_dt, weight_reads, (reg_stop - reg_start + 1))
   } else {
@@ -295,13 +294,14 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   if (nrow(r2_dt) > 0) {
     print("nrow r2_dt > 0.")
     print(paste0("fold_bool: ", fold_bool))
+    
+    # take unique reads for dicer overhang calculation, then replicate according to count later
+    dicer_dt <- r2_dt %>%
+      dplyr::group_by(rname, start, end, first, width) %>%
+      dplyr::count()
+    
     if (fold_bool == 'TRUE') {
        print("Calculating dicer_overlaps.")
-
-       # take unique reads for dicer overhang calculation, then replicate according to count later
-       dicer_dt <- r2_dt %>%
-         dplyr::group_by(rname, start, end, first, width) %>%
-         dplyr::summarize(count = dplyr::n())
        #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
        all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
 
@@ -329,7 +329,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
         fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir)
         MFE <- fold_list$MFE
         perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
-        all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start)
+
+        all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
 
       if (!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)) {  #if there are overlaps calc overhangs
         if (write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, all_overlaps, "_hairpin")
