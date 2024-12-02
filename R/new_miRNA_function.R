@@ -78,7 +78,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
-  
+
   chrom <- NULL
 
   if (nrow(r2_dt) == 0) {
@@ -94,7 +94,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
       r2_dt <- no_weight(r2_dt, as.character(chrom_name))
     }
   }
-  
+
   #transform ends of one set of reads
   r1_dt <- r2_dt %>%
     dplyr::mutate(end = end + 59)
@@ -117,7 +117,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
                     all.x = TRUE) %>%
     dplyr::select(-c(count.x)) %>%
     dplyr::rename('count' = count.y)
-  
+
   dt_table[is.na(dt_table)] = 0
 
   # returns overlaps
@@ -133,17 +133,17 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   #r2_dt <- utils::head(r2_dt, 10000)
 
   #system.time(test_overlap <- new_find_overlaps(r2_dt))
-  
+
   r1_summarized <- r1_dt %>%
     dplyr::group_by_all() %>%
     dplyr::count()
-  
+
   r2_summarized <- r2_dt %>%
     dplyr::group_by_all() %>%
     dplyr::count()
 
   overlaps <- find_overlaps(r1_summarized, r2_summarized)
-  
+
   MAX_DIST_APART <- 60
 
   overlaps <- overlaps %>%
@@ -153,7 +153,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     dplyr::filter(r1_end < r2_start & dist <= MAX_DIST_APART) %>%
     dplyr::filter(dist > 2) %>%  # only want read pairs where start position of read 2 is after the end of read 1
     dplyr::select(-dist)
-  
+
   # write out pairs here
   if (nrow(overlaps) == 0) {
     cat(paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
@@ -208,7 +208,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     dplyr::rename("r1_start" = "start", "r1_end" = "stop")
   r2_seqs <- getFastas(geno_seq, read_pileups$r2_start, read_pileups$r2_end, nrow(read_pileups)) %>%
     dplyr::rename("r2_start" = "start", "r2_end" = "stop")
-  
+
   geno_seq <- NULL
 
   read_pileups <- read_pileups %>%
@@ -250,17 +250,17 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   final <- most_abundant[1,]
   final_seq <- final$whole_seq
 
-  
+
   #RNAfold wants U's not T's, so convert to U
   converted <- list(convertU(final_seq, 1))
-  
+
   converted <- data.frame('V1' = unname(unlist(converted)))
-  
+
   colnames(converted) <- paste0(">", chrom_name, "-", final$r1_start - 1, "_", final$r2_end - 1)
   final$converted <- converted$V1
-  
+
   write.table(converted, file = paste0(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
-  
+
   mx_idx <- which(c(final$r1_count_avg, final$r2_count_avg) == max(final$r1_count_avg, final$r2_count_avg))
   mx <- c(final$r1_count_avg, final$r2_count_avg)[mx_idx]
 
@@ -280,15 +280,15 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
   # need to convert starts and stops of reads to 1-based for coloring structure
   # diff <- final$r1_start - reg_start
-  
+
   # Get the relative start and stop positions of the reads in the context of final_seq for plotting purposes
   pos_df <- data.frame(r1_start = stringr::str_locate(final_seq, final$r1_seq)[1],
                        r1_end = stringr::str_locate(final_seq, final$r1_seq)[2],
                        r2_start = stringr::str_locate(final_seq, final$r2_seq)[1],
                        r2_end = stringr::str_locate(final_seq, final$r2_seq)[2])
-  
+
   rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
-  
+
   print('making fold_list')
   ################################################################################################################
   #fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
@@ -299,10 +299,10 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   #prefix <- paste0(wkdir, chrom_name, "-", (fold_list$start - 1), "-", (fold_list$stop - 1))
   prefix <- get_region_string(chrom_name, reg_start, reg_stop)
   print(prefix)
-  
+
   mfe <- fold_list$mfe
   perc_paired <- (length(fold_list$helix$i)*2)/(fold_list$stop - fold_list$start)
-  
+
   # transforms reads from one arm of hairpin to their paired position
   # makes a table of reads which are overlapping
   dicer_overlaps <- dicer_overlaps(r2_summarized, fold_list$helix, chrom_name, fold_list$start)
@@ -386,9 +386,9 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
     left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
     right_top <- cowplot::plot_grid(NULL, density_plot,zplot, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(0.4,1,1), align = "vh", axis = "lrtb")
-      
+
     all_plot <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1,1), rel_widths = c(1,1), align = "vh", axis = "lrtb")
-    
+
     if (out_type == "png" || out_type == "PNG") {
       grDevices::png(file = file.path(wkdir, paste(prefix, strand, "combined.png", sep = "_")), height = 8, width = 11, units = "in", res = 300)
       print(all_plot)
@@ -404,3 +404,4 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
   return(results)
 }
+
