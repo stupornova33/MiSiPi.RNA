@@ -11,7 +11,7 @@
 #' @export
 
 fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, wkdir) {
-  
+
   write.table(converted,
               file = file.path(wkdir, "converted.fasta"),
               sep = "\n",
@@ -42,7 +42,7 @@ fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, 
   # Delete unwanted .ps file
   ps_filename_to_remove <- paste0(chrom_name, "-", start - 1, "_", stop - 1, "_ss.ps")
   file.remove(file.path(ps_filename_to_remove))
-  
+
   pos_vec <- seq(2, length(fold), by = 2)
   sep_seqs <- function(x) {
     vien_split <- stringi::stri_split_fixed(fold[3], pattern = " ")[[1]][2]
@@ -57,14 +57,20 @@ fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, 
     print(vien_struct)
     vien_split <- test[[x]][[1]]
     print(vien_split)
-    ct <- RRNA::makeCt(vien_struct, fold[[1]])
+    ct <- RRNA::makeCt(vien_struct, fold[[2]])
     # Using capture.output to silence the excessive console output from ct2coord
-    utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
-
+    # check to see if no bases are paired first
+    if(sum(ct$bound) > 0){
+      utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
+        mfe <- gsub(' ', '', gsub('[)]','', gsub('[(]', '', vien_split)))
+        print(mfe)
+        mfe <- as.numeric(mfe)
+    } else {
+      coord <- NULL
+      mfe <- 0
+    }
     #split the string to get mfe
-    mfe <- gsub(' ', '', gsub('[)]','', gsub('[(]', '', vien_split)))
-    print(mfe)
-    mfe <- as.numeric(mfe)
+
     start <- start
     stop <- stop
     converted <- converted
