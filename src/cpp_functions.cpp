@@ -521,8 +521,10 @@ DataFrame calc_overhangs(std::vector<int> r1_start, std::vector<int> r1_end,
       int new_r2_start = r2_start[j] + i; // Shift r2_start
       int new_r2_end = new_r2_start + r2_width[j] - 1;
 
-      int p3_overhang = new_r2_start - r1_start[j];
-      int p5_overhang = new_r2_end - r1_end[j];
+      int p5_overhang = r1_start[j] - new_r2_start;
+      //int p5_overhang = new_r2_end - r1_end[j];
+      //12/31/24 change to match siRNA_function
+      int p3_overhang = r1_end[j] - new_r2_end;
 
       if (p5_overhang == 2 && p3_overhang == 2) {
         if (dupes_present) {
