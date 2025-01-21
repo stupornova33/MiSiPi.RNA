@@ -35,7 +35,7 @@ See https://www.tbi.univie.ac.at/RNA/ for installation.
 For converting the .ps output files from the miRNA module to .png, install [ImageMagick](https://imagemagick.org/index.php) and [ghostscript](https://www.ghostscript.com/), 
 then run 
 ```
-ps2png(ps2png(path_to_magick_exe, file_dir)
+ps2png(path_to_magick_exe, file_dir)
 ```
 where path_to_magick_exe is the full path to the binary executable and file_dir is the folder containing the .ps files. This will also be the output folder.
 
