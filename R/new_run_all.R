@@ -296,7 +296,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
                                annotate_region, weight_reads, gtf_file,
                                write_fastas, out_type)
 
-  max_si_heat <- get_max_si_heat(si_res)
+  max_si_heat <- .get_max_si_heat(si_res)
 
   local_ml$highest_si_col <- max_si_heat$highest_si_col
   si_dicerz <- si_res$si_dicer$Z_score[5]
@@ -484,13 +484,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
 
   #if(!is.na(pi_res[[1]])){
-  #  max_pi_heat <- get_max_pi_heat(pi_res)
+  #  max_pi_heat <- .get_max_pi_heat(pi_res)
 
   #  local_ml$pingpong_col <- max_pi_heat$highest_pi_col
 
   #  local_ml$max_pi_count <- max_pi_heat$highest_pi_count/total_read_count
 
-  #  local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
+  #  local_ml$max_piz_overlap <- .get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
   #  piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
   #  col_status <- ifelse(.exists_not_empty(piz_overlap_file), FALSE, TRUE)
   #  write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
@@ -503,11 +503,11 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   #max_pi_heat <- NULL
 
   if(sum(pi_res[[1]]) != 0){
-    max_pi_heat <- get_max_pi_heat(pi_res)
+    max_pi_heat <- .get_max_pi_heat(pi_res)
     local_ml$pingpong_col <- max_pi_heat$highest_pi_col
     # changed pi_count to CPM
     local_ml$max_pi_count <- ((max_pi_heat$highest_pi_count)*1000000)/total_read_count
-    local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res$z_df$Z_score), unlist(pi_res$z_df$Overlap))[[1]]
+    local_ml$max_piz_overlap <- .get_max_zscore(unlist(pi_res$z_df$Z_score), unlist(pi_res$z_df$Overlap))[[1]]
     piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
     col_status <- ifelse(.exists_not_empty(piz_overlap_file), FALSE, TRUE)
     write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
