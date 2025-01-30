@@ -34,7 +34,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
 
    #for the read size dist plot
 
-   read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+   read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
    if(strand == "+"){
       chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)

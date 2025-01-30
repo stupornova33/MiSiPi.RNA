@@ -529,7 +529,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   if (plot_output == TRUE) {
     cat(file = paste0(wkdir, logfile), paste0("Generating plots.", "\n"), append = TRUE)
     ### ping pong plots
-    read_dist <- get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+    read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
     ## calculate read density by size
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
