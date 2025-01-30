@@ -7,7 +7,7 @@
 .calc_phasing <- function(df1, df2, n) {
   dist <- num.y <- num.x <- Zscore <- num <- NULL
 
-  phased <- find_hp_overlaps(df1, df2, n)
+  phased <- .find_hp_overlaps(df1, df2, n)
 
   # Convert the dupes columns to numeric so they can handle larger numbers
   # A few loci were giving combined duplicate counts into the trillions
