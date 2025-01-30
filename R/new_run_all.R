@@ -257,7 +257,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
                     )
   }
 
-  local_ml$perc_first_nucT <- first_nuc_T(forward_dt, reverse_dt)
+  local_ml$perc_first_nucT <- .first_nuc_T(forward_dt, reverse_dt)
 
   all_nuc_10 <- all_seqs %>%
     stringr::str_sub(10, 10)
