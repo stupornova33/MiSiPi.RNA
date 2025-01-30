@@ -314,7 +314,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   local_ml$hp_perc_paired <- max(plus_perc_paired, minus_perc_paired)
 
   perc_paired_file <- paste0(si_dir, "perc_paired.txt")
-  col_status <- ifelse(exists_not_empty(perc_paired_file), FALSE, TRUE)
+  col_status <- ifelse(.exists_not_empty(perc_paired_file), FALSE, TRUE)
   write.table(local_ml$hp_perc_paired, perc_paired_file, quote = FALSE, append = TRUE, col.names = col_status)
 
 ######################################################################### get hairpin-specific results ###############################################################
@@ -360,7 +360,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   #local_ml$hp_phasedz <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
 
   hp_dicerz_file <- paste0(si_dir, "hp_dicerz.txt")
-  col_status <- ifelse(exists_not_empty(hp_dicerz_file), FALSE, TRUE)
+  col_status <- ifelse(.exists_not_empty(hp_dicerz_file), FALSE, TRUE)
   #write.table(local_ml$hp_dicerz, hp_dicerz_file, quote = FALSE, append = TRUE, col.names = col_status)
 
   si_res <- NULL
@@ -492,7 +492,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   #  local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res[[2]]$Z_score), unlist(pi_res[[2]]$Overlap))[[1]]
   #  piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
-  #  col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
+  #  col_status <- ifelse(.exists_not_empty(piz_overlap_file), FALSE, TRUE)
   #  write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
   #} else {
   #    local_ml$pingpong_col <- -33
@@ -509,7 +509,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
     local_ml$max_pi_count <- ((max_pi_heat$highest_pi_count)*1000000)/total_read_count
     local_ml$max_piz_overlap <- get_max_zscore(unlist(pi_res$z_df$Z_score), unlist(pi_res$z_df$Overlap))[[1]]
     piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
-    col_status <- ifelse(exists_not_empty(piz_overlap_file), FALSE, TRUE)
+    col_status <- ifelse(.exists_not_empty(piz_overlap_file), FALSE, TRUE)
     write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
   } else {
     local_ml$pingpong_col <- -33
@@ -548,7 +548,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   }
 
   pi_phasedz_file <- paste0(piRNA_dir, "pi_phasedz.txt")
-  col_status <- ifelse(exists_not_empty(pi_phasedz_file), FALSE, TRUE)
+  col_status <- ifelse(.exists_not_empty(pi_phasedz_file), FALSE, TRUE)
   write.table(local_ml$pi_phasedz, pi_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
 
 
@@ -573,7 +573,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   cat(file = logfile, "Writing results to table\n", append = TRUE)
 
   ml_file <- paste0(tbl_name, "_ml.txt")
-  col_status <- ifelse(exists_not_empty(paste0(all_dir, ml_file)), FALSE, TRUE)
+  col_status <- ifelse(.exists_not_empty(paste0(all_dir, ml_file)), FALSE, TRUE)
   print(paste0("col_status: ", col_status))
   utils::write.table(df, paste0(all_dir, ml_file), sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
 
