@@ -24,8 +24,8 @@ plot_sizes_by_strand <- function(chrom_name, reg_start, reg_stop, bam_file, libs
 
   # extract reads by strand
   # this creates a list object
-  chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-  chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
+  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
 
   # turn the list object into a more useable data frame and filter reads by length,

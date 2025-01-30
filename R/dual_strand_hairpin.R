@@ -85,7 +85,7 @@
   print("Computing plus strand.")
   strand <- "+"
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what = c("rname", "pos", "qwidth"), which = which)
-  chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
+  chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
 
   print("Filtering reads")
   # filter the reads and calculate the end position
@@ -225,7 +225,7 @@
   print("Beginning minus strand.")
   strand <- "-"
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what = c("rname", "pos", "qwidth"), which = which)
-  chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+  chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
   print("Filtering data.")
   r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%

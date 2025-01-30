@@ -101,8 +101,8 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
-  chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-  chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
+  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
   print("filtering forward and reverse dts")
   forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%

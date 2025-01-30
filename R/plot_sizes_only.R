@@ -8,7 +8,7 @@
 
 #' @export
 
-plot_sizes_only <- function(wkdir,geno, bam_file, bed_file) {
+plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
   
   roi <- read.csv(bed_file, header = FALSE, sep = '\t')
 
@@ -30,8 +30,8 @@ plot_sizes_only <- function(wkdir,geno, bam_file, bed_file) {
 
     # extract reads by strand
     # this creates a list object
-    chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-    chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+    chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
+    chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
     forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
       subset(width <= 32 & width >= 18) %>%

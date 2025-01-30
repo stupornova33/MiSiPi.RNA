@@ -37,7 +37,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
    read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
    if(strand == "+"){
-      chrom <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
+      chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
 
       filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
          base::subset(width <= 32 & width >= 18) %>%
@@ -61,7 +61,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
          dplyr::select(-c(first))
 
    } else {
-      chrom <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+      chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
       filter_dt <- data.table::setDT(makeBamDF(chrom)) %>%
          base::subset(width <= 32 & width >= 18) %>%

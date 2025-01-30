@@ -42,12 +42,12 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   bam_header <- NULL
 
   #for the read size distribution plot
-  chrom_m <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
-  chrom_p <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
+  chrom_m <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
+  chrom_p <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
 
   read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
-  # Moved this code block up so that the getChr functions don't have to be called again
+  # Moved this code block up so that the .get_chr functions don't have to be called again
   if(strand == "-"){
     chrom <- chrom_m
   } else {

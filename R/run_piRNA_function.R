@@ -27,8 +27,8 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   # Get the reads from the BAM using Rsamtools
   print("Making chromP and chromM")
   cat(file = paste0(wkdir, logfile), "Making chromP and chromM\n", append = TRUE)
-  chromP <- getChrPlus(bam_obj, chrom_name, reg_start, reg_stop)
-  chromM <- getChrMinus(bam_obj, chrom_name, reg_start, reg_stop)
+  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
+  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
   print("Finished making chromP and chromM. Filtering forward and reverse reads by length.")
 
