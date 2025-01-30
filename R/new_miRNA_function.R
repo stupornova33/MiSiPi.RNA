@@ -142,7 +142,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
     dplyr::group_by_all() %>%
     dplyr::count()
 
-  overlaps <- find_overlaps(r1_summarized, r2_summarized)
+  overlaps <- .find_overlaps(r1_summarized, r2_summarized)
 
   MAX_DIST_APART <- 60
 

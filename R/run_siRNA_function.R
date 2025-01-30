@@ -108,7 +108,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       # Now that the DTs have been weighted and re-expanded,
       # Let's summarize them again and keep track of the duplicates with the column "n"
-      # This will be crucial in keeping memory and cpu usage down during find_overlaps()
+      # This will be crucial in keeping memory and cpu usage down during .find_overlaps()
       f_summarized <- forward_dt %>%
         dplyr::group_by_all() %>%
         dplyr::count()
@@ -118,11 +118,11 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         dplyr::count()
 
       # get overlapping reads
-      #overlaps <- find_overlaps(f_summarized, r_summarized) %>%
+      #overlaps <- .find_overlaps(f_summarized, r_summarized) %>%
       #  dplyr::mutate(p5_overhang = r2_end - r1_end,
       #                p3_overhang = r2_start - r1_start)# %>%
         #dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
-      overlaps <- find_overlaps(f_summarized, r_summarized) %>%
+      overlaps <- .find_overlaps(f_summarized, r_summarized) %>%
        dplyr::mutate(p5_overhang = r1_start - r2_start,
                      p3_overhang = r1_end - r2_end) #%>%
        #dplyr::filter(p3_overhang >= 0 & p5_overhang >= 0)

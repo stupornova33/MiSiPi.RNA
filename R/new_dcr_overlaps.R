@@ -188,8 +188,8 @@ new_dcr_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start){
   j_dat <- j_dat %>% stats::na.omit(j_dat)
 
   if(!nrow(i_dat) == 0 && !nrow(j_dat) == 0){
-    #i_j_overlaps <- find_overlaps(j_dat, i_dat)
-    i_j_overlaps <- find_overlaps(i_dat, j_dat)
+    #i_j_overlaps <- .find_overlaps(j_dat, i_dat)
+    i_j_overlaps <- .find_overlaps(i_dat, j_dat)
   } else {
     i_j_overlaps <- data.frame(r1_start = 0, r1_width = 0, r1_end = 0,
                                r2_start = 0, r2_width = 0, r2_end = 0)

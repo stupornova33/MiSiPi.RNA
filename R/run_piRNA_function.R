@@ -119,7 +119,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       dplyr::count()
     
     #get the overlapping read pairs
-    overlaps <- find_overlaps(r_summarized, f_summarized)
+    overlaps <- .find_overlaps(r_summarized, f_summarized)
     
     print("Completed find_overlaps.")
 
