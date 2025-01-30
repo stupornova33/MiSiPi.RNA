@@ -167,13 +167,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
 
     #transform reads and find dicer pairs
     print("Calculating dicer overlaps.")
-    #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
+    #system.time(all_overlaps <- .dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
     dicer_dt <- r2_dt %>%
       dplyr::group_by(rname, start, end, width, first) %>%
       dplyr::count()
 
-    all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
-    # dicer_overlaps() returns zero values if there are no valid overlaps
+    all_overlaps <- .dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
+    # .dicer_overlaps() returns zero values if there are no valid overlaps
     # so check to make sure the first values are not zero
     if (!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)) {
       #if(write_fastas == TRUE) write_proper_overhangs(r2_dt, r2_dt, wkdir, prefix, all_overlaps, "_hairpin")
@@ -302,8 +302,8 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     
     if (fold_bool == 'TRUE') {
        print("Calculating dicer_overlaps.")
-       #system.time(all_overlaps <- dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
-       all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
+       #system.time(all_overlaps <- .dicer_overlaps(r2_dt, fold_list$helix, chrom_name, reg_start))
+       all_overlaps <- .dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
 
        if (!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)) {  #if there are overlaps calc overhangs
          #if(write_fastas == TRUE) write_proper_overhangs(r2_dt, r2_dt,wkdir, prefix, all_overlaps, "_hairpin")
@@ -330,7 +330,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
         MFE <- fold_list$MFE
         perc_paired <- (length(fold_list$helix$i)*2)/(reg_stop - reg_start)
 
-        all_overlaps <- dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
+        all_overlaps <- .dicer_overlaps(dicer_dt, fold_list$helix, chrom_name, reg_start)
 
       if (!is.na(all_overlaps[1,1]) && !(all_overlaps[1,1] == 0)) {  #if there are overlaps calc overhangs
         if (write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, all_overlaps, "_hairpin")
