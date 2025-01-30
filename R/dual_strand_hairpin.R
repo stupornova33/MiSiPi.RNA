@@ -136,7 +136,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   # calculate phasing signatures
   print("Calculating plus phasing signature.")
   if (nrow(r2_dt) > 0) {
-    plus_hp_phased_tbl <- calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
+    plus_hp_phased_tbl <- .calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
@@ -270,7 +270,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   #calculate phasing
   if (nrow(r2_dt) > 0) {
      print("r2_dt contains data. Calculating phasing.")
-     minus_hp_phased_tbl <- calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
+     minus_hp_phased_tbl <- .calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
      print("summing minus_hp phased_num.")
      minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
      print("getting mean of minus_hp phased_num.")

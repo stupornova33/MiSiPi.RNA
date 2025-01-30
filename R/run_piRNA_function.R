@@ -267,7 +267,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                                       phased_num=rep(0, 51))
 
   if (!nrow(filter_r1_dt) == 0) {
-    phased_plus_counts <- calc_phasing(filter_r1_dt, filter_r2_dt, 59)
+    phased_plus_counts <- .calc_phasing(filter_r1_dt, filter_r2_dt, 59)
   } else {
     # set null results for machine learning if no reads
     phased_plus_counts <- data.table::data.table(phased_dist = c(seq(0,50)),
@@ -293,7 +293,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     dplyr::count()
   
   if (!nrow(over_26_dt) == 0) {
-    phased_26_plus_counts <- calc_phasing(over_26_dt, over_26_dt, 59)
+    phased_26_plus_counts <- .calc_phasing(over_26_dt, over_26_dt, 59)
   } else {
     phased_26_plus_counts <- data.table::data.table(phased_dist =  c(seq(0,50)),
                                                     phased_num = c(rep(0, times = 51)),
@@ -390,7 +390,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
   cat(file = paste0(wkdir, logfile), paste0("Calculating minus strand phasing.", "\n"), append = TRUE)
   if (!nrow(filter_r1_dt) == 0) {
-    phased_minus_counts <- calc_phasing(filter_r1_dt, filter_r2_dt, 59)
+    phased_minus_counts <- .calc_phasing(filter_r1_dt, filter_r2_dt, 59)
   } else {
     phased_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)),
                                                   phased_num = c(rep(0, times = 51)),
@@ -412,7 +412,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     dplyr::count()
 
   if (!nrow(over_26_dt) == 0) {
-    phased_26_minus_counts <- calc_phasing(over_26_dt, over_26_dt, 59)
+    phased_26_minus_counts <- .calc_phasing(over_26_dt, over_26_dt, 59)
   } else {
     phased_26_minus_counts <- data.table::data.table(phased_dist = c(seq(0,50)),
                                                      phased_num = c(rep(0, times = 51)),
