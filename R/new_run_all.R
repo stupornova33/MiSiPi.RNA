@@ -226,7 +226,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   }
 
   all_seqs <- c(forward_dt$seq, reverse_dt$seq)
-  local_ml$perc_GC <- get_GC_content(all_seqs)
+  local_ml$perc_GC <- .get_GC_content(all_seqs)
 
   read_dist <- get_read_size_dist(forward_dt, reverse_dt)
 
