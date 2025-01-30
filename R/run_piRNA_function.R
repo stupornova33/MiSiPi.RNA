@@ -52,7 +52,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   # for the read size dist plot
   cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
 
-  read_dist <- get_read_size_dist(forward_dt, reverse_dt)
+  read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
 
   # Summarize data frames into unique reads with a column of duplicates
   forward_dt <- forward_dt %>%

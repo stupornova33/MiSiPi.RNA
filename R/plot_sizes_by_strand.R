@@ -59,7 +59,7 @@ plot_sizes_by_strand <- function(chrom_name, reg_start, reg_stop, bam_file, libs
   size_dist$norm_count <- ceiling(size_dist$norm_count)
   #output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
-  #dist <- get_read_size_dist(forward_dt, reverse_dt)
+  #dist <- .get_read_size_dist(forward_dt, reverse_dt)
 
   p_size_dist <- size_dist %>% dplyr::filter(strand == "positive")
   m_size_dist <- size_dist %>% dplyr::filter(strand == "negative")
