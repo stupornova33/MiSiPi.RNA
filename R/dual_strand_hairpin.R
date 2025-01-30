@@ -26,18 +26,18 @@
 
 
   # function to fold the genomic sequence and extract relevant results
-  # calls fold_long_rna which runs RNAfold from ViennaRNA, splits the strings returned into
+  # calls .fold_long_rna which runs RNAfold from ViennaRNA, splits the strings returned into
   # the dot thing and the mfe
   # R4RNA viennaToHelix is used to create the helix from the dot
   fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir) {
     dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
 
     converted <- convertU(dna_vec, 1)
-    # writeLines(converted, con = file.path(wkdir, "converted.txt")) # This is written in fold_long_rna as converted.fasta
+    # writeLines(converted, con = file.path(wkdir, "converted.txt")) # This is written in .fold_long_rna as converted.fasta
     dna_vec <- NULL
 
     # use
-    fold_list <- mapply(fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold, wkdir)
+    fold_list <- mapply(.fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold, wkdir)
     fold_list <- t(fold_list)
     MFE <- unlist(unname(fold_list[, 3]))
     vienna <- fold_list[, 5]
