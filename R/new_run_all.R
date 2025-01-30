@@ -230,7 +230,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
 
   read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
 
-  ave_size <- highest_sizes(read_dist)
+  ave_size <- .highest_sizes(read_dist)
 
   local_ml$ave_size <- ave_size
 
