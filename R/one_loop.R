@@ -26,7 +26,7 @@ one_loop <- function(vienna_vec, orig_loop_pos, converted){
    right_seq <- split_seq[loop_pos[2]:length(split_seq)]
    right_seq <- rev(right_seq)
    
-   stem_list <- align_stems(right_seq, left_seq, num_loops)
+   stem_list <- .align_stems(right_seq, left_seq, num_loops)
    
    left_arm <- stem_list$left_arm
    right_arm <- stem_list$right_arm

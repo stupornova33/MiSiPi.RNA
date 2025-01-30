@@ -2,7 +2,6 @@
 
 export("%>%")
 export(OpenBamFile)
-export(align_stems)
 export(calc_expand_overhangs)
 export(calc_overhangs)
 export(calc_phasing)

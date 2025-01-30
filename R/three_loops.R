@@ -50,7 +50,7 @@ three_loops <- function(vienna_vec, orig_loop_pos, converted){
       new_right_vienna <- collapse(new_right_vienna)
  
       
-      stem_list <- align_stems(left_stem_seq, right_stem_seq, num_loops)
+      stem_list <- .align_stems(left_stem_seq, right_stem_seq, num_loops)
       left_arm <- stem_list$left_arm
       right_arm <- stem_list$right_arm
       
