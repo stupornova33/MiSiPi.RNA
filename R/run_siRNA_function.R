@@ -118,10 +118,15 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         dplyr::count()
 
       # get overlapping reads
+      #overlaps <- find_overlaps(f_summarized, r_summarized) %>%
+      #  dplyr::mutate(p5_overhang = r2_end - r1_end,
+      #                p3_overhang = r2_start - r1_start)# %>%
+        #dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
       overlaps <- find_overlaps(f_summarized, r_summarized) %>%
-        dplyr::mutate(p5_overhang = r2_end - r1_end,
-                      p3_overhang = r2_start - r1_start) %>%
-        dplyr::filter(p5_overhang >= 0 & p3_overhang >= 0)
+       dplyr::mutate(p5_overhang = r1_start - r2_start,
+                     p3_overhang = r1_end - r2_end) #%>%
+       #dplyr::filter(p3_overhang >= 0 & p5_overhang >= 0)
+
 
       # TODO This function runs very slowly on large loci
       # See if it can be run on the summarized dts
@@ -191,7 +196,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
     }
   )
   print("heatmap has been written.")
-  
+
   print("Beginning hairpin function.")
   #run the hairpin function on each strand separately
   dsh <- dual_strand_hairpin(chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
