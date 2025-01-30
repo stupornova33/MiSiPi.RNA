@@ -22,7 +22,7 @@
 
 run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, logfile, wkdir,
                            pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type) {
-  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   print(prefix)
   width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
 

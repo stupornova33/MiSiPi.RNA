@@ -115,7 +115,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
 
    df <- cbind(phased_counts, phased_26_counts)
 
-   prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
 
    phased_output <- phased_counts %>% dplyr::select(c(phased_z))

@@ -18,7 +18,7 @@ plot_sizes_only <- function(wkdir,geno, bam_file, bed_file) {
     reg_start <- roi$V2[i]
     reg_stop <- roi$V3[i]
     logfile <- "plot_sizes.log.txt"
-    prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+    prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
     print(prefix)
     
     # use Rsamtools to process the bam file

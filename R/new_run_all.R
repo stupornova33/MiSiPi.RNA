@@ -74,13 +74,13 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
                                      pi_phased26z = numeric(1))
 
   print("setting locus")
-  local_ml$locus <- get_region_string(chrom_name, reg_start, reg_stop)
+  local_ml$locus <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   local_ml$locus_length <- reg_stop - reg_start + 1
 
   print(local_ml$locus_length)
   print("setting prefix")
-  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
 ####################################################################### process bam input files #############################################################################
   #

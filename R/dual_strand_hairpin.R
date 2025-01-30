@@ -45,7 +45,7 @@
 
     writeLines(as.character(vienna), con = file.path(wkdir, "vienna.txt"))
 
-    prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+    prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
     helix <- R4RNA::viennaToHelix(unlist(fold_list[, 5]))
 
@@ -407,7 +407,7 @@
     }
   )
 
-  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   plus_phased_out <- t(c(prefix, t(plus_res$phased_tbl.phased_z)))
   minus_phased_out <- t(c(prefix, t(minus_res$phased_tbl.phased_z)))

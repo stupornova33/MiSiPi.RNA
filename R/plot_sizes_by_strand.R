@@ -9,7 +9,7 @@
 
 plot_sizes_by_strand <- function(chrom_name, reg_start, reg_stop, bam_file, libsize){
   options(scipen=999)
-  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   print(prefix)
 
   # use Rsamtools to process the bam file

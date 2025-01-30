@@ -20,7 +20,7 @@
 run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal,
                                plot_output, weight_reads, write_fastas, out_type) {
   
-  prefix <- get_region_string(chrom_name, reg_start, reg_stop)
+  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
   bam_obj <- OpenBamFile(bam_file, logfile)
 
