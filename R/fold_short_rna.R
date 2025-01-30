@@ -1,39 +1,42 @@
-#' function to run RNAfold
-#' processes output of RNA fold to get MFE and vien struct
-#' returns list of values for each region
-#' @param start an integer
-#' @param stop an integer
-#' @param converted a vector containing a sequence
-#' @param path_to_RNAfold a string
-#' @param chrom_name a string
-#' @param wkdir a string
-#' @return list
-#' @export
+# function to run RNAfold
+# processes output of RNA fold to get MFE and vien struct
+# returns list of values for each region
+# @param start an integer
+# @param stop an integer
+# @param converted a vector containing a sequence
+# @param path_to_RNAfold a string
+# @param chrom_name a string
+# @param wkdir a string
+# @return list
 
-fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, wkdir) {
-
+.fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, wkdir) {
   write.table(converted,
-              file = file.path(wkdir, "converted.fasta"),
-              sep = "\n",
-              append = FALSE,
-              row.names = FALSE,
-              quote = FALSE)
+    file = file.path(wkdir, "converted.fasta"),
+    sep = "\n",
+    append = FALSE,
+    row.names = FALSE,
+    quote = FALSE
+  )
 
-  syscheck <- Sys.info()['sysname']
+  syscheck <- Sys.info()["sysname"]
 
   if (syscheck == "Windows") {
-    fold <- system2(command = path_to_RNAfold,
-                    args = file.path(wkdir, "converted.fasta"),
-                    stdout= TRUE,
-                    wait = TRUE,
-                    invisible = TRUE)
+    fold <- system2(
+      command = path_to_RNAfold,
+      args = file.path(wkdir, "converted.fasta"),
+      stdout = TRUE,
+      wait = TRUE,
+      invisible = TRUE
+    )
   } else if (syscheck == "Linux" | syscheck == "Darwin") {
     # linux is complaining that converted is not a character vector or null
     # I think it's currently a list
     # Going to attempt to just give it the file name instead of contents of the file
-    #fold <- system(command = path_to_RNAfold, input = converted, intern = TRUE)
-    fold <- system(command = paste(path_to_RNAfold, file.path(wkdir, "converted.fasta"), sep = " "),
-                   intern = TRUE)
+    # fold <- system(command = path_to_RNAfold, input = converted, intern = TRUE)
+    fold <- system(
+      command = paste(path_to_RNAfold, file.path(wkdir, "converted.fasta"), sep = " "),
+      intern = TRUE
+    )
   } else {
     print("Operating system is not Windows or Linux/Darwin. Returning empty handed")
     return(NULL)
@@ -60,26 +63,28 @@ fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, 
     ct <- RRNA::makeCt(vien_struct, fold[[2]])
     # Using capture.output to silence the excessive console output from ct2coord
     # check to see if no bases are paired first
-    if(sum(ct$bound) > 0){
+    if (sum(ct$bound) > 0) {
       utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
-        mfe <- gsub(' ', '', gsub('[)]','', gsub('[(]', '', vien_split)))
-        print(mfe)
-        mfe <- as.numeric(mfe)
+      mfe <- gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_split)))
+      print(mfe)
+      mfe <- as.numeric(mfe)
     } else {
       coord <- NULL
       mfe <- 0
     }
-    #split the string to get mfe
+    # split the string to get mfe
 
     start <- start
     stop <- stop
     converted <- converted
-    return(list("start" = start,
-                "stop" = stop,
-                "mfe" = mfe,
-                "vienna" = vien_struct,
-                "converted" = converted,
-                "extracted_df" = coord))
+    return(list(
+      "start" = start,
+      "stop" = stop,
+      "mfe" = mfe,
+      "vienna" = vien_struct,
+      "converted" = converted,
+      "extracted_df" = coord
+    ))
   }
 
   res <- lapply(1:length(test), make_fold)
