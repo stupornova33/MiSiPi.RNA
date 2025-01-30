@@ -106,7 +106,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
   pileup_start <- min(r1_dt$start)
   pileup_stop <- max(r2_dt$end)
-  pileups <- get_read_pileups(pileup_start, pileup_stop, bam_scan, bam_file)
+  pileups <- .get_read_pileups(pileup_start, pileup_stop, bam_scan, bam_file)
   #dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
 
   empty_table <- data.frame(pos = c(seq(pileup_start, pileup_stop)), count = c(0))
@@ -367,7 +367,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
 
     # get the per-base coverage
     # returns a two column df with pos and coverage
-    new_pileups <- get_read_pileups(fold_list$start, fold_list$stop, bam_scan, bam_file)  %>%
+    new_pileups <- .get_read_pileups(fold_list$start, fold_list$stop, bam_scan, bam_file)  %>%
       dplyr::group_by(pos) %>%
       dplyr::summarise(count = sum(count))
 
