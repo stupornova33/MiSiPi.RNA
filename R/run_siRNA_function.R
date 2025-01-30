@@ -214,7 +214,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
     #heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
     print("Making size_dist plot")
-    dist <- get_weighted_read_dist(forward_dt, reverse_dt)
+    dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
 
     cat(file = paste0(wkdir, logfile), "plot_sizes\n", append = TRUE)
     size_plot <- plot_sizes(dist)

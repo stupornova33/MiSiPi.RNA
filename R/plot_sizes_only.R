@@ -48,7 +48,7 @@ plot_sizes_only <- function(wkdir,geno, bam_file, bed_file) {
       dplyr::group_by_all() %>%
       dplyr::summarize(count = dplyr::n())
 
-    dist <- get_weighted_read_dist(forward_dt, reverse_dt)
+    dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
 
     #size_plot <- plot_sizes(dist)
 
