@@ -11,6 +11,6 @@ null_mi_res <- function() {
   overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4),
                           proper_count = c(0,0,0,0,0,0,0,0,0),
                           improper_count = c(0,0,0,0,0,0,0,0,0))
-  overhangs$zscore <- calc_zscore(overhangs$proper_count)
+  overhangs$zscore <- .calc_zscore(overhangs$proper_count)
   return(list("mfe" = mfe, "perc_paired" = 0, "overhangs" = c(overhangs, z_df)))
 }

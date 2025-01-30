@@ -138,7 +138,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
                                         dupes_present = TRUE,
                                         overlaps$r1_dupes, overlaps$r2_dupes)
 
-      dicer_overhangs$Z_score <- calc_zscore(dicer_overhangs$proper_count)
+      dicer_overhangs$Z_score <- .calc_zscore(dicer_overhangs$proper_count)
 
       cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
       # calculate the siRNA pairs for the heatmap
@@ -220,7 +220,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
     size_plot <- plot_sizes(dist)
     cat(file = paste0(wkdir, logfile), "plot_overhangz\n", append = TRUE)
 
-    dicer_overhangs$zscore <- calc_zscore(dicer_overhangs$proper_count)
+    dicer_overhangs$zscore <- .calc_zscore(dicer_overhangs$proper_count)
     print("Making dicer plot")
     dicer_plot <- plot_overhangz(dicer_overhangs, "none")
 

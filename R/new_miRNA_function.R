@@ -312,12 +312,12 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
   z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
   # create empty z_df
-  z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
+  z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = .calc_zscore(z_res$count))
 
   # calculate the zscores, if there are results
   if (is.na(dicer_overlaps[1,1]) | dicer_overlaps[1,1] == 0) {
     overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-    overhangs$zscore <- calc_zscore(overhangs$proper_count)
+    overhangs$zscore <- .calc_zscore(overhangs$proper_count)
   } else {
     #if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
     print('making overhangs')
@@ -326,7 +326,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
                                            dupes_present = TRUE,
                                            r1_dupes = dicer_overlaps$r1_dupes,
                                            r2_dupes = dicer_overlaps$r2_dupes))
-    overhangs$zscore <- calc_zscore(overhangs$proper_count)
+    overhangs$zscore <- .calc_zscore(overhangs$proper_count)
   }
 
   # transform data frame from table to row

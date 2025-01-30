@@ -224,7 +224,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     output <- NULL
 
     # Put results into table
-    z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = calc_zscore(z_res$count))
+    z_df <- data.frame("Overlap" = z_res[ ,1], "Z_score" = .calc_zscore(z_res$count))
     #z_res <- NULL
 
 
@@ -444,7 +444,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   all_phased <- data.frame(dist = phased_minus_counts$phased_dist)
   all_phased <- all_phased %>%
     dplyr::mutate(count = phased_plus_counts$phased_num + phased_minus_counts$phased_num)
-  all_phased$zscore <- calc_zscore(all_phased$count)
+  all_phased$zscore <- .calc_zscore(all_phased$count)
   tbl <- all_phased %>%
     dplyr::select(zscore)
   tbl <- as.data.frame(t(tbl))

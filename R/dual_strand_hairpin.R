@@ -184,13 +184,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                                        dupes_present = TRUE,
                                        r1_dupes = all_overlaps$r1_dupes,
                                        r2_dupes = all_overlaps$r2_dupes)
-      plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
+      plus_overhangs$zscore <- .calc_zscore(plus_overhangs$proper_count)
       plus_hp_overhangz <- mean(plus_overhangs$zscore[5])
 
     } else {
       print("all_overlaps does not contain data. Setting null results.")
       plus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-      plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
+      plus_overhangs$zscore <- .calc_zscore(plus_overhangs$proper_count)
       # return arbitrary "null" value if there are no valid results for ML
       plus_hp_overhangs_counts <- 0
       plus_hp_overhangz <- -33
@@ -198,7 +198,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
   } else {
       print("r2_dt contains less than 2 rows. Setting null results.")
       plus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-      plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
+      plus_overhangs$zscore <- .calc_zscore(plus_overhangs$proper_count)
       plus_hp_overhangs_counts <- sum(plus_overhangs$proper_count[5])
       plus_hp_overhangz <- mean(plus_overhangs$zscore[5])
 
@@ -214,7 +214,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     plus_res <- plus_null_res
   } else {
     print("plus_null_res does not exist. Creating final plus_res object.")
-      plus_overhangs$zscore <- calc_zscore(plus_overhangs$proper_count)
+      plus_overhangs$zscore <- .calc_zscore(plus_overhangs$proper_count)
       plus_overhangz <- mean(plus_overhangs$zscore[1:4])
       plus_res <- list(plusMFE = MFE, plus_hp_overhangz = plus_hp_overhangz, plus_hp_phasedz = plus_hp_phased_z, phased_tbl.dist = plus_hp_phased_tbl$phased_dist,
                 phased_tbl.phased_z = plus_hp_phased_tbl$phased_z, dicer_tbl.shift = plus_overhangs$shift, dicer_tbl.zscore = plus_overhangs$zscore, perc_paired= perc_paired)
@@ -314,13 +314,13 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                                            dupes_present = TRUE,
                                            r1_dupes = all_overlaps$r1_dupes,
                                            r2_dupes = all_overlaps$r2_dupes)
-         minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+         minus_overhangs$zscore <- .calc_zscore(minus_overhangs$proper_count)
          minus_hp_overhangz <- mean(plus_overhangs$zscore[5])
        } else {
            print("all_overlaps does not contain results. Setting results to null.")
            minus_hp_overhangs_counts <- 0
            minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-           minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+           minus_overhangs$zscore <- .calc_zscore(minus_overhangs$proper_count)
            minus_hp_overhangs_counts <- sum(minus_overhangs$proper_count[5])
            minus_hp_overhangz <- mean(minus_overhangs$zscore[5])
        }
@@ -340,21 +340,21 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                                                       dupes_present = TRUE,
                                                       r1_dupes = all_overlaps$r1_dupes,
                                                       r2_dupes = all_overlaps$r2_dupes))
-         minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+         minus_overhangs$zscore <- .calc_zscore(minus_overhangs$proper_count)
          minus_hp_overhangz <- mean(minus_overhangs$zscore[5])
       } else {
          minus_hp_overhangs_counts <- 0
          minus_hp_overhangz <- -33
 
          minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-         minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+         minus_overhangs$zscore <- .calc_zscore(minus_overhangs$proper_count)
       }
    }
 
   } else { #else if fold bool is false and no results in r2_dt
       print("fold_bool == FALSE & nrow r2_dt == 0.")
       minus_overhangs <- data.frame(shift = c(-4,-3,-2,-1,0,1,2,3,4), proper_count = c(0,0,0,0,0,0,0,0,0), improper_count = c(0,0,0,0,0,0,0,0,0))
-      minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+      minus_overhangs$zscore <- .calc_zscore(minus_overhangs$proper_count)
       perc_paired <- -33
   }
 
@@ -364,7 +364,7 @@ dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
     minus_res <- minus_null_res
   } else {
     print("minus_null_res does not exist.")
-      minus_overhangs$zscore <- calc_zscore(minus_overhangs$proper_count)
+      minus_overhangs$zscore <- .calc_zscore(minus_overhangs$proper_count)
       minus_overhangz <- mean(minus_overhangs$zscore[1:4])
       minus_res <- list(minusMFE = MFE, minus_hp_overhangz = minus_hp_overhangz, minus_hp_phasedz = minus_hp_phasedz, phased_tbl.dist = minus_hp_phased_tbl$phased_dist,
                  phased_tbl.phased_z = minus_hp_phased_tbl$phased_z, dicer_tbl.shift = minus_overhangs$shift, dicer_tbl.zscore = minus_overhangs$zscore, perc_paired = perc_paired)

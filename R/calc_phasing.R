@@ -44,7 +44,7 @@
     phased[is.na(phased)] <- 0
     phased <- phased %>%
       dplyr::select(-num.y)
-    phased$Zscore <- calc_zscore(phased$num.x)
+    phased$Zscore <- .calc_zscore(phased$num.x)
     phased <- phased %>%
       dplyr::rename(
         phased_dist = dist,
@@ -53,7 +53,7 @@
       )
   } else {
     phased <- data.table::data.table(dist = seq(0, 50), num = rep(0, 51))
-    phased$Zscore <- calc_zscore(phased$num)
+    phased$Zscore <- .calc_zscore(phased$num)
     phased <- phased_counts %>%
       dplyr::rename(
         phased_dist = dist,
