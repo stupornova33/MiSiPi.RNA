@@ -13,14 +13,14 @@
   width <- pos <- count.y <- count.x <- NULL
 
   chrom_p <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
-  plus_dt <- data.table::setDT(makeBamDF(chrom_p)) %>%
+  plus_dt <- data.table::setDT(.makeBamDF(chrom_p)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos))
   chrom_p <- NULL
 
   chrom_m <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
-  minus_dt <- data.table::setDT(makeBamDF(chrom_m)) %>%
+  minus_dt <- data.table::setDT(.makeBamDF(chrom_m)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::mutate(start = pos, end = pos + width - 1) %>%
     dplyr::select(-c(pos))
