@@ -81,29 +81,27 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   # Expand the data frames back to full size and weight reads in some cases
   print("Getting weighted data.frames.")
   #include "T" argument to return read sequences
-  if (weight_reads == "None" | weight_reads == "none") {
-    print("No weighting of reads applied")
-    forward_dt <- no_weight(forward_dt, as.character(chrom_name))
-    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
-  } else if (weight_reads == "weight_by_prop") {
-    print("weight reads by proportion")
-    forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name))
-    reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name))
-  } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-    print("normalize read count to locus")
-    forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
-    reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
-  } else if (is.integer(weight_reads)) {
-    print("weight reads to a user provided value")
-    forward_dt <- weight_by_uservalue(forward_dt, norm, (reg_stop - reg_start))
-    reverse_dt <- weight_by_uservalue(reverse_dt, norm, (reg_stop - reg_start))
-  } else {
-    stop("Invalid argument supplied to weight_reads")
-    cat(file = paste0(wkdir, logfile),
-        "Unexpected parameter provied for 'weight_reads'\n",
-        append = TRUE)
-  }
+  
+  # Get expanded-weighted reads
+  
+  # locus_norm is being given a different locus_read_count here in piRNA vs in siRNA & dual_strand_hairpin
+  # I think it is incorrect here, but I need confirmation as to what it should be
+  # In siRNA it is given the sum of the number of reads in the forward or reverse set
+  # Here it is being given the reads from both the forward and reverse or double the reverse
+  
+  # if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
+  #   print("normalize read count to locus")
+  #   forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
+  #   reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
+  # }
+  
+  # For now, I am changing this to be similar to siRNA
 
+  locus_length <- reg_stop - reg_start + 1
+  
+  forward_dt <- .weight_reads(forward_dt, weight_reads, locus_length, sum(forward_dt$count))
+  reverse_dt <- .weight_reads(reverse_dt, weight_reads, locus_length, sum(reverse_dt$count))
+  
   print("Completed getting weighted dataframes.")
 
 
@@ -121,8 +119,6 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     #get the overlapping read pairs
     overlaps <- .find_overlaps(r_summarized, f_summarized)
     
-    print("Completed find_overlaps.")
-
     print("Completed find_overlaps.")
 
     #1/9/24 now make_BamDF returns sequence too, so read sequences can be extracted from that

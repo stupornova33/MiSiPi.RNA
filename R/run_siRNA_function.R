@@ -75,30 +75,11 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
     print("f_dt and r_dt are not empty")
     cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
 
-    if (weight_reads == "None" | weight_reads == "none") {
-      print("No weighting of reads applied.")
-      forward_dt <- no_weight(forward_dt, as.character(chrom_name))
-      reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
-
-    } else if (weight_reads == "weight_by_prop") {
-      print("Weighting reads by proportion.")
-      forward_dt <- weight_by_prop(forward_dt, as.character(chrom_name))
-      reverse_dt <- weight_by_prop(reverse_dt, as.character(chrom_name))
-
-    } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-      forward_dt <- locus_norm(forward_dt, sum(forward_dt$count)) %>% dplyr::mutate(width = end - start + 1)
-      reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count)) %>% dplyr::mutate(width = end - start + 1)
-
-    } else if (is.integer(weight_reads)) {
-      print("User supplied custom weighting value for reads.")
-      forward_dt <- weight_by_uservalue(forward_dt, weight_reads, (reg_stop - reg_start))
-      reverse_dt <- weight_by_uservalue(reverse_dt, weight_reads, (reg_stop - reg_start))
-
-    } else {
-      cat(file = paste0(wkdir, logfile),
-          "Unexpected parameter provided for 'weight_reads' argument. Please check input arguments.\n",
-          append = TRUE)
-    }
+    # Get expanded-weighted reads
+    locus_length <- reg_stop - reg_start + 1
+    
+    forward_dt <- .weight_reads(forward_dt, weight_reads, locus_length, sum(forward_dt$count))
+    reverse_dt <- .weight_reads(reverse_dt, weight_reads, locus_length, sum(reverse_dt$count))
 
     print("Completed getting weighted dataframes.")
 

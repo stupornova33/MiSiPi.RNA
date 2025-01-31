@@ -97,17 +97,13 @@
     dplyr::summarize(count = dplyr::n())
 
   print("Weighting reads.")
-  # weight reads if argument supplied
-  if (weight_reads == "weight_by_prop") {
-    r2_dt <- weight_by_prop(r2_dt, chrom_name)
-  } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-    r2_dt <- locus_norm(r2_dt, sum(r2_dt$n))
-  } else if (is.integer(weight_reads)) {
-    r2_dt <- weight_by_uservalue(r2_dt, weight_reads, (reg_stop - reg_start + 1))
-  } else {
-    r2_dt <- no_weight(r2_dt, as.character(chrom_name))
-  }
-
+  
+  locus_length <- reg_stop - reg_start + 1
+  
+  r2_dt <- .weight_reads(r2_dt, weight_reads, locus_length, sum(r2_dt$n))
+  
+  print("Completed getting weighted dataframes.")
+  
   r2_dt <- na.omit(r2_dt)
 
   # Now that the reads have been weighted,
@@ -236,16 +232,12 @@
     dplyr::summarize(count = dplyr::n())
 
   print("Weighting reads.")
-  # weight reads if argument supplied
-  if (weight_reads == "weight_by_prop") {
-    r2_dt <- weight_by_prop(r2_dt, chrom_name)
-  } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-    r2_dt <- locus_norm(r2_dt, sum(r2_dt$n))
-  } else if (is.integer(weight_reads)) {
-    r2_dt <- weight_by_uservalue(r2_dt, weight_reads, (reg_stop - reg_start + 1))
-  } else {
-    r2_dt <- no_weight(r2_dt, as.character(chrom_name))
-  }
+  
+  locus_length <- reg_stop - reg_start + 1
+  
+  r2_dt <- .weight_reads(r2_dt, weight_reads, locus_length, sum(r2_dt$n))
+  
+  print("Completed getting weighted dataframes.")
 
   r2_dt <- na.omit(r2_dt)
 
