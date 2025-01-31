@@ -6,7 +6,6 @@
 
 misipi_rna <- function(vars){
 
-
 mapply(new_run_all,
        vars$chrom_name,
        vars$reg_start,
