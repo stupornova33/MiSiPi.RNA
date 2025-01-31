@@ -11,8 +11,8 @@
 .find_hp_overlaps <- function(r1_dt, r2_dt, n) {
   r1_stop <- r1_start <- dist <- start_r1 <- widthx <- start_r2 <- widthy <- NULL
 
-  gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
-  gr2_obj <- makeGRobj(r2_dt, "rname", "start", "end")
+  gr1_obj <- .makeGRobj(r1_dt, "rname", "start", "end")
+  gr2_obj <- .makeGRobj(r2_dt, "rname", "start", "end")
 
   res <- GenomicRanges::findOverlaps(gr1_obj, gr2_obj,
     maxgap = -1L, minoverlap = 1L,

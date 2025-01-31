@@ -19,8 +19,8 @@
   # Attempting to work with both DTs as summarized
 
   if (!is.null(r2_dt)) {
-    gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
-    gr2_obj <- makeGRobj(r2_dt, "rname", "start", "end")
+    gr1_obj <- .makeGRobj(r1_dt, "rname", "start", "end")
+    gr2_obj <- .makeGRobj(r2_dt, "rname", "start", "end")
 
     res <- GenomicRanges::findOverlaps(gr1_obj, gr2_obj,
       maxgap = -1L, minoverlap = 4L,
@@ -29,7 +29,7 @@
       ignore.strand = TRUE
     )
   } else {
-    gr1_obj <- makeGRobj(r1_dt, "rname", "start", "end")
+    gr1_obj <- .makeGRobj(r1_dt, "rname", "start", "end")
     res <- GenomicRanges::findOverlaps(gr1_obj,
       maxgap = -1L, minoverlap = 4L,
       type = c("any"), select = c("all"),
