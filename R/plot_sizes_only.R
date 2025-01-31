@@ -33,7 +33,7 @@ plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
     chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
     chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
-    forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
+    forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
       subset(width <= 32 & width >= 18) %>%
       dplyr::rename(start = pos) %>%
       dplyr::mutate(end = start + width - 1) %>%
@@ -41,7 +41,7 @@ plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
       # get the number of times a read occurs
       dplyr::summarize(count = dplyr::n())
 
-    reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
+    reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
       subset(width <= 32 & width >= 18) %>%
       dplyr::rename(start = pos) %>%
       dplyr::mutate(end = start + width - 1) %>%

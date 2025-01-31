@@ -105,7 +105,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
   chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
   print("filtering forward and reverse dts")
-  forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
+  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 16) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%
@@ -114,7 +114,7 @@ new_run_all <- function(chrom_name, reg_start, reg_stop,
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
 
-  reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
+  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
     subset(width <= 32 & width >= 16) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%

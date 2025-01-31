@@ -38,12 +38,12 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
 
   # Make forward and reverse dataframes filtered for width
-  forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
+  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 16) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1)
 
-  reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
+  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
     subset(width <= 32 & width >= 16) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1)

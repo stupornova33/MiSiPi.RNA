@@ -31,7 +31,7 @@ plot_sizes_by_strand <- function(chrom_name, reg_start, reg_stop, bam_file, libs
   # turn the list object into a more useable data frame and filter reads by length,
   # bam only contains pos and width, need to add an end column
   cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
-  forward_dt <- data.table::setDT(make_si_BamDF(chromP)) %>%
+  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%
@@ -41,7 +41,7 @@ plot_sizes_by_strand <- function(chrom_name, reg_start, reg_stop, bam_file, libs
   forward_dt$strand <- "positive"
 
   cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
-  reverse_dt <- data.table::setDT(make_si_BamDF(chromM)) %>%
+  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
     subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%

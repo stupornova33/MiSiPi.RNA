@@ -89,7 +89,7 @@
 
   print("Filtering reads")
   # filter the reads and calculate the end position
-  r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
+  r2_dt <- data.table::setDT(.make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%
@@ -224,7 +224,7 @@
   chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
   print("Filtering data.")
-  r2_dt <- data.table::setDT(make_si_BamDF(chrom)) %>%
+  r2_dt <- data.table::setDT(.make_si_BamDF(chrom)) %>%
     base::subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%

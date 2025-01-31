@@ -72,7 +72,7 @@ new_miRNA_function <- function(chrom_name, reg_start, reg_stop, chromosome, leng
   # Processing one strand, so make copy of df to transform
   # 1/9/24 added seq back in for writing miRNA pairs (arms)
 
-  r2_dt <- make_si_BamDF(chrom) %>%
+  r2_dt <- .make_si_BamDF(chrom) %>%
     subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%
