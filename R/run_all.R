@@ -114,7 +114,7 @@
     dplyr::summarize(count = sum(count))
 
   print("output_readsize_dist")
-  output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
+  .output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
 
   chromP <- NULL
   chromM <- NULL

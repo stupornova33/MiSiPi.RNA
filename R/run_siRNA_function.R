@@ -64,7 +64,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
     dplyr::group_by(width) %>%
     dplyr::summarise(count = sum(count))
 
-  output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
+  .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
   chromP <- NULL
   chromM <- NULL

@@ -75,7 +75,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     dplyr::group_by(width) %>%
     dplyr::summarize(count = sum(count))
 
-  output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, type = "piRNA")
+  .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, type = "piRNA")
   size_dist <- NULL
 
   # Expand the data frames back to full size and weight reads in some cases
