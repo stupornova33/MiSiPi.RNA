@@ -264,7 +264,7 @@
 
   # Summarize the data for faster processing
   # 10/28/24 removed the summarizing here as it had to be added in earlier in this function
-  # TODO need to ensure that the call from new_miRNA_function still works with this change
+  # TODO need to ensure that the call from .miRNA still works with this change
   # i_dat <- i_dat %>%
   #  dplyr::group_by_all() %>%
   #  dplyr::count()

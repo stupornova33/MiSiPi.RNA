@@ -1,6 +1,6 @@
 # null_mi_res
 #
-# creates a default object for return to miRNA_function in the event that no meaningful results could be calculated in a particular iteration
+# creates a default object for return to .miRNA function in the event that no meaningful results could be calculated in a particular iteration
 #
 # @return default null result object
 

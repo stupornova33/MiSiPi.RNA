@@ -380,7 +380,7 @@
     file.create(paste0(miRNA_dir, mi_log))
   }
 
-  mi_res <- new_miRNA_function(
+  mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
     chromosome, length, "+",
     min_read_count, genome_file, bam_file,
@@ -406,7 +406,7 @@
     plus_overlapz <- NA
   }
 
-  mi_res <- new_miRNA_function(
+  mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
     chromosome, length, "-",
     min_read_count, genome_file, bam_file,
