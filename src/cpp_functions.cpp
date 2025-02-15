@@ -883,8 +883,6 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   }
 
   for (int overlap = 4; overlap <= 30; overlap++) {
-    std::cout << "Overlap: " << overlap << std::endl;
-
     int current_count = 0;
 
     // Iterate through each fstart position and calculate the overlap position
