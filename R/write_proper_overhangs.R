@@ -16,7 +16,7 @@
   rname <- dt1$rname[1]
 
   # We might be able to get rid of this and pass in the summarized dts
-  # In run_siRNA_function, at least they are available
+  # In .siRNA, at least they are available
   # TODO check other call locations
   uniq_forward <- dplyr::distinct(dt1)
   uniq_reverse <- dplyr::distinct(dt2)

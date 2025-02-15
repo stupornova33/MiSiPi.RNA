@@ -283,7 +283,7 @@
     file.create(file.path(si_dir, si_log))
   }
 
-  si_res <- run_siRNA_function(
+  si_res <- .siRNA(
     chrom_name, reg_start, reg_stop,
     length, min_read_count, genome_file,
     bam_file, si_log, si_dir,
