@@ -40,7 +40,7 @@ ps2png(path_to_magick_exe, file_dir)
 where path_to_magick_exe is the full path to the binary executable and file_dir is the folder containing the .ps files. This will also be the output folder.
 
 ### Input
-The input for any of MiSiPi.RNA's main functions is an object created by theset_vars() function. Running set_vars will always be the first step in using this package. Below is a description of each of the parameters that will be passed to set_vars(). These should be changed based on your needs.
+The input for any of MiSiPi.RNA's main functions is an object created by the set_vars() function. Running set_vars will always be the first step in using this package. Below is a description of each of the parameters that will be passed to set_vars(). These should be changed based on your needs.
 
 - **roi**             - A bed file listing your regions of interest
 - **bam_file**        - A BAM file of aligned reads. Index file must also be present
@@ -88,13 +88,13 @@ Palette options are:
 ## Provide the vars object to the function of your choice and all lines contained in BED file will be run:
 
 ```
-miRNA_function(vars)
+miRNA(vars)
 
 
-piRNA_function(vars)
+piRNA(vars)
 
 
-siRNA_function(vars)
+siRNA(vars)
 ```
 
 ## To run the above functions all at once:
