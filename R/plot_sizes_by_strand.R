@@ -13,7 +13,7 @@ plot_sizes_by_strand <- function(chrom_name, reg_start, reg_stop, bam_file, libs
   print(prefix)
 
   # use Rsamtools to process the bam file
-  bam_obj <- OpenBamFile(bam_file, "logfile.txt")
+  bam_obj <- .open_bam(bam_file, "logfile.txt")
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])

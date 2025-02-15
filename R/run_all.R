@@ -78,7 +78,7 @@
   if (!file.exists(paste0(all_dir, "run_all_logfile.txt"))) file.create(paste0(all_dir, "run_all_logfile.txt"))
   logfile <- paste0(all_dir, "run_all_logfile.txt")
 
-  bam_obj <- OpenBamFile(bam_file)
+  bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[["targets"]])
   chr_length <- unname(bam_header[["targets"]])

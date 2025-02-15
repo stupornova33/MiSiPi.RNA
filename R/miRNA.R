@@ -33,7 +33,7 @@
     return(.null_mi_res())
   }
 
-  bam_obj <- OpenBamFile(bam_file, logfile)
+  bam_obj <- .open_bam(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[["targets"]])
   chr_length <- unname(bam_header[["targets"]])

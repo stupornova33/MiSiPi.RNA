@@ -55,7 +55,7 @@
   }
 
 
-  bam_obj <- OpenBamFile(bam_file, logfile)
+  bam_obj <- .open_bam(bam_file, logfile)
 
   # RNAfold can't fold things longer than 10kb
 

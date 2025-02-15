@@ -22,7 +22,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
   
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
-  bam_obj <- OpenBamFile(bam_file, logfile)
+  bam_obj <- .open_bam(bam_file, logfile)
 
   # Get the reads from the BAM using Rsamtools
   print("Making chromP and chromM")

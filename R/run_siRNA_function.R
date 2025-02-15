@@ -27,7 +27,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
   width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
 
   # use Rsamtools to process the bam file
-  bam_obj <- OpenBamFile(bam_file, logfile)
+  bam_obj <- .open_bam(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])

@@ -21,7 +21,7 @@ phased_piRNA_function <- function(strand, chrom_name, reg_start, reg_stop, input
    #Calculates a probability based on observations, mean, and standard deviation
 
    # process bam input files
-   bam_obj <- OpenBamFile(input_file, logfile)
+   bam_obj <- .open_bam(input_file, logfile)
    bam_header <- Rsamtools::scanBamHeader(bam_obj)
    chr_name <- names(bam_header[['targets']])
    chr_length <- unname(bam_header[['targets']])

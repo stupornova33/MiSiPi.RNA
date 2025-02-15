@@ -42,7 +42,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
                                                            which = which))
     }
 
-    new_bam_obj <- OpenBamFile(filepath, logfile)
+    new_bam_obj <- .open_bam(filepath, logfile)
     return(new_bam_obj)
   }
 

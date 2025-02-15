@@ -70,7 +70,7 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
   out_type <- match.arg(out_type)
   ## End Parameter Validation
 
-  bam_obj <- MiSiPi.RNA::OpenBamFile(bam_file)
+  bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[['targets']])
   chr_length <- unname(bam_header[['targets']])

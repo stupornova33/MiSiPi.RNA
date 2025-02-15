@@ -2,7 +2,7 @@
 # takes bam object, chrom_name, reg_start, and reg_stop
 # extracts rname, pos, qwidth, and seq from bam obj
 #
-# @param bam_obj a bam obj created by openBamFile
+# @param bam_obj a bam obj created by open_bam
 # @param chrom_name a name passed in by user/bed file
 # @param reg_start a whole number
 # @param reg_stop a whole number
