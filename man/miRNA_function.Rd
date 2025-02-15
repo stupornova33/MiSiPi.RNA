@@ -3,7 +3,7 @@
 \name{miRNA_function}
 \alias{miRNA_function}
 \title{run miRNA function
-calls the miRNA function for both strands, creates miRNA logfile}
+calls the .miRNA function for both strands, creates miRNA logfile}
 \usage{
 miRNA_function(vars)
 }
@@ -15,5 +15,5 @@ plots
 }
 \description{
 run miRNA function
-calls the miRNA function for both strands, creates miRNA logfile
+calls the .miRNA function for both strands, creates miRNA logfile
 }
