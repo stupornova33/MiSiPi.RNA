@@ -532,7 +532,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
 
     z_df$Z_score[is.na(z_df$Z_score)] <- 0
 
-    z <- plot_overlapz(z_df)
+    z <- .plot_overlapz(z_df)
     dist_plot <- plot_sizes(read_dist)
 
     if ((reg_stop - reg_start) > 7000) {

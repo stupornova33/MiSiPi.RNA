@@ -203,7 +203,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
     dicer_overhangs$zscore <- .calc_zscore(dicer_overhangs$proper_count)
     print("Making dicer plot")
-    dicer_plot <- plot_overhangz(dicer_overhangs, "none")
+    dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
 
     #order of results in dsh obj =
     #plus_res, minus_res, plus_overhang_plot, minus_overhang_plot, density_plot,

@@ -432,8 +432,8 @@
     minus_overhangs$zscore[is.na(minus_overhangs$zscore)] <- 0
 
     ## return these as plot objects
-    plus_overhang_plot <- plot_overhangz(plus_overhangs, "+")
-    minus_overhang_plot <- plot_overhangz(minus_overhangs, "-")
+    plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
+    minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
 
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 

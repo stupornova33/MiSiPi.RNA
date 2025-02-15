@@ -375,7 +375,7 @@
 
   if (plot_output == TRUE) {
     # make the plots
-    dicer_sig <- plot_overhangz(overhangs, "+")
+    dicer_sig <- .plot_overhangz(overhangs, "+")
     print(overhangs)
     # make new pileups dt for structure
 
@@ -396,7 +396,7 @@
 
     dist_plot <- plot_sizes(read_dist)
 
-    zplot <- plot_overlapz(z_df)
+    zplot <- .plot_overlapz(z_df)
 
     left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1, 1), rel_heights = c(1, 1), align = "vh", axis = "lrtb")
     right_top <- cowplot::plot_grid(NULL, density_plot, zplot, ncol = 1, rel_widths = c(1, 1, 1), rel_heights = c(0.4, 1, 1), align = "vh", axis = "lrtb")
