@@ -1,45 +1,55 @@
-#' function to filter reads by size and plot pileup density
-#' @param bam_obj a string
-#' @param chrom_name a string
-#' @param reg_start a string
-#' @param reg_stop a string
-#' @param input_file a string
-#' @param wkdir a string
-#' @param logfile a string
-#' @return all_df
+# function to filter reads by size and plot pileup density
+# @param bam_obj a string
+# @param chrom_name a string
+# @param reg_start a string
+# @param reg_stop a string
+# @param input_file a string
+# @param wkdir a string
+# @param logfile a string
+# @return all_df
 
-#' @export
-
-read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_file, wkdir, logfile) {
+.read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_file, wkdir, logfile) {
   pos <- width <- rname <- NULL
 
-  filter_bamfile <- function(input_file, size1, size2,  strand) {
+  filter_bamfile <- function(input_file, size1, size2, strand) {
     seqnames <- NULL
-    which <- GenomicRanges::GRanges(seqnames=chrom_name,
-                                    IRanges::IRanges(reg_start, reg_stop))
-    filters <- S4Vectors::FilterRules(list(MinWidth=function(x) (BiocGenerics::width(x$seq) >= size1 &
-                                                                 BiocGenerics::width(x$seq) <= size2)))
+    which <- GenomicRanges::GRanges(
+      seqnames = chrom_name,
+      IRanges::IRanges(reg_start, reg_stop)
+    )
+    filters <- S4Vectors::FilterRules(list(MinWidth = function(x) {
+      (BiocGenerics::width(x$seq) >= size1 &
+        BiocGenerics::width(x$seq) <= size2)
+    }))
 
     if (strand == "+") {
       filename <- paste(size1, size2, "pos.bam", sep = "_")
       filepath <- file.path(bam_path, filename)
 
-      Rsamtools::filterBam(file = input_file,
-                           destination = filepath,
-                           filter = filters,
-                           param = Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
-                                                           what=c('rname', 'pos', 'qwidth', 'seq'),
-                                                           which = which))
+      Rsamtools::filterBam(
+        file = input_file,
+        destination = filepath,
+        filter = filters,
+        param = Rsamtools::ScanBamParam(
+          flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
+          what = c("rname", "pos", "qwidth", "seq"),
+          which = which
+        )
+      )
     } else {
       filename <- paste(size1, size2, "neg.bam", sep = "_")
       filepath <- file.path(bam_path, filename)
 
-      Rsamtools::filterBam(file = input_file,
-                           destination = filepath,
-                           filter = filters,
-                           param = Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
-                                                           what=c('rname', 'pos', 'qwidth', 'seq'),
-                                                           which = which))
+      Rsamtools::filterBam(
+        file = input_file,
+        destination = filepath,
+        filter = filters,
+        param = Rsamtools::ScanBamParam(
+          flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
+          what = c("rname", "pos", "qwidth", "seq"),
+          which = which
+        )
+      )
     }
 
     new_bam_obj <- .open_bam(filepath, logfile)
@@ -66,34 +76,41 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   make_bam_pileup <- function(bam, strand) {
     seqnames <- pos <- count <- NULL
 
-    which <- GenomicRanges::GRanges(seqnames=chrom_name, IRanges::IRanges(reg_start, reg_stop))
+    which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
     if (strand == "-") {
-      bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
-                                          what=c('rname', 'pos', 'qwidth'),
-                                          which=which)
+      bam_scan <- Rsamtools::ScanBamParam(
+        flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
+        what = c("rname", "pos", "qwidth"),
+        which = which
+      )
     } else {
-      bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
-                                          what=c('rname', 'pos', 'qwidth'),
-                                          which=which)
+      bam_scan <- Rsamtools::ScanBamParam(
+        flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
+        what = c("rname", "pos", "qwidth"),
+        which = which
+      )
     }
 
-    params <- Rsamtools::PileupParam(max_depth=4000,
-                                     min_base_quality=20,
-                                     min_mapq=0,
-                                     min_nucleotide_depth=1,
-                                     distinguish_strands=TRUE,
-                                     distinguish_nucleotides=TRUE,
-                                     ignore_query_Ns=TRUE,
-                                     include_deletions=TRUE,
-                                     include_insertions=FALSE,
-                                     left_bins=NULL,
-                                     query_bins=NULL,
-                                     cycle_bins=NULL)
+    params <- Rsamtools::PileupParam(
+      max_depth = 4000,
+      min_base_quality = 20,
+      min_mapq = 0,
+      min_nucleotide_depth = 1,
+      distinguish_strands = TRUE,
+      distinguish_nucleotides = TRUE,
+      ignore_query_Ns = TRUE,
+      include_deletions = TRUE,
+      include_insertions = FALSE,
+      left_bins = NULL,
+      query_bins = NULL,
+      cycle_bins = NULL
+    )
 
     pileups <- Rsamtools::pileup(bam,
-                                 index=(stringr::str_c(input_file, '','.bai')),
-                                 scanBamParam=bam_scan,
-                                 pileupParam=params) %>%
+      index = (stringr::str_c(input_file, "", ".bai")),
+      scanBamParam = bam_scan,
+      pileupParam = params
+    ) %>%
       dplyr::select(-c(seqnames, strand))
 
     # Summarize duplicate positions including minor alleles
@@ -142,7 +159,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   merge_neg_table <- function(empty_dat, res_dat) {
     count <- NULL
     neg_res <- merge(empty_dat, res_dat, by = "pos", all.x = TRUE) %>%
-      dplyr::mutate(count = count *-1) %>%
+      dplyr::mutate(count = count * -1) %>%
       dplyr::mutate(size = "all")
 
     neg_res["count"][is.na(neg_res["count"])] <- 0
@@ -180,7 +197,7 @@ read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_f
   pos_counts <- dplyr::bind_rows(pos_18_19_res, pos_20_22_res, pos_23_25_res, pos_26_32_res)
   neg_counts <- dplyr::bind_rows(neg_18_19_res, neg_20_22_res, neg_23_25_res, neg_26_32_res)
 
-  #df <- data.frame(position = pos_counts$pos, pos_count = pos_counts$count, neg_count = neg_counts$size) #%>% dplyr::select(-c(pos_count.pos, neg_counts.pos))
+  # df <- data.frame(position = pos_counts$pos, pos_count = pos_counts$count, neg_count = neg_counts$size) #%>% dplyr::select(-c(pos_count.pos, neg_counts.pos))
   pos_18_19_res <- neg_18_19_res <- pos_20_22_res <- neg_20_22_res <- NULL
   pos_23_25_res <- neg_23_25_res <- pos_26_32_res <- neg_26_32_res <- NULL
 

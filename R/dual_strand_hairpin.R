@@ -435,7 +435,7 @@
     plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
     minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
 
-    data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+    data <- .read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- .plot_density(data, reg_start, reg_stop)
 

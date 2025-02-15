@@ -284,7 +284,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
         if (!sum(results) == 0) {
           print("Heatplot results are not empty")
-          data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+          data <- .read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
           #density_plot <- .plot_density(data, reg_start, reg_stop)
           density_plot <- .plot_large_density(data, reg_start, reg_stop)
@@ -294,7 +294,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
         } else { #if no heat plot
            print("Heat plot results are empty")
-           data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+           data <- .read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
            density_plot <- .plot_large_density(data, reg_start, reg_stop)
            top <- cowplot::plot_grid(density_plot, size_plot, ncol = 2, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
@@ -316,7 +316,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
       } else { # if annotate_region == FALSE
         #plus_phasedz<- dsh[[7]]
         #minus_phasedz <- dsh[[8]]
-        data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+        data <- .read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
         density_plot <- .plot_large_density(data, reg_start, reg_stop)
 
         if (!sum(results) == 0) {
