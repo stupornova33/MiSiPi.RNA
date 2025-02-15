@@ -153,14 +153,14 @@
   local_ml$unique_read_bias <- unique_read_count / total_read_count
 
   if (nrow(forward_dt) > 0) {
-    forward_dt <- no_weight(forward_dt, as.character(chrom_name))
+    forward_dt <- .weight_reads(forward_dt, weight_reads = "none", 0L, 0L)
   } else {
     forward_dt <- forward_dt %>%
       dplyr::select(-c(count))
   }
 
   if (nrow(reverse_dt) > 0) {
-    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name))
+    reverse_dt <- .weight_reads(reverse_dt, weight_reads = "none", 0L, 0L)
   } else {
     reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
   }

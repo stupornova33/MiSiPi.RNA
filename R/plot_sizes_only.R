@@ -56,9 +56,10 @@
     ###########################################################################################################################
 
     # plot histogram with AUC
-    forward_dt <- no_weight(forward_dt, as.character(chrom_name)) %>%
+    forward_dt <- .weight_reads(forward_dt, weight_reads = "none", 0L, 0L) %>%
       dplyr::mutate(width = end - start + 1)
-    reverse_dt <- no_weight(reverse_dt, as.character(chrom_name)) %>%
+    
+    reverse_dt <- .weight_reads(reverse_dt, weight_reads = "none", 0L, 0L) %>%
       dplyr::mutate(width = end - start + 1)
 
     all_data <- rbind(forward_dt, reverse_dt)

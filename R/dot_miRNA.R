@@ -83,15 +83,8 @@
   if (nrow(r2_dt) == 0) {
     return(.null_mi_res())
   } else {
-    if (weight_reads == "weight_by_prop") {
-      r2_dt <- weight_by_prop(r2_dt, as.character(chrom_name))
-    } else if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-      locus_length <- reg_stop - reg_start
-      locus_read_count <- sum(r2_dt$count)
-      r2_dt <- locus_norm(r2_dt, locus_read_count)
-    } else {
-      r2_dt <- no_weight(r2_dt, as.character(chrom_name))
-    }
+    locus_length <- reg_stop - reg_start + 1
+    r2_dt <- .weight_reads(r2_dt, weight_reads, locus_length, sum(r2_dt$count))
   }
 
   # transform ends of one set of reads

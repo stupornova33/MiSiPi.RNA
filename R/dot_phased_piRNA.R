@@ -1,5 +1,5 @@
-#' phased piRNA function
-#' processes reads according to phased piRNA algorith
+# phased piRNA function
+# processes reads according to phased piRNA algorith
 # plots output
 # takes bam object and strand
 # returns max_zscore and plots

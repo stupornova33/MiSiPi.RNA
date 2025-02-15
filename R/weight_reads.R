@@ -74,7 +74,7 @@
 
   expanded_dt <- expanded_dt %>%
     dplyr::arrange(count)
-
+  
   expanded_dt <- rep_seq_reads(
     expanded_dt$count, expanded_dt$rname,
     expanded_dt$start, expanded_dt$end,
