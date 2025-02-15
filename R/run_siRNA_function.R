@@ -226,7 +226,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         plus_phasedz <- dsh[[8]]
         minus_phasedz <- dsh[[9]]
 
-        #gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+        #gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
 
         #if there are results for the heatmap, plot, otherwise omit
         if (!sum(results) == 0) {
@@ -279,7 +279,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         #minus_phasedz <- dsh[[9]]
 
         # things are broken here
-        gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+        gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
 
 
         if (!sum(results) == 0) {

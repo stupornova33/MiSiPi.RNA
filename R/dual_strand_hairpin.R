@@ -440,7 +440,7 @@
     density_plot <- .plot_density(data, reg_start, reg_stop)
 
     if (!Sys.info()["sysname"] == "Windows") {
-      arc_plot <- plot_helix(file.path(wkdir, "helix.txt"))
+      arc_plot <- .plot_helix(file.path(wkdir, "helix.txt"))
       grDevices::dev.control("enable")
       R4RNA::plotHelix(helix = R4RNA::readHelix(file.path(wkdir, "helix.txt")), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
       arc_plot <- grDevices::recordPlot() # don't touch this...the boss gets mad
@@ -457,7 +457,7 @@
 
     ## plot genome annotations (optional)
     if (annotate_region == TRUE) {
-      gtf_plot <- plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+      gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
       return(list(
         minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
         arc_plot, gtf_plot, plus_phasedz, minus_phasedz
