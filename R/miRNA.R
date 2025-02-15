@@ -298,7 +298,7 @@
     r2_end = stringr::str_locate(final_seq, final$r2_seq)[2]
   )
 
-  rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
+  .rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
 
   print("making fold_list")
   ################################################################################################################
