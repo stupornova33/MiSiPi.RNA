@@ -330,7 +330,7 @@
     overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
     overhangs$zscore <- .calc_zscore(overhangs$proper_count)
   } else {
-    # if(write_fastas == TRUE) write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
+    # if(write_fastas == TRUE) .write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
     print("making overhangs")
     overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
       dicer_overlaps$r2_start, dicer_overlaps$r2_width,

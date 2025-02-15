@@ -111,7 +111,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
 
       # TODO This function runs very slowly on large loci
       # See if it can be run on the summarized dts
-      if (write_fastas == TRUE) write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
+      if (write_fastas == TRUE) .write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
 
       #calculate the number of dicer pairs for the zscore
       dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end,
