@@ -30,7 +30,7 @@
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
   if (reg_stop - reg_start > 300) {
     cat(file = paste0(wkdir, logfile), "length of region is greater than 300. \n", append = TRUE)
-    return(null_mi_res())
+    return(.null_mi_res())
   }
 
   bam_obj <- OpenBamFile(bam_file, logfile)
@@ -81,7 +81,7 @@
   chrom <- NULL
 
   if (nrow(r2_dt) == 0) {
-    return(null_mi_res())
+    return(.null_mi_res())
   } else {
     if (weight_reads == "weight_by_prop") {
       r2_dt <- weight_by_prop(r2_dt, as.character(chrom_name))
@@ -100,7 +100,7 @@
 
   if (nrow(r1_dt) == 0 || nrow(r2_dt) == 0) {
     cat(paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
-    return(null_mi_res())
+    return(.null_mi_res())
   }
 
   pileup_start <- min(r1_dt$start)
@@ -157,7 +157,7 @@
   # write out pairs here
   if (nrow(overlaps) == 0) {
     cat(paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
-    return(null_mi_res())
+    return(.null_mi_res())
   }
 
   read_pileups <- getPileupsMap(
@@ -170,7 +170,7 @@
   overlaps <- NULL
 
   if (nrow(read_pileups) == 0) {
-    return(null_mi_res())
+    return(.null_mi_res())
   }
 
   read_pileups <- read_pileups %>%
@@ -189,7 +189,7 @@
 
   # loop_coord <- loop_coord %>% dplyr::filter((lstop - lstart + 1) > 2)
   if (nrow(read_pileups) == 0) {
-    return(null_mi_res())
+    return(.null_mi_res())
   }
 
   # remove results where loop sequence has greater than 5% of total read count

@@ -61,7 +61,7 @@
 
   if (reg_stop - reg_start > 10000) {
     print("Region greater than 10kb. Creating null_hp_res.")
-    res <- null_hp_res()
+    res <- .null_hp_res()
     return(res)
   }
 
@@ -124,7 +124,7 @@
   if (nrow(r2_dt) < 3) {
     print("r2_dt contains less than 3 rows. Setting plus_null_res.")
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
-    plus_null_res <- null_hp_res()[[2]]
+    plus_null_res <- .null_hp_res()[[2]]
   }
 
   # calculate phasing signatures
@@ -256,7 +256,7 @@
   if (nrow(r2_dt) < 3) {
     print("nrow r2_dt is less than 3. Setting null_minus_res.")
     cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
-    minus_null_res <- null_hp_res()[[1]]
+    minus_null_res <- .null_hp_res()[[1]]
   }
 
   # calculate phasing
