@@ -536,7 +536,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     dist_plot <- plot_sizes(read_dist)
 
     if ((reg_stop - reg_start) > 7000) {
-      density_plot <- plot_large_density(data, reg_start, reg_stop)
+      density_plot <- .plot_large_density(data, reg_start, reg_stop)
     } else {
       density_plot <- .plot_density(data, reg_start, reg_stop)
     }

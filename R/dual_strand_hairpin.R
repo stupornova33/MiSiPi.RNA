@@ -451,9 +451,9 @@
 
     ## why? No one knows
 
-    plus_phasedz <- plot_hp_phasedz(plus_hp_phased_tbl, "+")
+    plus_phasedz <- .plot_hp_phasedz(plus_hp_phased_tbl, "+")
 
-    minus_phasedz <- plot_hp_phasedz(minus_hp_phased_tbl, "-")
+    minus_phasedz <- .plot_hp_phasedz(minus_hp_phased_tbl, "-")
 
     ## plot genome annotations (optional)
     if (annotate_region == TRUE) {

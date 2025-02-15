@@ -287,7 +287,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
           data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
           #density_plot <- .plot_density(data, reg_start, reg_stop)
-          density_plot <- plot_large_density(data, reg_start, reg_stop)
+          density_plot <- .plot_large_density(data, reg_start, reg_stop)
           top <- cowplot::plot_grid(density_plot, size_plot, ncol = 2,  rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
           bottom <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), dicer_plot, ncol = 2, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
           all_plot <- cowplot::plot_grid(top, NULL, bottom, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(1,0.1,1), align = "vh", axis = "lrtb")
@@ -296,7 +296,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
            print("Heat plot results are empty")
            data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
-           density_plot <- plot_large_density(data, reg_start, reg_stop)
+           density_plot <- .plot_large_density(data, reg_start, reg_stop)
            top <- cowplot::plot_grid(density_plot, size_plot, ncol = 2, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
            bottom <- cowplot::plot_grid(dicer_plot, rel_widths = c(1), rel_heights = c(1), align = "vh", axis = "lrtb")
            all_plot <- cowplot::plot_grid(top, NULL, bottom, ncol = 1, rel_widths = c(1,1,1), rel_heights = c(1,0.1,1), align = "vh", axis = "lrtb")
@@ -317,7 +317,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
         #plus_phasedz<- dsh[[7]]
         #minus_phasedz <- dsh[[8]]
         data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
-        density_plot <- plot_large_density(data, reg_start, reg_stop)
+        density_plot <- .plot_large_density(data, reg_start, reg_stop)
 
         if (!sum(results) == 0) {
           left <- cowplot::plot_grid(density_plot, size_plot, dicer_plot, ncol = 1, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
