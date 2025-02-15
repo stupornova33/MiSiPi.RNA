@@ -181,7 +181,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
                                        reverse_dt$end, reverse_dt$start, reverse_dt$width,
                                        check_pi = TRUE)
 
-    #new_heat_plot <- plot_si_heat(new_heat, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+    #new_heat_plot <- .plot_si_heat(new_heat, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     # calculate overlaps of all reads for output table
     overlaps <- overlaps %>%
       dplyr::mutate(overlap = dplyr::case_when(r1_start > r2_start ~ (r2_end - r1_start),
@@ -548,13 +548,13 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     minus_df$phased_z[is.na(minus_df$phased_z)] <- 0
     minus_df$phased26_z[is.na(minus_df$phased26_z)] <- 0
 
-    plus_phased_plot <- plot_phasedz(plus_df, "+")
-    minus_phased_plot <- plot_phasedz(minus_df, "-")
+    plus_phased_plot <- .plot_phasedz(plus_df, "+")
+    minus_phased_plot <- .plot_phasedz(minus_df, "-")
 
 
     if (sum(heat_results) > 0) {
       options(scipen = 999)
-      heat_plot <- plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+      heat_plot <- .plot_si_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
 
       top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot), ncol = 1, rel_widths = c(0.8,1,1),
                                      rel_heights = c(0.8,0.1,1), align = "vh", axis = "lrtb")

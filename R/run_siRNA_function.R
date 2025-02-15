@@ -190,9 +190,9 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
     if (!sum(results) == 0) {
       cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
       print("Making heatmap.")
-      heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+      heat_plot <- .plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     }
-    #heat_plot <- plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+    #heat_plot <- .plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
     print("Making size_dist plot")
     dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
