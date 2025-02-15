@@ -275,7 +275,7 @@
 
 
   if (!nrow(i_dat) == 0 && !nrow(j_dat) == 0) {
-    i_j_overlaps <- new_find_overlaps(i_dat, j_dat)
+    i_j_overlaps <- .find_overlaps(i_dat, j_dat)
   } else {
     i_j_overlaps <- data.frame(
       r1_start = 0, r1_width = 0, r1_end = 0, r1_dupes = 0,
