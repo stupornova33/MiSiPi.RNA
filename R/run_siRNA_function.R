@@ -198,7 +198,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
     dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
 
     cat(file = paste0(wkdir, logfile), "plot_sizes\n", append = TRUE)
-    size_plot <- plot_sizes(dist)
+    size_plot <- .plot_sizes(dist)
     cat(file = paste0(wkdir, logfile), "plot_overhangz\n", append = TRUE)
 
     dicer_overhangs$zscore <- .calc_zscore(dicer_overhangs$proper_count)

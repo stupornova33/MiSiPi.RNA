@@ -394,7 +394,7 @@
     density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
     density_plot <- .plot_density(density, reg_start, reg_stop)
 
-    dist_plot <- plot_sizes(read_dist)
+    dist_plot <- .plot_sizes(read_dist)
 
     zplot <- .plot_overlapz(z_df)
 

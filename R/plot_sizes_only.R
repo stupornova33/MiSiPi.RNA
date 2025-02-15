@@ -1,16 +1,13 @@
-#' plot_sizes_only
-#' A function which will process the reads at a locus but only plot the size distribution and will not run the miRNA, siRNA or piRNA modules.
-#' @param wkdir A string - the path of the output directory.
-#' @param geno A string specifying the genotype of the sample, for appending as a suffix to the output file.
-#' @param bam_file A string - the name of the BAM file.
-#' @param bed_file A string - the name of the 3-column BED file.
-#' @return results
+# plot_sizes_only
+# A function which will process the reads at a locus but only plot the size distribution and will not run the miRNA, siRNA or piRNA modules.
+# @param wkdir A string - the path of the output directory.
+# @param geno A string specifying the genotype of the sample, for appending as a suffix to the output file.
+# @param bam_file A string - the name of the BAM file.
+# @param bed_file A string - the name of the 3-column BED file.
+# @return results
 
-#' @export
-
-plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
-  
-  roi <- read.csv(bed_file, header = FALSE, sep = '\t')
+.plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
+  roi <- read.csv(bed_file, header = FALSE, sep = "\t")
 
   for (i in 1:nrow(roi)) {
     print(i)
@@ -20,12 +17,12 @@ plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
     logfile <- "plot_sizes.log.txt"
     prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
     print(prefix)
-    
+
     # use Rsamtools to process the bam file
     bam_obj <- .open_bam(bam_file, logfile)
     bam_header <- Rsamtools::scanBamHeader(bam_obj)
-    chr_name <- names(bam_header[['targets']])
-    chr_length <- unname(bam_header[['targets']])
+    chr_name <- names(bam_header[["targets"]])
+    chr_length <- unname(bam_header[["targets"]])
     bam_header <- NULL
 
     # extract reads by strand
@@ -50,11 +47,11 @@ plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
 
     dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
 
-    #size_plot <- plot_sizes(dist)
+    # size_plot <- .plot_sizes(dist)
 
-    #grDevices::pdf(file = paste0(wkdir, prefix, "_sizes.pdf"), height = 4, width = 4)
-    #print(size_plot)
-    #grDevices::dev.off()
+    # grDevices::pdf(file = paste0(wkdir, prefix, "_sizes.pdf"), height = 4, width = 4)
+    # print(size_plot)
+    # grDevices::dev.off()
 
     ###########################################################################################################################
 
@@ -70,9 +67,9 @@ plot_sizes_only <- function(wkdir, geno, bam_file, bed_file) {
     if (nrow(all_data) > 0) {
       png(paste0(wkdir, prefix, "_", geno, "_density.png"), height = 5, width = 5, units = "in", res = 300)
       d <- density(all_data$width, bw = 0.4, kernel = "biweight")
-      #auc <- sum(diff(d$x) * (head(d$y,-1)+tail(d$y,-1)))/2
+      # auc <- sum(diff(d$x) * (head(d$y,-1)+tail(d$y,-1)))/2
       auc <- MESS::auc(x = d$x, y = d$y, from = 18, to = 32, type = "spline")
-      plot(d, main = "Density", sub = paste0("AUC = ", auc), xlim = c(18,32), ylim = c(0,1) )
+      plot(d, main = "Density", sub = paste0("AUC = ", auc), xlim = c(18, 32), ylim = c(0, 1))
       dev.off()
     } else {
       cat(paste0(geno, " ", prefix, "had no 0 reads.\n"), file = logfile, append = TRUE)

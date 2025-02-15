@@ -145,7 +145,7 @@
   )
 
   if (plot_output == TRUE) {
-    dist_plot <- plot_sizes(read_dist)
+    dist_plot <- .plot_sizes(read_dist)
     phased_plot <- .plot_phasedz(df)
     all_plot <- cowplot::plot_grid(phased_plot, dist_plot, rel_widths = c(1, 0.7), rel_heights = c(1, 1), ncol = 2)
     grDevices::pdf(file = paste0(wkdir, prefix, "_", strand, "_phased_zscore.pdf"), height = 6, width = 11)

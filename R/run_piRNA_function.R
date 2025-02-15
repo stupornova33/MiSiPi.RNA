@@ -533,7 +533,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
     z_df$Z_score[is.na(z_df$Z_score)] <- 0
 
     z <- .plot_overlapz(z_df)
-    dist_plot <- plot_sizes(read_dist)
+    dist_plot <- .plot_sizes(read_dist)
 
     if ((reg_stop - reg_start) > 7000) {
       density_plot <- .plot_large_density(data, reg_start, reg_stop)
@@ -541,7 +541,7 @@ run_piRNA_function <- function(chrom_name, reg_start, reg_stop, length, bam_file
       density_plot <- .plot_density(data, reg_start, reg_stop)
     }
     data <- NULL
-    dist_plot <- plot_sizes(read_dist)
+    dist_plot <- .plot_sizes(read_dist)
 
     plus_df$phased_z[is.na(plus_df$phased_z)] <- 0
     plus_df$phased26_z[is.na(plus_df$phased26_z)] <- 0
