@@ -60,9 +60,9 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
     stopifnot("Parameter `gtf_file` must be a valid filepath to a 9 column gtf file." = file.exists(gtf_file))
     gtf_columns_vector <- utils::count.fields(gtf_file, sep = "\t")
     stopifnot("gtf_file must have the same number of columns in each line." = length(unique(gtf_columns_vector)) == 1)
-    #waiting to include the number of column check
-    #number_of_gtf_columns <- gtf_columns_vector[1]
-    #stopifnot("gtf_file must have 9 columns and be tab separated." = number_of_gtf_columns == 9)
+    # waiting to include the number of column check
+    # number_of_gtf_columns <- gtf_columns_vector[1]
+    # stopifnot("gtf_file must have 9 columns and be tab separated." = number_of_gtf_columns == 9)
   }
   # write_fastas
   stopifnot("Parameter `write_fastas` only accepts TRUE or FALSE." = is.logical(write_fastas))
@@ -72,33 +72,33 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
 
   bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
-  chr_name <- names(bam_header[['targets']])
-  chr_length <- unname(bam_header[['targets']])
+  chr_name <- names(bam_header[["targets"]])
+  chr_length <- unname(bam_header[["targets"]])
   bam_header <- V2 <- V3 <- NULL
   test_list <- utils::read.csv(roi, sep = "\t", header = FALSE)
 
   # get the working directory to write the logfile
-  dir <- unlist(strsplit(roi, "\\/\\s*(?=[^\\/]+$)", perl=TRUE))[1]
+  dir <- unlist(strsplit(roi, "\\/\\s*(?=[^\\/]+$)", perl = TRUE))[1]
   # assign indexes to the chromosomes names from the bed file
   # also checks to make sure the chromosome name from the bed file is actually in the genome
   # prints to a file
 
   res_list <- vector()
   na_idx <- vector()
-  for(i in 1:nrow(test_list)){
+  for (i in 1:nrow(test_list)) {
     res <- which(chr_name == test_list$V1[i])
-    if(identical(res, integer(0))){
+    if (identical(res, integer(0))) {
       na_idx <- append(na_idx, i)
     } else {
       res_list <- append(res_list, res)
     }
   }
 
-  if(length(na_idx) > 0){
+  if (length(na_idx) > 0) {
     # remove any lines of bed file where chromosome was not in genome and print error to file.
-    test_list <- test_list[-c(na_idx),]
+    test_list <- test_list[-c(na_idx), ]
     suppressWarnings(
-      if(!file.exists("Error.log")){
+      if (!file.exists("Error.log")) {
         write(paste0("Chromosome at lines ", na_idx, " were not found in the genome. Please check.\n"), file = paste0(dir, "Error.log"), append = FALSE)
       } else {
         write(paste0("Chromosome at lines ", na_idx, " were not found in the genome. Please check.\n"), file = paste0(dir, "Error.log"), append = TRUE)
@@ -109,8 +109,10 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
   # Convert the bed file coordinates to 1 based for compatibility with other tools
   # This will be converted back using revert_positions() when writing results that reference the coordinates
   test_list <- test_list %>%
-    dplyr::mutate(V2 = V2 + 1,
-                  V3 = V3 + 1)
+    dplyr::mutate(
+      V2 = V2 + 1,
+      V3 = V3 + 1
+    )
 
   test_list <- test_list %>%
     dplyr::mutate(chromosome = res_list) %>%
@@ -123,25 +125,27 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
   reg_stop <- test_list$V3
   length <- test_list$length
   chromosome <- unlist(unname(test_list$chromosome))
-  var_list <- list(chrom_name = chrom_name,
-                   reg_start = reg_start,
-                   reg_stop = reg_stop,
-                   length = length,
-                   chromosome = chromosome,
-                   plot_output = plot_output,
-                   path_to_RNAfold = path_to_RNAfold,
-                   path_to_RNAplot = path_to_RNAplot,
-                   min_read_count = min_read_count,
-                   genome= genome,
-                   bam_file = bam_file,
-                   roi = roi,
-                   pi_pal = pi_pal,
-                   si_pal = si_pal,
-                   annotate_region = annotate_region,
-                   weight_reads = weight_reads,
-                   gtf_file = gtf_file,
-                   write_fastas = write_fastas,
-                   out_type = out_type)
+  var_list <- list(
+    chrom_name = chrom_name,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    length = length,
+    chromosome = chromosome,
+    plot_output = plot_output,
+    path_to_RNAfold = path_to_RNAfold,
+    path_to_RNAplot = path_to_RNAplot,
+    min_read_count = min_read_count,
+    genome = genome,
+    bam_file = bam_file,
+    roi = roi,
+    pi_pal = pi_pal,
+    si_pal = si_pal,
+    annotate_region = annotate_region,
+    weight_reads = weight_reads,
+    gtf_file = gtf_file,
+    write_fastas = write_fastas,
+    out_type = out_type
+  )
 
   return(var_list)
 }
