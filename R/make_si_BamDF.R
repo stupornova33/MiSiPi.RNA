@@ -7,6 +7,6 @@
 .make_si_BamDF <- function(chrom_obj) {
   # get just first nuc of sequence to save memory
   s1 <- substr(chrom_obj$seq, 1, 1)
-  bam_df <- data.frame("rname" = chrom_obj$rname, "pos" = chrom_obj$pos, "width" = chrom_obj$qwidth, "seq" = chrom_obj$seq, "first" = s1)
+  bam_df <- data.frame("rname" = as.character(chrom_obj$rname), "pos" = chrom_obj$pos, "width" = chrom_obj$qwidth, "seq" = chrom_obj$seq, "first" = s1)
   return(bam_df)
 }

@@ -9,6 +9,6 @@
   # get just first nuc of sequence to save memory
   s1 <- substr(chrom_obj$seq, 1, 1)
   # changed 12/5 to remove seq
-  bam_df <- data.frame("rname" = chrom_obj$rname, "pos" = chrom_obj$pos, "width" = chrom_obj$qwidth, "first" = s1)
+  bam_df <- data.frame("rname" = as.character(chrom_obj$rname), "pos" = chrom_obj$pos, "width" = chrom_obj$qwidth, "first" = s1)
   return(bam_df)
 }
