@@ -6,7 +6,7 @@
 
 misipi_rna <- function(vars){
 
-mapply(new_run_all,
+mapply(.run_all,
        vars$chrom_name,
        vars$reg_start,
        vars$reg_stop,
@@ -26,5 +26,4 @@ mapply(new_run_all,
        vars$gtf_file,
        vars$write_fastas,
        vars$out_type)
-
 }
