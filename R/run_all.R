@@ -474,7 +474,7 @@
     file.create(paste0(piRNA_dir, pi_log))
   }
 
-  pi_res <- run_piRNA_function(chrom_name, reg_start, reg_stop,
+  pi_res <- .piRNA(chrom_name, reg_start, reg_stop,
     length, bam_file, genome_file,
     pi_log, piRNA_dir, pi_pal,
     plot_output = plot_output,
