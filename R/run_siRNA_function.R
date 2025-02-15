@@ -286,7 +286,7 @@ run_siRNA_function <- function(chrom_name, reg_start, reg_stop, length, min_read
           print("Heatplot results are not empty")
           data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
-          #density_plot <- plot_density(data, reg_start, reg_stop)
+          #density_plot <- .plot_density(data, reg_start, reg_stop)
           density_plot <- plot_large_density(data, reg_start, reg_stop)
           top <- cowplot::plot_grid(density_plot, size_plot, ncol = 2,  rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")
           bottom <- cowplot::plot_grid(ggplotify::as.grob(heat_plot), dicer_plot, ncol = 2, rel_widths = c(1,1), rel_heights = c(1,1), align = "vh", axis = "lrtb")

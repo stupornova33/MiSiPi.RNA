@@ -437,7 +437,7 @@
 
     data <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
-    density_plot <- plot_density(data, reg_start, reg_stop)
+    density_plot <- .plot_density(data, reg_start, reg_stop)
 
     if (!Sys.info()["sysname"] == "Windows") {
       arc_plot <- plot_helix(file.path(wkdir, "helix.txt"))

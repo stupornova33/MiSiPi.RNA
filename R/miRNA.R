@@ -392,7 +392,7 @@
     empty_table <- data.frame(pos = c(seq(fold_list$start, fold_list$stop)), count = c(0))
 
     density <- read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
-    density_plot <- plot_density(density, reg_start, reg_stop)
+    density_plot <- .plot_density(density, reg_start, reg_stop)
 
     dist_plot <- plot_sizes(read_dist)
 
