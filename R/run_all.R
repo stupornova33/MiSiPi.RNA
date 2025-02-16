@@ -60,13 +60,11 @@
     pi_phased26z = numeric(1)
   )
 
-  print("setting locus")
   local_ml$locus <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   local_ml$locus_length <- reg_stop - reg_start + 1
 
   print(local_ml$locus_length)
-  print("setting prefix")
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   ####################################################################### process bam input files #############################################################################
@@ -91,7 +89,6 @@
   chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
   chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
-  print("filtering forward and reverse dts")
   forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 16) %>%
     dplyr::rename(start = pos) %>%
@@ -113,7 +110,6 @@
     dplyr::group_by(width) %>%
     dplyr::summarize(count = sum(count))
 
-  print("output_readsize_dist")
   .output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
 
   chromP <- NULL
@@ -130,7 +126,6 @@
   # ave_size
   # perc_first_nucT
   # perc_A10
-  print("Getting extra metrics for ML")
 
   sizes <- data.frame(width = c(forward_dt$width, reverse_dt$width))
 
@@ -165,7 +160,6 @@
     reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
   }
 
-  print("about to do historgram")
   if (nrow(forward_dt) + nrow(reverse_dt) > 1) {
     all_widths <- c(forward_dt$width, reverse_dt$width)
 
@@ -199,8 +193,6 @@
   }
 
   all_widths <- NULL
-
-  print("got past the histogram")
 
   # TO DO: make a null_res to return
   if (nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) {
@@ -305,32 +297,23 @@
 
   plus_perc_paired <- si_res[[3]][[2]]$perc_paired
   minus_perc_paired <- si_res[[3]][[2]]$perc_paired
+  
   # changed 3/25 to be RPM
   local_ml$num_si_dicer_reads <- (si_res[[2]]$proper_count[5] * 1000000) / total_read_count
   local_ml$hp_perc_paired <- max(plus_perc_paired, minus_perc_paired)
-
-  perc_paired_file <- paste0(si_dir, "perc_paired.txt")
-  col_status <- ifelse(.exists_not_empty(perc_paired_file), FALSE, TRUE)
-  write.table(local_ml$hp_perc_paired, perc_paired_file, quote = FALSE, append = TRUE, col.names = col_status)
-
+  
   ######################################################################### get hairpin-specific results ###############################################################
 
-  # hp_phasedz [ maximum value of plus_phasedz[1:4] and minus_phasedz[1:4] ]
-  # MFE change to hp_mfe
-  # hp_dicerz [ maximum value of plus_dicerz and minus_dicerz]
-  print("getting hairpin-specific results")
-  # plus_phasedz <- unlist(unname(si_res[[3]][[2]][6]))
   plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
-  # if(!plus_phasedz[1] == "NaN" && !plus_phasedz[1] == -33){
+
   if (!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)) {
     plus_mean <- mean(plus_phasedz[1:4])
   } else {
     plus_mean <- -33
   }
 
-  # minus_phasedz <- unlist(unname(si_res[[3]][[1]][6]))
   minus_phasedz <- si_res[[3]][[1]]$phased_tbl.phased_z
-  # if(!minus_phasedz[1] == "NaN" && !minus_phasedz[1] == -33){
+  
   if (!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)) {
     minus_mean <- mean(minus_phasedz[1:4])
   } else {
@@ -351,13 +334,7 @@
     minus_dicerz <- -33
   }
 
-
   local_ml$hp_dicerz <- max(plus_dicerz, minus_dicerz)
-  # local_ml$hp_phasedz <- max(unlist(unname(si_res[[3]][[1]][3])), unlist(unname(si_res[[3]][[2]][3])))
-
-  hp_dicerz_file <- paste0(si_dir, "hp_dicerz.txt")
-  col_status <- ifelse(.exists_not_empty(hp_dicerz_file), FALSE, TRUE)
-  # write.table(local_ml$hp_dicerz, hp_dicerz_file, quote = FALSE, append = TRUE, col.names = col_status)
 
   si_res <- NULL
   max_si_heat <- NULL
@@ -489,9 +466,6 @@
     # changed pi_count to CPM
     local_ml$max_pi_count <- ((max_pi_heat$highest_pi_count) * 1000000) / total_read_count
     local_ml$max_piz_overlap <- .get_max_zscore(unlist(pi_res$z_df$Z_score), unlist(pi_res$z_df$Overlap))[[1]]
-    piz_overlap_file <- paste0(piRNA_dir, "max_piz_overlap.txt")
-    col_status <- ifelse(.exists_not_empty(piz_overlap_file), FALSE, TRUE)
-    write.table(local_ml$max_piz_overlap, piz_overlap_file, quote = FALSE, append = TRUE, col.names = col_status)
   } else {
     local_ml$pingpong_col <- -33
     local_ml$max_pi_count <- -33
@@ -528,13 +502,6 @@
     local_ml$pi_phased26z <- max(phasedz26_plus, phasedz26_minus)
   }
 
-  pi_phasedz_file <- paste0(piRNA_dir, "pi_phasedz.txt")
-  col_status <- ifelse(.exists_not_empty(pi_phasedz_file), FALSE, TRUE)
-  write.table(local_ml$pi_phasedz, pi_phasedz_file, quote = FALSE, append = TRUE, col.names = col_status)
-
-
-
-
   pi_res <- NULL
 
   ####################################################################### add results to table ########################################################################
@@ -545,18 +512,13 @@
 
   tmp <- unlist(strsplit(bam_file, "[/]"))
   input_pref <- tmp[length(tmp)]
-  input_pref2 <- strsplit(input_pref, "[.]")[[1]][1]
+  input_pref <- strsplit(input_pref, "[.]")[[1]][1]
 
-  tbl_name <- paste0(tbl_pref, "_", input_pref2)
-  df <- as.matrix(local_ml)
-  print("writing to table")
+  ml_file <- file.path(all_dir, paste0(tbl_pref, "_", input_pref, "_ml.txt"))
+  
+  local_ml <- as.matrix(local_ml)
 
-  cat(file = logfile, "Writing results to table\n", append = TRUE)
-
-  ml_file <- paste0(tbl_name, "_ml.txt")
-  col_status <- ifelse(.exists_not_empty(paste0(all_dir, ml_file)), FALSE, TRUE)
-  print(paste0("col_status: ", col_status))
-  utils::write.table(df, paste0(all_dir, ml_file), sep = "\t", quote = FALSE, append = T, col.names = col_status, na = "NA", row.names = F)
-
-  print("file has been written.")
+  cat(file = logfile, "Writing machine learning results to table\n", append = TRUE)
+  .write.quiet(local_ml, ml_file)
+  
 }
