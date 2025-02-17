@@ -26,10 +26,13 @@
                      roi, genome_file, min_read_count,
                      si_pal, pi_pal, plot_output,
                      path_to_RNAfold, path_to_RNAplot,
-                     annotate_region,
-                     weight_reads, gtf_file,
-                     write_fastas, out_type) {
+                     annotate_region, weight_reads,
+                     gtf_file, write_fastas, out_type,
+                     i, i_total) {
   width <- pos <- start <- end <- NULL
+
+  msg <- paste(i, "out of", i_total, "|", chrom_name)
+  print(msg)
 
   # create empty data table for results
   local_ml <- data.table::data.table(
@@ -295,11 +298,11 @@
 
   plus_perc_paired <- si_res[[3]][[2]]$perc_paired
   minus_perc_paired <- si_res[[3]][[2]]$perc_paired
-  
+
   # changed 3/25 to be RPM
   local_ml$num_si_dicer_reads <- (si_res[[2]]$proper_count[5] * 1000000) / total_read_count
   local_ml$hp_perc_paired <- max(plus_perc_paired, minus_perc_paired)
-  
+
   ######################################################################### get hairpin-specific results ###############################################################
 
   plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
@@ -311,7 +314,7 @@
   }
 
   minus_phasedz <- si_res[[3]][[1]]$phased_tbl.phased_z
-  
+
   if (!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)) {
     minus_mean <- mean(minus_phasedz[1:4])
   } else {
@@ -513,10 +516,9 @@
   input_pref <- strsplit(input_pref, "[.]")[[1]][1]
 
   ml_file <- file.path(all_dir, paste0(tbl_pref, "_", input_pref, "_ml.txt"))
-  
+
   local_ml <- as.matrix(local_ml)
 
   cat(file = logfile, "Writing machine learning results to table\n", append = TRUE)
   .write.quiet(local_ml, ml_file)
-  
 }
