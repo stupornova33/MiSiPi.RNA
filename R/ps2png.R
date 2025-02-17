@@ -5,6 +5,7 @@
 #' @export
 
 ps2png <- function(path_to_magick_exe, file_dir) {
+  old_dir <- getwd()
   setwd(file_dir)
   ps_files <- list.files(file_dir, pattern = "_ss.ps")
   last <- tail(unlist(strsplit(file_dir, "")), 1)
@@ -23,4 +24,5 @@ ps2png <- function(path_to_magick_exe, file_dir) {
     args <- paste0("-density 300 ", input_file, " -quality 100 ", out_file)
     system2(path_to_magick_exe, args = args)
   }
+  setwd(old_dir)
 }
