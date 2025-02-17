@@ -298,8 +298,6 @@ DataFrame getPileups(std::vector<int> dtpos, std::vector<int> dtcount, std::vect
 std::map<int, int> vectorsToMap(std::vector<int> &k, std::vector<int> &v) {
    // Assumes vectors of same length
    // Only call from getPileupsMap which should only be called with data.frame input
-   // std::cout << "!!Assertion upcoming!!" << std::endl;
-   // std::cout << "Checking if dtpos.size() and dtcount.size() are equal..." << std::endl;
    // assert(k.size() == v.size());
 
    std::map<int, int> m;
@@ -842,9 +840,6 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   int f_size = int(fdt_start.size());
   int r_size = int(rdt_start.size());
 
-  std::cout << "f_size: " << f_size << std::endl;
-  std::cout << "r_size: " << r_size << std::endl;
-
   std::vector<int> fstart_res;
   fstart_res.reserve(f_size);
   std::vector<int> fend_res;
@@ -854,8 +849,6 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   std::vector<int> rend_res;
   rend_res.reserve(r_size);
 
-  std::cout << "Starting f_loop" << std::endl;
-
   for (int i = 0; i < f_size; i++) {
     //get reads of size i
     if (fwidth[i] >= 18 && fwidth[i] <= 30) {
@@ -863,8 +856,6 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
       fend_res.emplace_back(fdt_end[i]);
     }
   }
-
-  std::cout << "Starting r_loop" << std::endl;
 
   for (int i = 0; i < r_size; i++) {
     if (rwidth[i] >= 18 && rwidth[i] <= 30) {
@@ -903,8 +894,7 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   }
 
   DataFrame df = DataFrame::create(Named("overlap") = overlap_res, Named("count") = counts_res);
-                                     std::cout << "Returning" << std::endl;
-                                     return(df);
+  return(df);
 }
 
 // map_and_count
