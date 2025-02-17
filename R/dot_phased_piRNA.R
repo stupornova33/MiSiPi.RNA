@@ -127,22 +127,11 @@
   phased26_output <- phased_26_counts %>% dplyr::select(c(phased26_z))
   phased26_output <- t(c(prefix, t(phased26_output)))
 
+  phased_file <- file.path(wkdir, "phased_piRNA_zscores.txt")
+  phased26_file <- file.path(wkdir, "phased26_piRNA_zscores.txt")
 
-  suppressWarnings(
-    if (!file.exists("phased_piRNA_zscores.txt")) {
-      utils::write.table(phased_output, file = paste0(wkdir, "phased_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
-    } else {
-      utils::write.table(phased_output, file = paste0(wkdir, "phased_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-    }
-  )
-
-  suppressWarnings(
-    if (!file.exists("phased26_piRNA_zscores.txt")) {
-      utils::write.table(phased26_output, file = paste0(wkdir, "phased26_piRNA_zscores.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = F, na = "NA", row.names = F)
-    } else {
-      utils::write.table(phased26_output, file = paste0(wkdir, "phased26_piRNA_zscores.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-    }
-  )
+  .write.quiet(phased_output, phased_file)
+  .write.quiet(phased26_output, phased26_file)
 
   if (plot_output == TRUE) {
     dist_plot <- .plot_sizes(read_dist)

@@ -35,8 +35,9 @@ ml_probability <- function(path_to_table, table) {
   all_df <- all_df %>% dplyr::select(c(locus, `Prob. cisNAT`, `Prob. contam`, `Prob. hpRNA`, `Prob. miRNA`, `Prob. piRNA`))
 
   all_df[, 2:6] <- round(all_df[, 2:6], digits = 2)
-  write.table(all_df, paste0(path_to_table, "ml_probability.txt"), sep = "\t", row.names = FALSE, col.names = TRUE, quote = FALSE)
-
+  ml_file <- file.path(path_to_table, "ml_probability.txt")
+  .write.quiet(all_df, ml_file)
+  
   max <- c(100, 100, 100, 100, 100)
   min <- c(0, 0, 0, 0, 0)
 

@@ -23,12 +23,9 @@
   bam_obj <- .open_bam(bam_file, logfile)
 
   # Get the reads from the BAM using Rsamtools
-  print("Making chromP and chromM")
   cat(file = paste0(wkdir, logfile), "Making chromP and chromM\n", append = TRUE)
   chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
   chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
-
-  print("Finished making chromP and chromM. Filtering forward and reverse reads by length.")
 
   ################################################################# ping pong piRNA ##############################################################
   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
@@ -77,7 +74,6 @@
   size_dist <- NULL
 
   # Expand the data frames back to full size and weight reads in some cases
-  print("Getting weighted data.frames.")
   # include "T" argument to return read sequences
 
   # Get expanded-weighted reads
@@ -88,7 +84,6 @@
   # Here it is being given the reads from both the forward and reverse or double the reverse
 
   # if (weight_reads == "Locus_norm" | weight_reads == "locus_norm") {
-  #   print("normalize read count to locus")
   #   forward_dt <- locus_norm(forward_dt, sum(forward_dt$count, reverse_dt$count))
   #   reverse_dt <- locus_norm(reverse_dt, sum(reverse_dt$count, reverse_dt$count))
   # }
@@ -99,9 +94,6 @@
 
   forward_dt <- .weight_reads(forward_dt, weight_reads, locus_length, sum(forward_dt$count))
   reverse_dt <- .weight_reads(reverse_dt, weight_reads, locus_length, sum(reverse_dt$count))
-
-  print("Completed getting weighted dataframes.")
-
 
   # if there are both forward and reverse results
   if (!nrow(forward_dt) == 0 && !nrow(reverse_dt) == 0) {
@@ -116,8 +108,6 @@
 
     # get the overlapping read pairs
     overlaps <- .find_overlaps(r_summarized, f_summarized)
-
-    print("Completed find_overlaps.")
 
     # 1/9/24 now make_BamDF returns sequence too, so read sequences can be extracted from that
     # ignoring reads with same start/stop but internal mismatches from output fasta
@@ -141,7 +131,6 @@
           dplyr::distinct(start, end, .keep_all = TRUE)
         tmp_f <- tmp[which(tmp$start == proper_overlaps$r2_start[i] & tmp$end == proper_overlaps$r2_end[i]), ] %>%
           dplyr::distinct(start, end, .keep_all = TRUE)
-
 
         rreads <- rbind(rreads, tmp_r)
         freads <- rbind(freads, tmp_f)
@@ -208,14 +197,9 @@
     overlap_out <- data.frame(t(z_res))
     colnames(overlap_out) <- overlap_out[1, ]
     overlap_out <- overlap_out[-1, ]
-
-    suppressWarnings(
-      if (!file.exists(paste0(wkdir, "piRNA_alloverlaps_counts.txt"))) {
-        utils::write.table(overlap_out, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = FALSE)
-      } else {
-        utils::write.table(overlap_out, file = paste0(wkdir, "piRNA_alloverlaps_counts.txt"), quote = FALSE, sep = "\t", col.names = FALSE, append = TRUE, na = "NA", row.names = FALSE)
-      }
-    )
+    overlap_file <- file.path(wkdir, "piRNA_alloverlaps_counts.txt")
+    
+    .write.quiet(overlap_out, overlap_file)
 
     # forward_dt <- NULL
     # reverse_dt <- NULL
@@ -225,13 +209,10 @@
 
     output <- t(c(prefix, as.vector(heat_results)))
 
-    suppressWarnings(
-      if (!file.exists(paste0(wkdir, "piRNA_heatmap.txt"))) {
-        utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), sep = "\t", quote = FALSE, append = FALSE, col.names = TRUE, na = "NA", row.names = F)
-      } else {
-        utils::write.table(output, file = paste0(wkdir, "piRNA_heatmap.txt"), quote = FALSE, sep = "\t", col.names = F, append = TRUE, na = "NA", row.names = F)
-      }
-    )
+    output_file <- file.path(wkdir, "piRNA_heatmap.txt")
+    
+    .write.quiet(output, output_file)
+    
     output <- NULL
 
     # Put results into table
@@ -255,7 +236,6 @@
   ################## compute plus strand
 
   cat(file = paste0(wkdir, logfile), paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
-  print("Calculating phasing on plus strand.")
 
   # Processing unistrand, so make copy of original read df to transform
   filter_r1_dt <- forward_dt %>%
@@ -341,58 +321,13 @@
     dplyr::select(phased26_z)
   phased26_plus_output <- t(c(prefix, t(phased26_plus_output)))
 
-
-  suppressWarnings(
-    if (!file.exists(paste0(wkdir, "phased_plus_piRNA_zscores.txt"))) {
-      write.table(phased_plus_output,
-        file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"),
-        sep = "\t",
-        quote = FALSE,
-        append = FALSE,
-        col.names = T,
-        na = "NA",
-        row.names = F
-      )
-    } else {
-      write.table(phased_plus_output,
-        file = paste0(wkdir, "phased_plus_piRNA_zscores.txt"),
-        quote = FALSE,
-        sep = "\t",
-        col.names = F,
-        append = TRUE,
-        na = "NA",
-        row.names = F
-      )
-    }
-  )
-
-  suppressWarnings(
-    if (!file.exists(paste0(wkdir, "phased26_plus_piRNA_zscores.txt"))) {
-      write.table(phased26_plus_output,
-        file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"),
-        sep = "\t",
-        quote = FALSE,
-        append = FALSE,
-        col.names = T,
-        na = "NA",
-        row.names = F
-      )
-    } else {
-      write.table(phased26_plus_output,
-        file = paste0(wkdir, "phased26_plus_piRNA_zscores.txt"),
-        quote = FALSE,
-        sep = "\t",
-        col.names = F,
-        append = TRUE,
-        na = "NA",
-        row.names = F
-      )
-    }
-  )
+  phased_file <- file.path(wkdir, "phased_plus_piRNA_zscores.txt")
+  phased26_file <- file.path(wkdir, "phased26_plus_piRNA_zscores.txt")
+  .write.quiet(phased_plus_output, phased_file)
+  .write.quiet(phased26_plus_output, phased26_file)
 
   ################ run minus strand
   cat(file = paste0(wkdir, logfile), paste0("Running minus strand phasing.", "\n"), append = TRUE)
-  print("Running minus strand phasing.")
 
   filter_r1_dt <- reverse_dt %>%
     dplyr::filter(first == "T") %>%
@@ -484,81 +419,14 @@
   colnames(tbl) <- c(all_phased$dist, "locus")
   tbl <- dplyr::select(tbl, 52, 1:51)
 
-  suppressWarnings(
-    if (!file.exists(paste0(wkdir, "phased_minus_piRNA_zscores.txt"))) {
-      write.table(phased_minus_output,
-        file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"),
-        sep = "\t",
-        quote = FALSE,
-        append = FALSE,
-        col.names = F,
-        na = "NA",
-        row.names = F
-      )
-    } else {
-      write.table(phased_minus_output,
-        file = paste0(wkdir, "phased_minus_piRNA_zscores.txt"),
-        quote = FALSE,
-        sep = "\t",
-        col.names = F,
-        append = TRUE,
-        na = "NA",
-        row.names = F
-      )
-    }
-  )
-
-  suppressWarnings(
-    if (!file.exists(paste0(wkdir, "phased26_minus_piRNA_zscores.txt"))) {
-      write.table(phased26_minus_output,
-        file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"),
-        sep = "\t",
-        quote = FALSE,
-        append = FALSE,
-        col.names = F,
-        na = "NA",
-        row.names = F
-      )
-    } else {
-      write.table(phased26_minus_output,
-        file = paste0(wkdir, "phased26_minus_piRNA_zscores.txt"),
-        quote = FALSE,
-        sep = "\t",
-        col.names = F,
-        append = TRUE,
-        na = "NA",
-        row.names = F
-      )
-    }
-  )
+  phased_file <- file.path(wkdir, "phased_minus_piRNA_zscores.txt")
+  phased26_file <- file.path(wkdir, "phased26_minus_piRNA_zscores.txt")
+  .write.quiet(phased_minus_output, phased_file)
+  .write.quiet(phased26_minus_output, phased26_file)
 
   # all phased is the sum of zscores for both plus and minus strand
-  suppressWarnings(
-    if (!file.exists(paste0(wkdir, "all_phased_piRNA_zscores.txt"))) {
-      write.table(tbl,
-        file = paste0(wkdir, "all_phased_piRNA_zscores.txt"),
-        sep = "\t",
-        quote = FALSE,
-        append = FALSE,
-        col.names = T,
-        na = "NA",
-        row.names = F
-      )
-    } else {
-      write.table(tbl,
-        file = paste0(wkdir, "all_phased_piRNA_zscores.txt"),
-        quote = FALSE,
-        sep = "\t",
-        col.names = F,
-        append = TRUE,
-        na = "NA",
-        row.names = F
-      )
-    }
-  )
-
-  print("Completed calculations. Making plots.")
-  print(paste0("sum heat results: ", sum(heat_results)))
+  all_phased_file <- file.path(wkdir, "all_phased_piRNA_zscores.txt")
+  .write.quiet(tbl, all_phased_file)
 
   #################################################################################################
   ### make plots

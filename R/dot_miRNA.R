@@ -23,7 +23,6 @@
 .miRNA <- function(chrom_name, reg_start, reg_stop, chromosome, length,
                    strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, path_to_RNAplot,
                    write_fastas, weight_reads, out_type) {
-  print(.get_region_string(chrom_name, reg_start, reg_stop))
   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
@@ -195,7 +194,6 @@
     seqnames = c(chrom_name),
     ranges = IRanges::IRanges(start = c(1), end = c(length))
   )
-  # print(paste0("mygranges: ", mygranges))
 
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
   geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
@@ -242,7 +240,8 @@
 
 
   if (nrow(grouped > 1)) {
-    write.table(grouped, file = paste0(wkdir, "alt_miRNAs_coord.bed"), sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+    alt_file <- file.path(wkdir, "alt_miRNAs_coord.bed")
+    .write.quiet(grouped, alt_file)
     cat(file = paste0(wkdir, logfile), "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
   }
 
@@ -293,7 +292,6 @@
 
   .rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
 
-  print("making fold_list")
   ################################################################################################################
   # .fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
   fold_list <- .fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, chrom_name, wkdir)[[1]]
@@ -302,7 +300,6 @@
   # make the plots for all the sequences in the "fold_list"
   # prefix <- paste0(wkdir, chrom_name, "-", (fold_list$start - 1), "-", (fold_list$stop - 1))
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
-  print(prefix)
 
   mfe <- fold_list$mfe
   perc_paired <- (length(fold_list$helix$i) * 2) / (fold_list$stop - fold_list$start)
@@ -324,7 +321,6 @@
     overhangs$zscore <- .calc_zscore(overhangs$proper_count)
   } else {
     # if(write_fastas == TRUE) .write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
-    print("making overhangs")
     overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
       dicer_overlaps$r2_start, dicer_overlaps$r2_width,
       dupes_present = TRUE,
@@ -340,36 +336,12 @@
   overhang_output$locus <- paste0(chrom_name, "_", fold_list$start, "_", fold_list$stop)
   overhang_output <- overhang_output[, c(10, 1:9)]
 
-  dice_file <- paste0(wkdir, "miRNA_dicerz.txt")
-  suppressWarnings(
-    if (!file.exists(dice_file)) {
-      write.table(overhang_output,
-        file = dice_file,
-        sep = "\t",
-        quote = FALSE,
-        col.names = T,
-        append = FALSE,
-        na = "NA",
-        row.names = F
-      )
-    } else {
-      write.table(overhang_output,
-        file = dice_file,
-        sep = "\t",
-        quote = FALSE,
-        col.names = F,
-        append = TRUE,
-        na = "NA",
-        row.names = F
-      )
-    }
-  )
-
+  dice_file <- file.path(wkdir, "miRNA_dicerz.txt")
+  .write.quiet(overhang_output, dice_file)
 
   if (plot_output == TRUE) {
     # make the plots
     dicer_sig <- .plot_overhangz(overhangs, "+")
-    print(overhangs)
     # make new pileups dt for structure
 
     # get the per-base coverage
