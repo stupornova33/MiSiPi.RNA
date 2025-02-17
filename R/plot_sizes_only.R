@@ -10,13 +10,11 @@
   roi <- read.csv(bed_file, header = FALSE, sep = "\t")
 
   for (i in 1:nrow(roi)) {
-    print(i)
     chrom_name <- roi$V1[i]
     reg_start <- roi$V2[i]
     reg_stop <- roi$V3[i]
     logfile <- "plot_sizes.log.txt"
     prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
-    print(prefix)
 
     # use Rsamtools to process the bam file
     bam_obj <- .open_bam(bam_file, logfile)

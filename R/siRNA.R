@@ -9,14 +9,12 @@
 siRNA <- function(vars) {
   dir <- "siRNA_outputs/"
 
-  print("calling .siRNA")
   wkdir <- "siRNA_outputs/"
   logfile <- "siRNA_logfile.txt"
 
   if (!dir.exists(wkdir) == TRUE) dir.create(wkdir)
 
   if (!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
-  print("Logfile created. Now running .siRNA.")
 
   si_res <- mapply(
     .siRNA, vars$chrom_name, vars$reg_start, vars$reg_stop, vars$length, 1, vars$genome, vars$bam_file, logfile,

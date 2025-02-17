@@ -18,19 +18,16 @@
   phased$r2_dupes <- as.numeric(phased$r2_dupes)
 
   if (!nrow(phased) == 0) {
-    print("making phased_counts")
     phased <- phased %>%
       dplyr::mutate(total_dupes = r1_dupes * r2_dupes) %>%
       dplyr::group_by(dist) %>%
       dplyr::summarize(num = sum(total_dupes)) %>%
       dplyr::mutate(dist = abs(dist))
   } else {
-    print("setting phased_counts to zero")
     phased <- data.table::data.table(dist = 1, num = 0L)
   }
 
   # make the results data table
-  print("making all_table")
   all_table <- data.table::data.table(
     dist = seq(0, 50),
     num = rep(0, 51)

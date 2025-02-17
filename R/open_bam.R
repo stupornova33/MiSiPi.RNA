@@ -10,7 +10,7 @@
    tryCatch(Rsamtools::open.BamFile(bam_obj), error = function(e) {
      msg <- conditionMessage(e)
      cat(msg, file = logfile, sep = "\n", append = TRUE)
-     message("Could not open Bamfile provided")
+     warning("Could not open Bamfile provided")
      stop(e)
    })
    return(bam_obj)

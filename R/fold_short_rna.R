@@ -38,7 +38,7 @@
       intern = TRUE
     )
   } else {
-    print("Operating system is not Windows or Linux/Darwin. Returning empty handed")
+    warning("Operating system is not Windows or Linux/Darwin. Returning empty handed")
     return(NULL)
   }
 
@@ -57,16 +57,13 @@
 
   make_fold <- function(x) {
     vien_struct <- test[[x]][[2]]
-    print(vien_struct)
     vien_split <- test[[x]][[1]]
-    print(vien_split)
     ct <- RRNA::makeCt(vien_struct, fold[[2]])
     # Using capture.output to silence the excessive console output from ct2coord
     # check to see if no bases are paired first
     if (sum(ct$bound) > 0) {
       utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
       mfe <- gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_split)))
-      print(mfe)
       mfe <- as.numeric(mfe)
     } else {
       coord <- NULL

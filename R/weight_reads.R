@@ -37,13 +37,13 @@
     stopifnot("locus_length must be numeric" = is.numeric(locus_length))
   }
 
-  output_msg <- switch(method,
-    "none" = "No weighting of reads applied.",
-    "locus_norm" = "Normalizing read count to locus.",
-    "weight_by_prop" = "Weighting reads by proportion.",
-    "value" = "User supplied custom weighting value for reads."
-  )
-  print(output_msg)
+  # output_msg <- switch(method,
+  #   "none" = "No weighting of reads applied.",
+  #   "locus_norm" = "Normalizing read count to locus.",
+  #   "weight_by_prop" = "Weighting reads by proportion.",
+  #   "value" = "User supplied custom weighting value for reads."
+  # )
+  # print(output_msg)
 
   # Weight reads
   expanded_dt <- filter_dt

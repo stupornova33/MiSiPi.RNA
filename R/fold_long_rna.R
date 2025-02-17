@@ -34,7 +34,7 @@
       intern = TRUE
     )
   } else {
-    print("Operating system is not Windows or Linux/Darwin. Returning empty handed.")
+    warning("Operating system is not Windows or Linux/Darwin. Returning empty handed.")
     return(NULL)
   }
 

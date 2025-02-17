@@ -64,7 +64,6 @@
 
   local_ml$locus_length <- reg_stop - reg_start + 1
 
-  print(local_ml$locus_length)
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   ####################################################################### process bam input files #############################################################################
@@ -132,7 +131,6 @@
   set.seed(1234)
   sample <- sizes[sample(1:nrow(sizes)), ]
   sample <- head(sample, 5000)
-  print(head(sample))
   sizes <- NULL
 
   if ((length(sample) > 3) && !(length(unique(sample)) == 1)) {

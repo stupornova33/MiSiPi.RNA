@@ -93,8 +93,6 @@
   ## Start
   if (nrow(filter_helix) > 0) {
     for (i in 1:nrow(filter_helix)) {
-      print(paste0("i: ", i))
-      # print(paste0("i: ", i))
       x_rng <- seq(filter_helix$X.Start[i], filter_helix$X.End[i])
 
       y_rng <- seq(filter_helix$Y.Start[i], filter_helix$Y.End[i])
@@ -126,34 +124,21 @@
           start_idx <- which(final_helix_df$i == x_dat$start[j])
           end_idx <- which(final_helix_df$i == x_dat$end[j])
 
-          # print(paste0("start_idx: ", start_idx))
-          # print(paste0("end_idx: ", end_idx))
-
           # if read starts at paired pos but ends at non-paired pos
           if (identical(end_idx, integer(0)) & !identical(start_idx, integer(0))) {
             found <- FALSE
             current_start <- x_dat$start[j]
             current_end <- x_dat$end[j]
-            # print(paste0("current_end: ", current_end))
             new_end <- current_end - 1
-            # print(paste0("new_end: ", new_end))
             while (!found) {
-              # print("NOT FOUND")
-              # print("!found")
               end_idx <- which(final_helix_df$i == new_end)
-              # print("while end_idx: ", end_idx)
               if (identical(end_idx, integer(0))) {
                 new_end <- new_end - 1
                 shift <- new_end - current_end
-                # print(paste0("new_end: ", new_end))
-                # print(paste0("shift: ", shift))
               } else {
                 found <- TRUE
-                # print("FOUND")
                 prior_end_idx <- end_idx
                 shift <- new_end - current_end
-                # print(paste0("prior_end_idx: ", prior_end_idx))
-                # print(paste0("shift: ", shift))
               }
             }
             paired_start <- final_helix_df$j[end_idx] + shift
@@ -165,27 +150,16 @@
             # coordinates of the read
             current_start <- x_dat$start[j]
             current_end <- x_dat$end[j]
-            # print(paste0("current_end: ", current_end))
             new_start <- current_start + 1
-            # print(paste0("new_start: ", new_start))
             while (!found) {
-              # print("NOT FOUND")
-              # print("!found")
               start_idx <- which(final_helix_df$i == new_start)
-              # print(paste0("start_idx: ", start_idx))
-              # print("while end_idx: ", end_idx)
               if (identical(start_idx, integer(0))) {
                 new_start <- new_start + 1
                 shift <- new_start - current_start
-                # print(paste0("new_start: ", new_start))
-                # print(paste0("shift: ", shift))
               } else {
                 found <- TRUE
-                # print("FOUND")
                 prior_start_idx <- start_idx
                 shift <- new_start - current_start
-                # print(paste0("prior_start_idx: ", prior_start_idx))
-                # print(paste0("shift: ", shift))
               }
             }
 
