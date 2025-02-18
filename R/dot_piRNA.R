@@ -16,8 +16,16 @@
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 # @return plots, heat results, and zdf
 
-.piRNA <- function(chrom_name, reg_start, reg_stop, length, bam_file, genome_file, logfile, wkdir, pal,
-                   plot_output, weight_reads, write_fastas, out_type) {
+.piRNA <- function(chrom_name, reg_start, reg_stop, length, bam_file,
+                   genome_file, logfile, wkdir, pal, plot_output,
+                   weight_reads, write_fastas, out_type, i = NULL, i_total = NULL) {
+  
+  # i and i_total will be null if called from run_all
+  if (!is.null(i)) {
+    msg <- paste(i, "out of", i_total, "|", chrom_name)
+    print(msg)
+  }
+  
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
   bam_obj <- .open_bam(bam_file, logfile)
