@@ -32,6 +32,7 @@
   }
   
   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
@@ -53,14 +54,15 @@
 
   read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
-  # Moved this code block up so that the .get_chr functions don't have to be called again
   if (strand == "-") {
     chrom <- chrom_m
   } else {
     chrom <- chrom_p
   }
+  
   chrom_m <- NULL
   chrom_p <- NULL
+  
   which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
 
   if (strand == "-") {
@@ -125,15 +127,6 @@
   # find_overlaps only requires one df passed in and doesn't transform end of reads to original
   # find_hp_overlaps requires two dfs and automatically transforms ends of reads
 
-
-  # r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
-  # r1_dt <- utils::head(r1_dt, 10000)
-
-  # r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
-  # r2_dt <- utils::head(r2_dt, 10000)
-
-  # system.time(test_overlap <- new_find_overlaps(r2_dt))
-
   r1_summarized <- r1_dt %>%
     dplyr::group_by_all() %>%
     dplyr::count()
@@ -195,9 +188,6 @@
   # remove results where loop sequence has greater than 5% of total read count
   total_count <- sum(pileups$count)
 
-
-  # df <- loop_coord
-
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
     ranges = IRanges::IRanges(start = c(1), end = c(length))
@@ -232,15 +222,14 @@
     dplyr::mutate(width = w_stop - w_start + 1) %>%
     dplyr::distinct()
 
-  # final_coord <- test
-
 
   # select unique combinations of r1_start/stop, r2_start/stop
   grouped <- read_pileups %>%
     dplyr::group_by(r1_start, r1_end, r2_start, r2_end) %>%
     dplyr::distinct() %>%
     dplyr::select(c(r1_start, r1_end, r1_count_avg, r2_start, r2_end, r2_count_avg)) %>%
-    dplyr::rename("r1_alt_start" = "r1_start", "r1_alt_end" = "r1_end", "r2_alt_start" = "r2_start", "r2_alt_end" = "r2_end")
+    dplyr::rename("r1_alt_start" = "r1_start", "r1_alt_end" = "r1_end",
+                  "r2_alt_start" = "r2_start", "r2_alt_end" = "r2_end")
 
   grouped <- grouped %>%
     dplyr::mutate(Chrom = chrom_name, Reg_start = reg_start, Reg_stop = reg_stop) %>%
@@ -312,6 +301,9 @@
   mfe <- fold_list$mfe
   perc_paired <- (length(fold_list$helix$i) * 2) / (fold_list$stop - fold_list$start)
 
+  
+  #### Z Score Issues ####
+  
   # transforms reads from one arm of hairpin to their paired position
   # makes a table of reads which are overlapping
   dicer_overlaps <- .dicer_overlaps(r2_summarized, fold_list$helix, chrom_name, fold_list$start)
@@ -323,6 +315,13 @@
   # create empty z_df
   z_df <- data.frame("Overlap" = z_res[, 1], "Z_score" = .calc_zscore(z_res$count))
 
+  
+  # ZSCORE Objects
+  # z_df$Z_score - from z_res - make_count_table - counts - calc_zscore
+  # overhangs$zscore from calc_zscore(overhangs$proper_count) - used in plot_overhangz (uses "zscore")
+  
+  
+  
   # calculate the zscores, if there are results
   if (is.na(dicer_overlaps[1, 1]) | dicer_overlaps[1, 1] == 0) {
     overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
