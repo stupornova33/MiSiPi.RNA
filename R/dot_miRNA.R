@@ -20,9 +20,17 @@
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 # @return plots
 
-.miRNA <- function(chrom_name, reg_start, reg_stop, chromosome, length,
-                   strand, min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, path_to_RNAplot,
-                   write_fastas, weight_reads, out_type) {
+.miRNA <- function(chrom_name, reg_start, reg_stop, chromosome, length, strand,
+                   min_read_count, genome_file, bam_file, logfile, wkdir,
+                   plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
+                   weight_reads, out_type, i = NULL, i_total = NULL) {
+  
+  # i and i_total will be null if called from run_all
+  if (!is.null(i)) {
+    msg <- paste(i, "out of", i_total, "|", chrom_name)
+    print(msg)
+  }
+  
   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
@@ -148,7 +156,7 @@
 
   # write out pairs here
   if (nrow(overlaps) == 0) {
-    cat(paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
+    cat(file = paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
     return(.null_mi_res())
   }
 

@@ -19,8 +19,17 @@
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 # @return results
 
-.siRNA <- function(chrom_name, reg_start, reg_stop, length, min_read_count, genome_file, bam_file, logfile, wkdir,
-                   pal, plot_output, path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type) {
+.siRNA <- function(chrom_name, reg_start, reg_stop, length, min_read_count,
+                   genome_file, bam_file, logfile, wkdir, pal, plot_output,
+                   path_to_RNAfold, annotate_region, weight_reads, gtf_file,
+                   write_fastas, out_type, i = NULL, i_total = NULL) {
+  
+  # i and i_total will be null if called from run_all
+  if (!is.null(i)) {
+    msg <- paste(i, "out of", i_total, "|", chrom_name)
+    print(msg)
+  }
+  
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
 

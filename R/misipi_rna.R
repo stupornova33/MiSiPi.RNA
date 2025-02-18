@@ -1,63 +1,22 @@
-#' run the run_all function
-#' @param vars a list
+#' Wrapper function that calls core functions
+#' @param vars a list of parameters created by set_vars
+#' @param method a string indicating which processing method should be used
 #' @return plots
 
 #' @export
 
-misipi_rna <- function(vars) {
-  total_iterations <- length(vars$chrom_name)
-  idx_vec <- 1:total_iterations
+misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
+  method <- match.arg(method)
   
-  # Widest line here is 81
-  cat(r"(__/\\\\____________/\\\\___________/\\\\\\\\\\\__________/\\\\\\\\\\\\\_________)", "\n")
-  cat(r"( _\/\\\\\\________/\\\\\\_________/\\\/////////\\\_______\/\\\/////////\\\_______)", "\n")
-  cat(r"(  _\/\\\//\\\____/\\\//\\\__/\\\__\//\\\______\///___/\\\_\/\\\_______\/\\\__/\\\_)", "\n")
-  cat(r"(   _\/\\\\///\\\/\\\/_\/\\\_\///____\////\\\_________\///__\/\\\\\\\\\\\\\/__\///__)", "\n")
-  cat(r"(    _\/\\\__\///\\\/___\/\\\__/\\\______\////\\\_______/\\\_\/\\\/////////_____/\\\_)", "\n")
-  cat(r"(     _\/\\\____\///_____\/\\\_\/\\\_________\////\\\___\/\\\_\/\\\_____________\/\\\_)", "\n")
-  cat(r"(      _\/\\\_____________\/\\\_\/\\\__/\\\______\//\\\__\/\\\_\/\\\_____________\/\\\_)", "\n")
-  cat(r"(       _\/\\\_____________\/\\\_\/\\\_\///\\\\\\\\\\\/___\/\\\_\/\\\_____________\/\\\_)", "\n")
-  cat(r"(        _\///______________\///__\///____\///////////_____\///__\///______________\///__)", "\n\n")
-  
-  
-  # cat(r"(__/\\\\____________/\\\\_____________/\\\\\\\\\\\____________/\\\\\\\\\\\\\__________)", "\n")
-  # cat(r"( _\/\\\\\\________/\\\\\\___________/\\\/////////\\\_________\/\\\/////////\\\________)", "\n")
-  # cat(r"(  _\/\\\//\\\____/\\\//\\\___/\\\___\//\\\______\///____/\\\__\/\\\_______\/\\\___/\\\_)", "\n")
-  # cat(r"(   _\/\\\\///\\\/\\\/_\/\\\__\///_____\////\\\__________\///___\/\\\\\\\\\\\\\/___\///__)", "\n")
-  # cat(r"(    _\/\\\__\///\\\/___\/\\\___/\\\_______\////\\\________/\\\__\/\\\/////////______/\\\_)", "\n")
-  # cat(r"(     _\/\\\____\///_____\/\\\__\/\\\__________\////\\\____\/\\\__\/\\\______________\/\\\_)", "\n")
-  # cat(r"(      _\/\\\_____________\/\\\__\/\\\___/\\\______\//\\\___\/\\\__\/\\\______________\/\\\_)", "\n")
-  # cat(r"(       _\/\\\_____________\/\\\__\/\\\__\///\\\\\\\\\\\/____\/\\\__\/\\\______________\/\\\_)", "\n")
-  # cat(r"(        _\///______________\///___\///_____\///////////______\///___\///_______________\///__)", "\n\n")
-  
-  msg <- paste("Processing | BED:", vars$roi, "| BAM:", vars$bam_file, "| GENOME:", vars$genome)
-  print(msg)
-  cat("\n")
-
-  invisible(
-    mapply(
-      .run_all,
-      vars$chrom_name,
-      vars$reg_start,
-      vars$reg_stop,
-      vars$chromosome,
-      vars$length,
-      vars$bam_file,
-      vars$roi,
-      vars$genome,
-      1,
-      vars$si_pal,
-      vars$pi_pal,
-      vars$plot_output,
-      vars$path_to_RNAfold,
-      vars$path_to_RNAplot,
-      vars$annotate_region,
-      vars$weight_reads,
-      vars$gtf_file,
-      vars$write_fastas,
-      vars$out_type,
-      idx_vec,
-      total_iterations
-    )
-  )
+  if (method == "all") {
+    run_all(vars)
+  } else if (method == "miRNA") {
+    miRNA(vars)
+  } else if (method == "piRNA") {
+    piRNA(vars)
+  } else if (method == "siRNA") {
+    siRNA(vars)
+  } else {
+    stop(paste("`method`:", method, "is not valid."))
+  }
 }
