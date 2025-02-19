@@ -48,6 +48,7 @@
 
   bam_header <- NULL
 
+  #### THIS IS INEFFICIENT -- FIX ###
   # for the read size distribution plot
   chrom_m <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
   chrom_p <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
@@ -73,6 +74,7 @@
     bam_scan <- Rsamtools::ScanBamParam(what = c("rname", "pos", "strand", "qwidth"), which = which)
   }
 
+  #### END OF INEFFICIENT SECTION ####
 
   ########################################################## main logic ################################################################
   ## make the read data tables
@@ -96,12 +98,13 @@
     r2_dt <- .weight_reads(r2_dt, weight_reads, locus_length, sum(r2_dt$count))
   }
 
-  # transform ends of one set of reads
+  # Transform ends of one set of reads in order capture the other arm of the hairpin
+  # Usually no more than 60nt away - Jarva et al lulz
   r1_dt <- r2_dt %>%
     dplyr::mutate(end = end + 59)
 
   if (nrow(r1_dt) == 0 || nrow(r2_dt) == 0) {
-    cat(paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
+    cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
     return(.null_mi_res())
   }
 
@@ -300,40 +303,43 @@
 
   mfe <- fold_list$mfe
   perc_paired <- (length(fold_list$helix$i) * 2) / (fold_list$stop - fold_list$start)
-
-  
-  #### Z Score Issues ####
   
   # transforms reads from one arm of hairpin to their paired position
   # makes a table of reads which are overlapping
+  #dicer_dt, helix_df, chrom_name, reg_start
+
   dicer_overlaps <- .dicer_overlaps(r2_summarized, fold_list$helix, chrom_name, fold_list$start)
   # summarize the counts by the # overlapping nucleotides
   z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
 
   # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
+  # TODO
+  # 2/18/25 - NOT SURE AT ALL ABOUT THIS STATEMENT
+  # Review the c++ function make_count_table()
+  # It is calculating overlaps from 4 through 30
+  # I think this is mutation is in correct, and if we want overlaps from 1-30 or 1-27,
+  # We'll need to modify the make_count_table to run differently for miRNA than piRNA
   z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
+  
   # create empty z_df
   z_df <- data.frame("Overlap" = z_res[, 1], "Z_score" = .calc_zscore(z_res$count))
-
-  
-  # ZSCORE Objects
-  # z_df$Z_score - from z_res - make_count_table - counts - calc_zscore
-  # overhangs$zscore from calc_zscore(overhangs$proper_count) - used in plot_overhangz (uses "zscore")
-  
-  
   
   # calculate the zscores, if there are results
   if (is.na(dicer_overlaps[1, 1]) | dicer_overlaps[1, 1] == 0) {
     overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
-    overhangs$zscore <- .calc_zscore(overhangs$proper_count)
+    #overhangs$zscore <- .calc_zscore(overhangs$proper_count)
+    overhangs$zscore <- 0
   } else {
     # if(write_fastas == TRUE) .write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
-    overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
-      dicer_overlaps$r2_start, dicer_overlaps$r2_width,
-      dupes_present = TRUE,
-      r1_dupes = dicer_overlaps$r1_dupes,
-      r2_dupes = dicer_overlaps$r2_dupes
+    overhangs <- data.frame(
+      calc_overhangs(
+        dicer_overlaps$r2_start, dicer_overlaps$r2_end,
+        dicer_overlaps$r1_start, dicer_overlaps$r1_width,
+        dupes_present = TRUE,
+        r1_dupes = dicer_overlaps$r1_dupes,
+        r2_dupes = dicer_overlaps$r2_dupes
     ))
+    
     overhangs$zscore <- .calc_zscore(overhangs$proper_count)
   }
 
@@ -348,7 +354,13 @@
 
   if (plot_output == TRUE) {
     # make the plots
-    dicer_sig <- .plot_overhangz(overhangs, "+")
+    
+    if (all(is.nan(overhangs$zscore[1]))) {
+      overhangs$zscore <- 0
+    }
+    
+    dicer_sig <- .plot_overhangz(overhangs, strand = strand)
+    
     # make new pileups dt for structure
 
     # get the per-base coverage
