@@ -27,7 +27,7 @@
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
-    msg <- paste(i, "out of", i_total, "|", chrom_name)
+    msg <- paste(i, "out of", i_total, "|", chrom_name, "|", strand, "strand")
     print(msg)
   }
   

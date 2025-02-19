@@ -20,6 +20,7 @@ miRNA <- function(vars) {
 
   if (!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
 
+  print("Starting plus strand")
   # Process the positive strand
   invisible(
     mapply(
@@ -46,6 +47,7 @@ miRNA <- function(vars) {
     )
   )
   
+  print("Starting minus strand")
   # Process the negative strand
   invisible(
     mapply(
