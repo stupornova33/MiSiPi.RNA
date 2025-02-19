@@ -45,7 +45,6 @@ The input for any of MiSiPi.RNA's main functions is an object created by the set
 - **roi**             - A bed file listing your regions of interest
 - **bam_file**        - A BAM file of aligned reads. Index file must also be present
 - **genome**          - A genome fasta file. Chromosome names must match the bed file
-- **min_read_count**  - This filters out loci with low mapping reads. Defaults to 1
 - **plot_output**     - (TRUE or FALSE) If TRUE, MiSiPi.RNA will output plots as pdfs
 - **path_to_RNAfold** - Full path to RNAfold executable
 - **path_to_RNAplot** - Full path to RNAplot executable
@@ -62,7 +61,6 @@ The input for any of MiSiPi.RNA's main functions is an object created by the set
 vars <- set_vars(roi = "path/to/bed",
                 bam_file = "path/to/bam", 
                 genome = "path/to/genome",
-                min_read_count = 1,
                 plot_output = TRUE, 
                 path_to_RNAfold = "path/to/ViennaRNA/RNAfold.exe",
                 path_to_RNAplot = "path/to/ViennaRNA/RNAplot.exe",

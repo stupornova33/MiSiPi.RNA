@@ -2,27 +2,26 @@
 #' @param roi The path to a BED file of loci of interest
 #' @param bam_file The path to a BAM file
 #' @param genome The path to a genome Fasta file
-#' @param min_read_count An integer. Default is 1
-#' @param plot_output Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.
 #' @param path_to_RNAfold The full path to the RNAfold binary executable.
 #' @param path_to_RNAplot The full path to the RNAplot binary executable.
+#' @param plot_output Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.
 #' @param pi_pal The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
 #' @param si_pal The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
-#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
 #' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.
-#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.
 #' @param write_fastas TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.
+#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
+#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.
 #' @param out_type The type of file for plots. Options are "png" or "pdf". Default is PDF.
 #' @return a list
 #' @export
 
-set_vars <- function(roi, bam_file, genome, min_read_count = 1,
-                     plot_output = TRUE, path_to_RNAfold, path_to_RNAplot,
+set_vars <- function(roi, bam_file, genome, 
+                     path_to_RNAfold, path_to_RNAplot, plot_output = TRUE, 
                      pi_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
-                     annotate_region = FALSE,
-                     weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), gtf_file = FALSE,
-                     write_fastas = FALSE, out_type = c("pdf", "png", "PDF", "PNG")) {
+                     weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), 
+                     write_fastas = FALSE, annotate_region = FALSE, gtf_file = FALSE,
+                     out_type = c("pdf", "png", "PDF", "PNG")) {
   ## Parameter Validation
   # roi
   stopifnot("Parameter `roi` must be a valid filepath to a BED file." = file.exists(roi))
@@ -37,10 +36,6 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
   stopifnot("A corresponding .bai index file must be present in the same directory as the .bam file" = file.exists(bai_file))
   # genome
   stopifnot("Parameter `genome` must be a valid filepath to a genome Fasta file." = file.exists(genome))
-  # min_read_count
-  # TODO If this gets reimplemented anywhere else, consider adding it to a separate file
-  is.wholenumber <- function(x, tol = .Machine$double.eps^0.5) abs(x - round(x)) < tol
-  stopifnot("Parameter `min_read_count` must be an whole number." = is.wholenumber(min_read_count))
   # plot_output
   stopifnot("Parameter `plot_output` only accepts TRUE or FALSE." = is.logical(plot_output))
   # path_to_RNAfold
@@ -134,7 +129,6 @@ set_vars <- function(roi, bam_file, genome, min_read_count = 1,
     plot_output = plot_output,
     path_to_RNAfold = path_to_RNAfold,
     path_to_RNAplot = path_to_RNAplot,
-    min_read_count = min_read_count,
     genome = genome,
     bam_file = bam_file,
     roi = roi,

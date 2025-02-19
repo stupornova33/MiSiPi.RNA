@@ -29,7 +29,6 @@ siRNA <- function(vars) {
       vars$reg_start,
       vars$reg_stop,
       vars$length,
-      1,
       vars$genome,
       vars$bam_file,
       logfile,

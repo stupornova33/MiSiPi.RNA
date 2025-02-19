@@ -5,7 +5,6 @@
 # @param reg_start An integer corresponding to the start of a region of interest.
 # @param reg_stop An integer corresponding to the end of a region of interest.
 # @param length The length of the chromosome of interest.
-# @param min_read_count A whole number. Default is 1.
 # @param genome_file The path to a genome fasta file.
 # @param bam_file The path to a BAM file. There must be a corresponding index ending in .bai in the same directory.
 # @param logfile The name of the file to which log information will be written.
@@ -20,7 +19,7 @@
 # @return a list of results
 
 .dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
-                                 min_read_count, genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
+                                 genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
                                  weight_reads, gtf_file, write_fastas, out_type) {
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 

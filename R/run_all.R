@@ -22,7 +22,6 @@ run_all <- function(vars) {
       vars$bam_file,
       vars$roi,
       vars$genome,
-      1,
       vars$si_pal,
       vars$pi_pal,
       vars$plot_output,

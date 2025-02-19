@@ -7,7 +7,6 @@
 # @param chromosome chrom names extracted from bam file
 # @param length length of chromosome of interest
 # @param strand a character passed in, "+" or "-"
-# @param min_read_count a whole number
 # @param genome_file a fasta file of chrom sequences
 # @param bam_file a BAM file
 # @param logfile a string
@@ -21,7 +20,7 @@
 # @return plots
 
 .miRNA <- function(chrom_name, reg_start, reg_stop, chromosome, length, strand,
-                   min_read_count, genome_file, bam_file, logfile, wkdir,
+                   genome_file, bam_file, logfile, wkdir,
                    plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
                    weight_reads, out_type, i = NULL, i_total = NULL) {
   

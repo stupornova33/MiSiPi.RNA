@@ -8,7 +8,6 @@
 # @param bam_file a string
 # @param roi a string
 # @param genome_file a string
-# @param min_read_count an integer
 # @param si_pal a string
 # @param pi_pal a string
 # @param plot_output a bool, TRUE or FALSE
@@ -23,7 +22,7 @@
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
                      chromosome, length, bam_file,
-                     roi, genome_file, min_read_count,
+                     roi, genome_file,
                      si_pal, pi_pal, plot_output,
                      path_to_RNAfold, path_to_RNAplot,
                      annotate_region, weight_reads,
@@ -278,7 +277,7 @@
 
   si_res <- .siRNA(
     chrom_name, reg_start, reg_stop,
-    length, min_read_count, genome_file,
+    length, genome_file,
     bam_file, si_log, si_dir,
     si_pal, plot_output, path_to_RNAfold,
     annotate_region, weight_reads, gtf_file,
@@ -361,7 +360,7 @@
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
     chromosome, length, "+",
-    min_read_count, genome_file, bam_file,
+    genome_file, bam_file,
     mi_log, miRNA_dir,
     plot_output,
     path_to_RNAfold,
@@ -387,7 +386,7 @@
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
     chromosome, length, "-",
-    min_read_count, genome_file, bam_file,
+    genome_file, bam_file,
     mi_log, miRNA_dir,
     plot_output,
     path_to_RNAfold,

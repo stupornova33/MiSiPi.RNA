@@ -4,7 +4,6 @@
 # @param reg_start a whole number
 # @param reg_stop a whole number
 # @param length an integer
-# @param min_read_count an integer
 # @param genome_file a string
 # @param bam_file a string
 # @param logfile a string
@@ -19,7 +18,7 @@
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 # @return results
 
-.siRNA <- function(chrom_name, reg_start, reg_stop, length, min_read_count,
+.siRNA <- function(chrom_name, reg_start, reg_stop, length,
                    genome_file, bam_file, logfile, wkdir, pal, plot_output,
                    path_to_RNAfold, annotate_region, weight_reads, gtf_file,
                    write_fastas, out_type, i = NULL, i_total = NULL) {
