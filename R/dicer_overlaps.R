@@ -7,15 +7,8 @@
 # return - Data Frame
 
 .dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start) {
-  # convert helix positions to chromosome positions
   bin <- j <- X.End <- X.Start <- Y.Start <- Y.End <- paired_pos <- start <- width <- NULL
 
-  helix_df <- helix_df %>%
-    dplyr::mutate(
-      i = i + (reg_start - 1),
-      j = j + (reg_start - 1)
-    )
-  ### paired bases are several nucleotides diff. than read starts... pad the ends of the helix
   if (nrow(helix_df) == 0) {
     return(i_j_overlaps <- data.frame(
       r1_start = 0, r1_width = 0, r1_end = 0,
@@ -23,19 +16,53 @@
     ))
   }
 
+  #### Convert helix positions to chromosome positions ####
+  # Positions returned by [RNAFold.exe or R4RNA::viennaToHelix] are indexed at 1 being the smallest
+  # But viennaToHelix does keep track of the start and stop positions
+  # We've passed in the start position here with the parameter reg_start (not to be confused with reg_start calculated in set_vars)
+  # So we're adding reg_start - 1 to each helix position to get the actual positions
+  helix_df <- helix_df %>%
+    dplyr::mutate(
+      i = i + (reg_start - 1),
+      j = j + (reg_start - 1)
+    )
+
+  ### paired bases are several nucleotides diff. than read starts... pad the ends of the helix
+  # there was an annoying thing where like... RNA fold was giving back paired positions
+  # and the reads were starting before the first paired position, so I was padding the data frame
+  # by about eight but in cases where the region of interest starts at less than 8,
+  # it would result in a negative number
+
   i_begin <- helix_df$i[1]
   i_end <- helix_df$i[nrow(helix_df)]
   j_begin <- helix_df$j[1]
   j_end <- helix_df$j[nrow(helix_df)]
 
-  if (reg_start >= 8) {
-    istartvals <- seq(i_begin - 8, i_begin - 1)
-    iendvals <- seq(i_end + 1, i_end + 8)
-    jstartvals <- seq(j_begin + 8, j_begin + 1)
-    jendvals <- seq(j_end - 1, j_end - 8)
+  if (reg_start < 8) {
+    final_helix_df <- helix_df
+  } else {
+    # This section is just adding up to 16 observations to the helix_df
+    # Up to 8 before the first observation and up to 8 after the last one
+    # They are just sequential from the observations, and any observation
+    # Where i & j are the same get filtered out
+    i_start_vals <- seq(i_begin - 8, i_begin - 1)
+    i_end_vals <- seq(i_end + 1, i_end + 8)
+    j_start_vals <- seq(j_begin + 8, j_begin + 1)
+    j_end_vals <- seq(j_end - 1, j_end - 8)
 
-    startdf <- data.frame(i = istartvals, j = jstartvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
-    enddf <- data.frame(i = iendvals, j = jendvals, length = c(rep(1, times = 4)), value = c(rep(NA, times = 4)))
+    startdf <- data.frame(
+      i = i_start_vals,
+      j = j_start_vals,
+      length = rep(1, times = 4),
+      value = rep(NA, times = 4)
+    )
+
+    enddf <- data.frame(
+      i = i_end_vals,
+      j = j_end_vals,
+      length = rep(1, times = 4),
+      value = rep(NA, times = 4)
+    )
 
     # check to make sure start and end values are not the same. If they are, remove
     new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
@@ -59,14 +86,12 @@
 
     # add the new intervals to helix_df
     final_helix_df <- dplyr::bind_rows(startdf, helix_df, enddf)
-  } else {
-    final_helix_df <- helix_df
   }
 
   # remove results where segment of paired bases is less than 15nt
   # for example the loop sequence
   final_helix_df <- final_helix_df %>%
-    dplyr::filter(j - i > 15)
+    dplyr::filter(j - i > 0)
 
   if (nrow(final_helix_df) == 0) {
     i_j_overlaps <- data.frame(
@@ -80,7 +105,6 @@
   grouped_helix <- group_helix_res(final_helix_df$i, final_helix_df$j)
   filter_helix <- grouped_helix %>%
     dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
-  # write.table(grouped_helix, "grouped_helix.txt", sep = "\t", row.names = FALSE, quote = FALSE)
 
   # 10/28/24 removed num_shifted column from i_dat as it appears to never be used in the package
   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), n = numeric(0), paired_start = numeric(0), paired_end = numeric(0))

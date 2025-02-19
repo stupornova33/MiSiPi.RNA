@@ -27,11 +27,12 @@
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
-    msg <- paste(i, "out of", i_total, "|", chrom_name)
+    msg <- paste(i, "out of", i_total, "|", chrom_name, "|", strand, "strand")
     print(msg)
   }
   
   cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
@@ -47,20 +48,22 @@
 
   bam_header <- NULL
 
+  #### THIS IS INEFFICIENT -- FIX ###
   # for the read size distribution plot
   chrom_m <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
   chrom_p <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
 
   read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
-  # Moved this code block up so that the .get_chr functions don't have to be called again
   if (strand == "-") {
     chrom <- chrom_m
   } else {
     chrom <- chrom_p
   }
+  
   chrom_m <- NULL
   chrom_p <- NULL
+  
   which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
 
   if (strand == "-") {
@@ -71,6 +74,7 @@
     bam_scan <- Rsamtools::ScanBamParam(what = c("rname", "pos", "strand", "qwidth"), which = which)
   }
 
+  #### END OF INEFFICIENT SECTION ####
 
   ########################################################## main logic ################################################################
   ## make the read data tables
@@ -94,12 +98,13 @@
     r2_dt <- .weight_reads(r2_dt, weight_reads, locus_length, sum(r2_dt$count))
   }
 
-  # transform ends of one set of reads
+  # Transform ends of one set of reads in order capture the other arm of the hairpin
+  # Usually no more than 60nt away - Jarva et al lulz
   r1_dt <- r2_dt %>%
     dplyr::mutate(end = end + 59)
 
   if (nrow(r1_dt) == 0 || nrow(r2_dt) == 0) {
-    cat(paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
+    cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
     return(.null_mi_res())
   }
 
@@ -124,15 +129,6 @@
   # using find_overlaps instead of find_hp_overlaps
   # find_overlaps only requires one df passed in and doesn't transform end of reads to original
   # find_hp_overlaps requires two dfs and automatically transforms ends of reads
-
-
-  # r1_dt <- r1_dt[sample(1:nrow(r1_dt)),]
-  # r1_dt <- utils::head(r1_dt, 10000)
-
-  # r2_dt <- r2_dt[sample(1:nrow(r2_dt)),]
-  # r2_dt <- utils::head(r2_dt, 10000)
-
-  # system.time(test_overlap <- new_find_overlaps(r2_dt))
 
   r1_summarized <- r1_dt %>%
     dplyr::group_by_all() %>%
@@ -195,9 +191,6 @@
   # remove results where loop sequence has greater than 5% of total read count
   total_count <- sum(pileups$count)
 
-
-  # df <- loop_coord
-
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
     ranges = IRanges::IRanges(start = c(1), end = c(length))
@@ -232,15 +225,14 @@
     dplyr::mutate(width = w_stop - w_start + 1) %>%
     dplyr::distinct()
 
-  # final_coord <- test
-
 
   # select unique combinations of r1_start/stop, r2_start/stop
   grouped <- read_pileups %>%
     dplyr::group_by(r1_start, r1_end, r2_start, r2_end) %>%
     dplyr::distinct() %>%
     dplyr::select(c(r1_start, r1_end, r1_count_avg, r2_start, r2_end, r2_count_avg)) %>%
-    dplyr::rename("r1_alt_start" = "r1_start", "r1_alt_end" = "r1_end", "r2_alt_start" = "r2_start", "r2_alt_end" = "r2_end")
+    dplyr::rename("r1_alt_start" = "r1_start", "r1_alt_end" = "r1_end",
+                  "r2_alt_start" = "r2_start", "r2_alt_end" = "r2_end")
 
   grouped <- grouped %>%
     dplyr::mutate(Chrom = chrom_name, Reg_start = reg_start, Reg_stop = reg_stop) %>%
@@ -311,30 +303,43 @@
 
   mfe <- fold_list$mfe
   perc_paired <- (length(fold_list$helix$i) * 2) / (fold_list$stop - fold_list$start)
-
+  
   # transforms reads from one arm of hairpin to their paired position
   # makes a table of reads which are overlapping
+  #dicer_dt, helix_df, chrom_name, reg_start
+
   dicer_overlaps <- .dicer_overlaps(r2_summarized, fold_list$helix, chrom_name, fold_list$start)
   # summarize the counts by the # overlapping nucleotides
   z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
 
   # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
+  # TODO
+  # 2/18/25 - NOT SURE AT ALL ABOUT THIS STATEMENT
+  # Review the c++ function make_count_table()
+  # It is calculating overlaps from 4 through 30
+  # I think this is mutation is in correct, and if we want overlaps from 1-30 or 1-27,
+  # We'll need to modify the make_count_table to run differently for miRNA than piRNA
   z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
+  
   # create empty z_df
   z_df <- data.frame("Overlap" = z_res[, 1], "Z_score" = .calc_zscore(z_res$count))
-
+  
   # calculate the zscores, if there are results
   if (is.na(dicer_overlaps[1, 1]) | dicer_overlaps[1, 1] == 0) {
     overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
-    overhangs$zscore <- .calc_zscore(overhangs$proper_count)
+    #overhangs$zscore <- .calc_zscore(overhangs$proper_count)
+    overhangs$zscore <- 0
   } else {
     # if(write_fastas == TRUE) .write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
-    overhangs <- data.frame(calc_overhangs(dicer_overlaps$r1_start, dicer_overlaps$r1_end,
-      dicer_overlaps$r2_start, dicer_overlaps$r2_width,
-      dupes_present = TRUE,
-      r1_dupes = dicer_overlaps$r1_dupes,
-      r2_dupes = dicer_overlaps$r2_dupes
+    overhangs <- data.frame(
+      calc_overhangs(
+        dicer_overlaps$r2_start, dicer_overlaps$r2_end,
+        dicer_overlaps$r1_start, dicer_overlaps$r1_width,
+        dupes_present = TRUE,
+        r1_dupes = dicer_overlaps$r1_dupes,
+        r2_dupes = dicer_overlaps$r2_dupes
     ))
+    
     overhangs$zscore <- .calc_zscore(overhangs$proper_count)
   }
 
@@ -349,7 +354,13 @@
 
   if (plot_output == TRUE) {
     # make the plots
-    dicer_sig <- .plot_overhangz(overhangs, "+")
+    
+    if (all(is.nan(overhangs$zscore[1]))) {
+      overhangs$zscore <- 0
+    }
+    
+    dicer_sig <- .plot_overhangz(overhangs, strand = strand)
+    
     # make new pileups dt for structure
 
     # get the per-base coverage

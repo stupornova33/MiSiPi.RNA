@@ -366,8 +366,8 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount,
       int read_r1_length = r1_end - r1_start + 1;
       int read_r2_length = r2_end - r2_start + 1;
 
-      int r1_running_total = 0;
-      int r2_running_total = 0;
+      double r1_running_total = 0;
+      double r2_running_total = 0;
 
       std::map<int, int>::iterator it;
 
@@ -835,7 +835,7 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   // Fill the vector with overlap values of 4 - 30
   std::iota(std::begin(overlap_res), std::end(overlap_res), 4);
 
-  std::vector<int> counts_res(res_size);
+  std::vector<double> counts_res(res_size);
 
   int f_size = int(fdt_start.size());
   int r_size = int(rdt_start.size());
@@ -849,8 +849,8 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   std::vector<int> rend_res;
   rend_res.reserve(r_size);
 
+  // Only keep reads between 18 and 30 nt
   for (int i = 0; i < f_size; i++) {
-    //get reads of size i
     if (fwidth[i] >= 18 && fwidth[i] <= 30) {
       fstart_res.emplace_back(fdt_start[i]);
       fend_res.emplace_back(fdt_end[i]);
@@ -865,7 +865,6 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   }
 
   int fstart_size = int(fstart_res.size());
-  //int rend_size = int(rend_res.size()); unused
 
   // Make an unordered map of the rend_res vector for easy lookup
   std::unordered_map<int, int> counts;
@@ -874,7 +873,7 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   }
 
   for (int overlap = 4; overlap <= 30; overlap++) {
-    int current_count = 0;
+    double current_count = 0;
 
     // Iterate through each fstart position and calculate the overlap position
     // Then iterate through the map to see if that position exists
