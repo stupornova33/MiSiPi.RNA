@@ -172,7 +172,7 @@
   
   # run the hairpin function on each strand separately
   dsh <- .dual_strand_hairpin(
-    chrom_name, reg_start, reg_stop, length, 1, genome_file, bam_file, logfile, wkdir, plot_output,
+    chrom_name, reg_start, reg_stop, length, genome_file, bam_file, logfile, wkdir, plot_output,
     path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type
   )
 
