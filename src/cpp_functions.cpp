@@ -343,9 +343,9 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount,
    res_start_r2.reserve(memory_reserve);
    std::vector<int> res_end_r2;
    res_end_r2.reserve(memory_reserve);
-   std::vector<int> res_r1_avg;
+   std::vector<double> res_r1_avg;
    res_r1_avg.reserve(memory_reserve);
-   std::vector<int> res_r2_avg;
+   std::vector<double> res_r2_avg;
    res_r2_avg.reserve(memory_reserve);
 
    //pileups is a vector of all positions and counts
@@ -384,7 +384,7 @@ DataFrame getPileupsMap(std::vector<int> dtpos, std::vector<int> dtcount,
          }
       }
 
-      int r1_count_average, r2_count_average;
+      double r1_count_average, r2_count_average;
       //if (r1_running_total != 0) {
          // This was added in to reduce the number of iterations which was approaching 1 billion
          // Used dplyr to group all the duplicate overlap reads and mutate in a count column to keep track of the number of duplicates
