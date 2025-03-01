@@ -218,6 +218,9 @@
   read_pileups$r1_seq <- r1_seqs$Seq
   read_pileups$r2_seq <- r2_seqs$Seq
   read_pileups$loop_seq <- loop_seqs$Seq
+  
+  loop_seqs <- r1_seqs <- r2_seqs <- NULL
+  
 
   read_pileups$whole_seq <- stringr::str_c(read_pileups$r1_seq, read_pileups$loop_seq, read_pileups$r2_seq)
   read_pileups <- read_pileups %>%
@@ -243,10 +246,13 @@
     .write.quiet(grouped, alt_file)
     cat(file = paste0(wkdir, logfile), "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
   }
+  grouped <- NULL
 
   most_abundant_idx <- which((read_pileups$r1_count_avg + read_pileups$r2_count_avg) == max(read_pileups$r1_count_avg + read_pileups$r2_count_avg))
   most_abundant <- read_pileups[most_abundant_idx, ]
 
+  read_pileups <- NULL
+  
   final <- most_abundant[1, ]
   final_seq <- final$whole_seq
 
@@ -311,6 +317,8 @@
   # summarize the counts by the # overlapping nucleotides
   z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
 
+  r1_dt <- r2_dt <- NULL
+  
   # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
   # TODO
   # 2/18/25 - NOT SURE AT ALL ABOUT THIS STATEMENT
