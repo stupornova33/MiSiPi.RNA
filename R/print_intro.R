@@ -15,7 +15,6 @@
 
   msg1 <- paste("Processing method:", method)
   msg2 <- paste("BED:", vars$roi, "| BAM:", vars$bam_file, "| GENOME:", vars$genome)
-  print(msg1)
-  print(msg2)
-  cat("\n")
+  
+  cli::cli_inform(c(msg1, msg2, ""))
 }
