@@ -22,8 +22,7 @@
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
-    msg <- paste(i, "out of", i_total, "|", chrom_name)
-    print(msg)
+    .inform_iteration(i, i_total, chrom_name)
   }
   
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
@@ -31,13 +30,13 @@
   bam_obj <- .open_bam(bam_file, logfile)
 
   # Get the reads from the BAM using Rsamtools
-  cat(file = paste0(wkdir, logfile), "Making chromP and chromM\n", append = TRUE)
+  cat(file = logfile, "Making chromP and chromM\n", append = TRUE)
   chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
   chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
   ################################################################# ping pong piRNA ##############################################################
-  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
-  cat(file = paste0(wkdir, logfile), paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
 
   # Make forward and reverse dataframes filtered for width
@@ -53,7 +52,7 @@
 
 
   # for the read size dist plot
-  cat(file = paste0(wkdir, logfile), paste0("Getting read size distribution.", "\n"), append = TRUE)
+  cat(file = logfile, paste0("Getting read size distribution.", "\n"), append = TRUE)
 
   read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
 
@@ -173,14 +172,14 @@
       fastas <- NULL
     }
 
-    cat(file = paste0(wkdir, logfile), paste0("Making counts table.", "\n"), append = TRUE)
+    cat(file = logfile, paste0("Making counts table.", "\n"), append = TRUE)
 
     z_res <- make_count_table(
       forward_dt$start, forward_dt$end, forward_dt$width,
       reverse_dt$start, reverse_dt$end, reverse_dt$width
     )
 
-    cat(file = paste0(wkdir, logfile), paste0("Finding overlaps.", "\n"), append = TRUE)
+    cat(file = logfile, paste0("Finding overlaps.", "\n"), append = TRUE)
 
     heat_results <- get_overlap_counts(forward_dt$start, forward_dt$end, forward_dt$width,
       reverse_dt$end, reverse_dt$start, reverse_dt$width,
@@ -243,7 +242,7 @@
 
   ################## compute plus strand
 
-  cat(file = paste0(wkdir, logfile), paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
+  cat(file = logfile, paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
 
   # Processing unistrand, so make copy of original read df to transform
   filter_r1_dt <- forward_dt %>%
@@ -282,7 +281,7 @@
     # phased_plus_counts[is.na(phased_plus_counts)] <- NA
   }
 
-  cat(file = paste0(wkdir, logfile), paste0("Calculating plus strand phasing.", "\n"), append = TRUE)
+  cat(file = logfile, paste0("Calculating plus strand phasing.", "\n"), append = TRUE)
 
   # for looking at only reads >= 26nt
   over_26_dt <- forward_dt %>%
@@ -335,7 +334,7 @@
   .write.quiet(phased26_plus_output, phased26_file)
 
   ################ run minus strand
-  cat(file = paste0(wkdir, logfile), paste0("Running minus strand phasing.", "\n"), append = TRUE)
+  cat(file = logfile, paste0("Running minus strand phasing.", "\n"), append = TRUE)
 
   filter_r1_dt <- reverse_dt %>%
     dplyr::filter(first == "T") %>%
@@ -355,7 +354,7 @@
     phased_num = rep(0, 51)
   )
 
-  cat(file = paste0(wkdir, logfile), paste0("Calculating minus strand phasing.", "\n"), append = TRUE)
+  cat(file = logfile, paste0("Calculating minus strand phasing.", "\n"), append = TRUE)
   if (!nrow(filter_r1_dt) == 0) {
     phased_minus_counts <- .calc_phasing(filter_r1_dt, filter_r2_dt, 59)
   } else {
@@ -441,7 +440,7 @@
   #  if(!sum(heat_results) == 0 && plot_output == TRUE){
 
   if (plot_output == TRUE) {
-    cat(file = paste0(wkdir, logfile), paste0("Generating plots.", "\n"), append = TRUE)
+    cat(file = logfile, paste0("Generating plots.", "\n"), append = TRUE)
     ### ping pong plots
     read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
@@ -553,7 +552,7 @@
   }
 
   # return(c(ave_z, ave_26z))
-  # cat(file = paste0(wkdir, logfile), paste0("Returning results for ML table.", "\n"), append = TRUE)
+  # cat(file = logfile, paste0("Returning results for ML table.", "\n"), append = TRUE)
   # results for ML table
   return(list(
     heat_results = heat_results, z_df = z_df, phased_plus_z = ave_plus_z, phased_26plus_z = ave_plus_26z,

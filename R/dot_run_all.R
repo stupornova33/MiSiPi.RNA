@@ -18,6 +18,8 @@
 # @param gtf_file a string
 # @param write_fastas a bool, TRUE or FALSE. Default is FALSE
 # @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
+# @param i
+# @param i_total
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
@@ -30,8 +32,7 @@
                      i, i_total) {
   width <- pos <- start <- end <- NULL
 
-  msg <- paste(i, "out of", i_total, "|", chrom_name)
-  print(msg)
+  .inform_iteration(i, i_total, chrom_name)
 
   # create empty data table for results
   local_ml <- data.table::data.table(
@@ -69,13 +70,9 @@
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   ####################################################################### process bam input files #############################################################################
-  #
 
-  if (!dir.exists("run_all/")) dir.create("run_all/")
-  all_dir <- "run_all/"
-
-  if (!file.exists(paste0(all_dir, "run_all_logfile.txt"))) file.create(paste0(all_dir, "run_all_logfile.txt"))
-  logfile <- paste0(all_dir, "run_all_logfile.txt")
+  all_dir <- "run_all"
+  logfile <- file.path(all_dir, "run_all_logfile.txt")
 
   bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
@@ -263,17 +260,10 @@
   # num_si_dicer_reads
   # hp_perc_paired
 
-  cat(file = logfile, "Begin siRNA function\n", append = TRUE)
-  if (!dir.exists("run_all/siRNA_dir/")) {
-    dir.create("run_all/siRNA_dir/")
-  }
+  cat(file = logfile, "Beginning siRNA function\n", append = TRUE)
 
-  si_dir <- "run_all/siRNA_dir/"
-  si_log <- "si_logfile.txt"
-
-  if (!file.exists(file.path(si_dir, si_log))) {
-    file.create(file.path(si_dir, si_log))
-  }
+  si_dir <- file.path(all_dir, "siRNA_outputs")
+  si_log <- file.path(si_dir, "siRNA_logfile.txt")
 
   si_res <- .siRNA(
     chrom_name, reg_start, reg_stop,
@@ -345,23 +335,16 @@
   # mirna_mfe
   # mirna_overlapz
 
-  cat(file = logfile, "Begin miRNA function\n", append = TRUE)
-  if (!dir.exists("run_all/miRNA_dir/")) {
-    dir.create("run_all/miRNA_dir/")
-  }
+  cat(file = logfile, "Beginning miRNA function\n", append = TRUE)
 
-  miRNA_dir <- "run_all/miRNA_dir/"
-  mi_log <- "mi_logfile.txt"
-
-  if (!file.exists(file.path(miRNA_dir, mi_log))) {
-    file.create(paste0(miRNA_dir, mi_log))
-  }
+  mi_dir <- file.path(all_dir, "miRNA_outputs")
+  mi_log <- file.path(mi_dir, "miRNA_logfile.txt")
 
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
     chromosome, length, "+",
     genome_file, bam_file,
-    mi_log, miRNA_dir,
+    mi_log, mi_dir,
     plot_output,
     path_to_RNAfold,
     path_to_RNAplot,
@@ -387,7 +370,7 @@
     chrom_name, reg_start, reg_stop,
     chromosome, length, "-",
     genome_file, bam_file,
-    mi_log, miRNA_dir,
+    mi_log, mi_dir,
     plot_output,
     path_to_RNAfold,
     path_to_RNAplot,
@@ -443,17 +426,13 @@
   # max_piz_overlap
 
   cat(file = logfile, "Begin piRNA function\n", append = TRUE)
-  if (!dir.exists("run_all/piRNA_dir/")) dir.create("run_all/piRNA_dir/")
 
-  piRNA_dir <- "run_all/piRNA_dir/"
-  pi_log <- "pi_logfile.txt"
-  if (!file.exists(file.path(piRNA_dir, pi_log))) {
-    file.create(paste0(piRNA_dir, pi_log))
-  }
+  pi_dir <- file.path(all_dir, "piRNA_outputs")
+  pi_log <- file.path(pi_dir, "piRNA_logfile.txt")
 
   pi_res <- .piRNA(chrom_name, reg_start, reg_stop,
     length, bam_file, genome_file,
-    pi_log, piRNA_dir, pi_pal,
+    pi_log, pi_dir, pi_pal,
     plot_output = plot_output,
     weight_reads,
     write_fastas,

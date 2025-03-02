@@ -25,8 +25,7 @@
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
-    msg <- paste(i, "out of", i_total, "|", chrom_name)
-    print(msg)
+    .inform_iteration(i, i_total, chrom_name)
   }
   
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
@@ -39,8 +38,8 @@
   chr_length <- unname(bam_header[["targets"]])
   bam_header <- NULL
 
-  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
-  cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
   # extract reads by strand
   # this creates a list object
@@ -49,7 +48,7 @@
 
   # turn the list object into a more useable data frame and filter reads by length,
   # bam only contains pos and width, need to add an end column
-  cat(file = paste0(wkdir, logfile), "Making Forward DT\n", append = TRUE)
+  cat(file = logfile, "Making Forward DT\n", append = TRUE)
   forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
     subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
@@ -58,7 +57,7 @@
     # get the number of times a read occurs
     dplyr::summarize(count = dplyr::n())
 
-  cat(file = paste0(wkdir, logfile), "Making Reverse DT\n", append = TRUE)
+  cat(file = logfile, "Making Reverse DT\n", append = TRUE)
   reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
     subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
@@ -78,7 +77,7 @@
 
   # If the data frames are empty there are no reads, can't do siRNA calculations
   if (nrow(forward_dt) > 0 & nrow(reverse_dt) > 0) {
-    cat(file = paste0(wkdir, logfile), "Calc overhangs\n", append = TRUE)
+    cat(file = logfile, "Calc overhangs\n", append = TRUE)
 
     # Get expanded-weighted reads
     locus_length <- reg_stop - reg_start + 1
@@ -126,7 +125,7 @@
 
       dicer_overhangs$Z_score <- .calc_zscore(dicer_overhangs$proper_count)
 
-      cat(file = paste0(wkdir, logfile), "get_si_overlaps\n", append = TRUE)
+      cat(file = logfile, "get_si_overlaps\n", append = TRUE)
       # calculate the siRNA pairs for the heatmap
 
       # system.time(results <- get_si_overlaps(reverse_dt$start, reverse_dt$end, reverse_dt$width,
@@ -142,14 +141,14 @@
       colnames(results) <- c("15", "", "17", "", "19", "", "21", "", "23", "", "25", "", "27", "", "29", "", "31", "")
     } else {
       # results are being stored also in case the run_all function is being used, at the end they will be written to a table
-      cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
+      cat(file = logfile, "No reads detected on one strand. \n", append = TRUE)
       # the data.frame should be modified if using calc_expand_overhangs
       dicer_overhangs <- data.frame(shift = seq(-4, 4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
       # dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
       results <- rep(0, times = 324)
     }
   } else {
-    cat(file = paste0(wkdir, logfile), "No reads detected on one strand. \n", append = TRUE)
+    cat(file = logfile, "No reads detected on one strand. \n", append = TRUE)
     # dicer_overhangs <- data.frame(shift = seq(-8,8), proper_count = c(rep(0, times = 17)), Z_score = c(rep(-33, times = 17)))
     dicer_overhangs <- data.frame(shift = seq(-4, 4), proper_count = c(rep(0, times = 9)), Z_score = c(rep(-33, times = 9)))
     results <- rep(0, times = 324)
@@ -181,16 +180,16 @@
   # user provides argument plot = T or plot = F
   if (plot_output == TRUE) {
     if (!sum(results) == 0) {
-      cat(file = paste0(wkdir, logfile), "plot_si_heat\n", append = TRUE)
+      cat(file = logfile, "plot_si_heat\n", append = TRUE)
       heat_plot <- .plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     }
     # heat_plot <- .plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
-    cat(file = paste0(wkdir, logfile), "get_read_dist\n", append = TRUE)
+    cat(file = logfile, "get_read_dist\n", append = TRUE)
     dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
 
-    cat(file = paste0(wkdir, logfile), "plot_sizes\n", append = TRUE)
+    cat(file = logfile, "plot_sizes\n", append = TRUE)
     size_plot <- .plot_sizes(dist)
-    cat(file = paste0(wkdir, logfile), "plot_overhangz\n", append = TRUE)
+    cat(file = logfile, "plot_overhangz\n", append = TRUE)
 
     dicer_overhangs$zscore <- .calc_zscore(dicer_overhangs$proper_count)
     dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
@@ -242,12 +241,12 @@
       }
 
       if (out_type == "png" || out_type == "PNG") {
-        cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
+        cat(file = logfile, "Making png\n", append = TRUE)
         grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 16, width = 14, units = "in", res = 300)
         print(all_plot)
         grDevices::dev.off()
       } else {
-        cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
+        cat(file = logfile, "Making pdf\n", append = TRUE)
         grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 16, width = 14)
         print(all_plot)
         grDevices::dev.off()
@@ -280,12 +279,12 @@
         }
 
         if (out_type == "png" || out_type == "PNG") {
-          cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
+          cat(file = logfile, "Making png\n", append = TRUE)
           grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 9, width = 14, units = "in", res = 300)
           print(all_plot)
           grDevices::dev.off()
         } else {
-          cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
+          cat(file = logfile, "Making pdf\n", append = TRUE)
           grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 9, width = 14)
           print(all_plot)
           grDevices::dev.off()
@@ -308,12 +307,12 @@
       }
 
       if (out_type == "png" || out_type == "PNG") {
-        cat(file = paste0(wkdir, logfile), "Making png\n", append = TRUE)
+        cat(file = logfile, "Making png\n", append = TRUE)
         grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 13, width = 13, units = "in", res = 300)
         print(all_plot)
         grDevices::dev.off()
       } else {
-        cat(file = paste0(wkdir, logfile), "Making pdf\n", append = TRUE)
+        cat(file = logfile, "Making pdf\n", append = TRUE)
         grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 13, width = 13)
         print(all_plot)
         grDevices::dev.off()

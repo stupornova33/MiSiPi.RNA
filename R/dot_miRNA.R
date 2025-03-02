@@ -26,17 +26,16 @@
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
-    msg <- paste(i, "out of", i_total, "|", chrom_name, "|", strand, "strand")
-    print(msg)
+    .inform_iteration(i, i_total, chrom_name, strand)
   }
   
-  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
   if (reg_stop - reg_start > 300) {
-    cat(file = paste0(wkdir, logfile), "length of region is greater than 300. \n", append = TRUE)
+    cat(file = logfile, "length of region is greater than 300. \n", append = TRUE)
     return(.null_mi_res())
   }
 
@@ -103,7 +102,7 @@
     dplyr::mutate(end = end + 59)
 
   if (nrow(r1_dt) == 0 || nrow(r2_dt) == 0) {
-    cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
+    cat(file = logfile, "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
     return(.null_mi_res())
   }
 
@@ -151,7 +150,7 @@
 
   # write out pairs here
   if (nrow(overlaps) == 0) {
-    cat(file = paste0(wkdir, logfile), "No overlapping reads found.\n", append = TRUE)
+    cat(file = logfile, "No overlapping reads found.\n", append = TRUE)
     return(.null_mi_res())
   }
 
@@ -244,7 +243,7 @@
   if (nrow(grouped > 1)) {
     alt_file <- file.path(wkdir, "alt_miRNAs_coord.bed")
     .write.quiet(grouped, alt_file)
-    cat(file = paste0(wkdir, logfile), "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
+    cat(file = logfile, "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
   }
   grouped <- NULL
 
@@ -265,7 +264,7 @@
   colnames(converted) <- paste0(">", chrom_name, "-", final$r1_start - 1, "_", final$r2_end - 1)
   final$converted <- converted$V1
 
-  write.table(converted, file = paste0(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
+  write.table(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
 
   mx_idx <- which(c(final$r1_count_avg, final$r2_count_avg) == max(final$r1_count_avg, final$r2_count_avg))
   mx <- c(final$r1_count_avg, final$r2_count_avg)[mx_idx]
