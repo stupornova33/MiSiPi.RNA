@@ -13,11 +13,13 @@ RoxygenNote: 7.3.2
 biocViews:
 Imports:
     Biostrings,
+    cli,
     cowplot,
     data.table,
     dplyr,
     GenomicRanges,
     ggplot2,
+    glue,
     IRanges,
     KernSmooth,
     magrittr,
