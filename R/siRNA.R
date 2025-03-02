@@ -13,14 +13,21 @@ siRNA <- function(vars) {
     method = "siRNA"
   )
   
-  dir <- "siRNA_outputs/"
-
-  wkdir <- "siRNA_outputs/"
-  logfile <- "siRNA_logfile.txt"
-
-  if (!dir.exists(wkdir) == TRUE) dir.create(wkdir)
-
-  if (!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
+  si_dir <- "siRNA_outputs"
+  logfile <- file.path(si_dir, "siRNA_logfile.txt")
+  
+  if (dir.exists(si_dir)) {
+    # If running interactively, give the option to delete old files if present,
+    # or move them to a new timestamped directory if not
+    if (!interactive()) {
+      unlink(si_dir, recursive = TRUE)
+    } else {
+      .overwrite_warning(si_dir)
+    }
+  }
+  
+  dir.create(si_dir)
+  file.create(logfile)
 
   invisible(
     mapply(
@@ -32,7 +39,7 @@ siRNA <- function(vars) {
       vars$genome,
       vars$bam_file,
       logfile,
-      wkdir,
+      si_dir,
       vars$si_pal,
       vars$plot_output,
       vars$path_to_RNAfold,
@@ -45,4 +52,6 @@ siRNA <- function(vars) {
       total_iterations
     )
   )
+  
+  .inform_complete(si_dir)
 }

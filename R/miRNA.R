@@ -13,14 +13,23 @@ miRNA <- function(vars) {
     method = "miRNA"
   )
 
-  logfile <- "miRNA_logfile.txt"
-
-  wkdir <- "miRNA_outputs/"
-  if (!dir.exists(wkdir) == TRUE) dir.create(wkdir)
-
-  if (!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
-
-  print("Starting plus strand")
+  mi_dir <- "miRNA_outputs"
+  logfile <- file.path(mi_dir, "miRNA_logfile.txt")
+  
+  if (dir.exists(mi_dir)) {
+    # If running interactively, give the option to delete old files if present,
+    # or move them to a new timestamped directory if not
+    if (!interactive()) {
+      unlink(mi_dir, recursive = TRUE)
+    } else {
+      .overwrite_warning(mi_dir)
+    }
+  }
+  
+  dir.create(mi_dir)
+  file.create(logfile)
+  
+  cli::cli_inform("Starting plus strand")
   # Process the positive strand
   invisible(
     mapply(
@@ -34,7 +43,7 @@ miRNA <- function(vars) {
       vars$genome,
       vars$bam_file,
       logfile,
-      wkdir,
+      mi_dir,
       vars$plot_output,
       vars$path_to_RNAfold,
       vars$path_to_RNAplot,
@@ -46,8 +55,8 @@ miRNA <- function(vars) {
     )
   )
   
-  print("Starting minus strand")
-  # Process the negative strand
+  pb <- cli::cli_inform(c("", "Starting minus strand"))
+  # Process the minus strand
   invisible(
     mapply(
       .miRNA,
@@ -60,7 +69,7 @@ miRNA <- function(vars) {
       vars$genome,
       vars$bam_file,
       logfile,
-      wkdir,
+      mi_dir,
       vars$plot_output,
       vars$path_to_RNAfold,
       vars$path_to_RNAplot,
@@ -71,4 +80,6 @@ miRNA <- function(vars) {
       total_iterations
     )
   )
+  
+  .inform_complete(mi_dir)
 }

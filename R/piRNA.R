@@ -12,13 +12,23 @@ piRNA <- function(vars) {
     genome = vars$genome,
     method = "piRNA"
   )
+
+  pi_dir <- "piRNA_outputs/"
+  logfile <- file.path(pi_dir, "piRNA_logfile.txt")
   
-  wkdir <- "piRNA_outputs/"
-  if (!dir.exists(wkdir) == TRUE) dir.create(wkdir)
-
-  logfile <- "piRNA_logfile.txt"
-  if (!file.exists(logfile) == TRUE) file.create(paste0(wkdir, logfile))
-
+  if (dir.exists(pi_dir)) {
+    # If running interactively, give the option to delete old files if present,
+    # or move them to a new timestamped directory if not
+    if (!interactive()) {
+      unlink(pi_dir, recursive = TRUE)
+    } else {
+      .overwrite_warning(pi_dir)
+    }
+  }
+  
+  dir.create(pi_dir)
+  file.create(logfile)
+  
   invisible(
     mapply(
       .piRNA,
@@ -29,7 +39,7 @@ piRNA <- function(vars) {
       vars$bam_file,
       vars$genome,
       logfile,
-      wkdir,
+      pi_dir,
       vars$pi_pal,
       vars$plot_output,
       vars$weight_reads,
@@ -39,4 +49,6 @@ piRNA <- function(vars) {
       total_iterations
     )
   )
+  
+  .inform_complete(pi_dir)
 }

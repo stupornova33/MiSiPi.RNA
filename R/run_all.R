@@ -11,6 +11,38 @@ run_all <- function(vars) {
     method = "all"
   )
   
+  all_dir <- "run_all"
+  all_log <- "run_all_logfile.txt"
+  
+  mi_dir <- file.path(all_dir, "miRNA_outputs")
+  mi_log <- "miRNA_logfile.txt"
+  
+  pi_dir <- file.path(all_dir, "piRNA_outputs")
+  pi_log <- "piRNA_logfile.txt"
+  
+  si_dir <- file.path(all_dir, "siRNA_outputs")
+  si_log <- "siRNA_logfile.txt"
+  
+  if (dir.exists(all_dir)) {
+    # If running interactively, give the option to delete old files if present,
+    # or move them to a new timestamped directory if not
+    if (!interactive()) {
+      unlink(all_dir, recursive = TRUE)
+    } else {
+      .overwrite_warning(all_dir)
+    }
+  }
+  
+  dir.create(all_dir)
+  dir.create(mi_dir)
+  dir.create(pi_dir)
+  dir.create(si_dir)
+  
+  file.create(file.path(all_dir, all_log))
+  file.create(file.path(mi_dir, mi_log))
+  file.create(file.path(pi_dir, pi_log))
+  file.create(file.path(si_dir, si_log))
+  
   invisible(
     mapply(
       .run_all,
@@ -36,4 +68,6 @@ run_all <- function(vars) {
       total_iterations
     )
   )
+  
+  .inform_complete(all_dir)
 }
