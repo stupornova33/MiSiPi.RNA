@@ -73,8 +73,8 @@
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
   geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
 
-  cat(file = paste0(wkdir, logfile), paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
-  cat(file = paste0(wkdir, logfile), "Filtering forward and reverse reads by length\n", append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
   # define which for Rsamtools ScanBamParam
   which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
@@ -113,7 +113,7 @@
   # null_hp_res() creates a table of specific "no result" values for zscores and such
 
   if (nrow(r2_dt) < 3) {
-    cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
+    cat(file = logfile, "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     plus_null_res <- .null_hp_res()[[2]]
   }
 
@@ -124,7 +124,7 @@
     plus_hp_phased_z <- mean(plus_hp_phased_tbl$phased_z[1:4])
   } else {
     # if read dfs are empty set results to null. Still need to create the empty tables for plots/ML
-    cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
+    cat(file = logfile, "No overlapping reads detected on this strand.\n", append = TRUE)
     # creating an empty table with "null" values
     plus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0, 50), phased_num = rep(0, 51), phased_z = rep(0, 51))
     plus_hp_phased_counts <- sum(plus_hp_phased_tbl$phased_num[1:4])
@@ -226,7 +226,7 @@
     dplyr::mutate(end = end + 30)
 
   if (nrow(r2_dt) < 3) {
-    cat(file = paste0(wkdir, logfile), "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
+    cat(file = logfile, "After filtering for width and strand, zero reads remain. Please check input BAM file.\n", append = TRUE)
     minus_null_res <- .null_hp_res()[[1]]
   }
 
@@ -236,7 +236,7 @@
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
     minus_hp_phasedz <- mean(minus_hp_phased_tbl$phased_z[1:4])
   } else {
-    cat(file = paste0(wkdir, logfile), "No overlapping reads detected on this strand.\n", append = TRUE)
+    cat(file = logfile, "No overlapping reads detected on this strand.\n", append = TRUE)
     minus_hp_phased_tbl <- data.table::data.table(phased_dist = seq(0, 50), phased_num = rep(0, 51), phased_z = rep(0, 51))
     minus_hp_phased_counts <- sum(minus_hp_phased_tbl$phased_num[1:4])
     minus_hp_phasedz <- -33

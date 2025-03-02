@@ -55,7 +55,7 @@
   pos4 <- pos_df$r2_end
 
   final_arg <- paste0(
-    "--infile=", wkdir, "converted.txt ",
+    "--infile=", wkdir, "/converted.txt ",
     '--pre="',
     pos1, " ", pos2, " ", 8, " ", colors[1], " ", "omark ",
     pos3, " ", pos4, " ", 9, " ", colors[2], " ", 'omark"'
