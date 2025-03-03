@@ -352,8 +352,9 @@
   # transform data frame from table to row
   overhang_output <- data.frame(t(overhangs$zscore))
   colnames(overhang_output) <- overhangs$shift
-  overhang_output$locus <- paste0(chrom_name, "_", fold_list$start, "_", fold_list$stop)
-  overhang_output <- overhang_output[, c(10, 1:9)]
+  overhang_output$original_locus <- .get_region_string(chrom_name, reg_start, reg_stop)
+  overhang_output$most_abundant_locus <- .get_region_string(chrom_name, fold_list$start, fold_list$stop)
+  overhang_output <- overhang_output[, c(10, 11, 1:9)]
 
   dice_file <- file.path(wkdir, "miRNA_dicerz.txt")
   .write.quiet(overhang_output, dice_file)
