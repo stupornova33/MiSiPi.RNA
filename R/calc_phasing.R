@@ -5,7 +5,7 @@
 # returns Data Frame of phased scores
 
 .calc_phasing <- function(df1, df2, n) {
-  dist <- num.y <- num.x <- Zscore <- num <- NULL
+  dist <- num.y <- num.x <- num <- NULL
 
   phased <- .find_hp_overlaps(df1, df2, n)
 
@@ -41,21 +41,21 @@
     phased[is.na(phased)] <- 0
     phased <- phased %>%
       dplyr::select(-num.y)
-    phased$Zscore <- .calc_zscore(phased$num.x)
+    phased$phased_z <- .calc_zscore(phased$num.x)
+    phased$phased_ml_z <- .calc_ml_zscore(phased$num.x)
     phased <- phased %>%
       dplyr::rename(
         phased_dist = dist,
-        phased_num = num.x,
-        phased_z = Zscore
+        phased_num = num.x
       )
   } else {
     phased <- data.table::data.table(dist = seq(0, 50), num = rep(0, 51))
-    phased$Zscore <- .calc_zscore(phased$num)
+    phased$phased_z <- .calc_zscore(phased$num)
+    phased$phased_ml_z <- .calc_ml_zscore(phased$num)
     phased <- phased_counts %>%
       dplyr::rename(
         phased_dist = dist,
         phased_num = num,
-        phased_z = Zscore
       )
   }
 
