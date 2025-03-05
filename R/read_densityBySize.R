@@ -1,5 +1,4 @@
 # function to filter reads by size and plot pileup density
-# @param bam_obj a string
 # @param chrom_name a string
 # @param reg_start a string
 # @param reg_stop a string
@@ -8,7 +7,7 @@
 # @param logfile a string
 # @return all_df
 
-.read_densityBySize <- function(bam_obj, chrom_name, reg_start, reg_stop, input_file, wkdir, logfile) {
+.read_densityBySize <- function(chrom_name, reg_start, reg_stop, input_file, wkdir, logfile) {
   pos <- width <- rname <- NULL
 
   filter_bamfile <- function(input_file, size1, size2, strand) {

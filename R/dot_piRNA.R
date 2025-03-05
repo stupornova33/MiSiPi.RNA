@@ -445,7 +445,7 @@
     read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
     ## calculate read density by size
-    data <- .read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+    data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     z_df$Z_score[is.na(z_df$Z_score)] <- 0
 
