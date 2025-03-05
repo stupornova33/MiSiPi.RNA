@@ -139,16 +139,7 @@
       )
       
       dicer_overhangs$zscore <- .calc_zscore(dicer_overhangs$proper_count)
-      
-      # Duplicate the zscore column
-      dicer_overhangs$ml_zscore <- dicer_overhangs$zscore
-      
-      # Find the indexes of all NaNs in zscore
-      zscore_nans <- which(is.nan(dicer_overhangs$zscore))
-      
-      # Update NaNs based for plotting and machine learning
-      dicer_overhangs$zscore[zscore_nans] <- 0 # Plotting
-      dicer_overhangs$ml_zscore[zscore_nans] <- -33 # Machine learning
+      dicer_overhangs$ml_zscore <- .calc_ml_zscore(dicer_overhangs$proper_count)
       
       cat(file = logfile, "get_si_overlaps\n", append = TRUE)
       
