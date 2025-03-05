@@ -63,6 +63,7 @@ set_vars <- function(roi, bam_file, genome,
   stopifnot("Parameter `write_fastas` only accepts TRUE or FALSE." = is.logical(write_fastas))
   # out_type
   out_type <- match.arg(out_type)
+  out_type <- tolower(out_type)
   ## End Parameter Validation
 
   bam_obj <- .open_bam(bam_file)
