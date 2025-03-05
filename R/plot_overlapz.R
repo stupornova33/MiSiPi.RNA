@@ -4,7 +4,7 @@
 
 .plot_overlapz <- function(z_df) {
   Z_score <- Overlap <- NULL
-  p <- ggplot2::ggplot(z_df, ggplot2::aes(x = Overlap, y = Z_score)) +
+  p <- ggplot2::ggplot(z_df, ggplot2::aes(x = Overlap, y = zscore)) +
     ggplot2::geom_line(color = "black", linewidth = 1.5) +
     ggplot2::theme_classic() +
     ggplot2::scale_x_continuous("Overlap", breaks = seq(0, 32, 5), labels = seq(0, 32, 5)) +

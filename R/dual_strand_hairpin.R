@@ -32,10 +32,8 @@
     dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
 
     converted <- convertU(dna_vec, 1)
-    # writeLines(converted, con = file.path(wkdir, "converted.txt")) # This is written in .fold_long_rna as converted.fasta
     dna_vec <- NULL
 
-    # use
     fold_list <- mapply(.fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold, wkdir)
     fold_list <- t(fold_list)
     MFE <- unlist(unname(fold_list[, 3]))
@@ -57,9 +55,18 @@
   bam_obj <- .open_bam(bam_file, logfile)
 
   # RNAfold can't fold things longer than 10kb
-
-  if (reg_stop - reg_start > 10000) {
+  if ((reg_stop - reg_start + 1) > 10000) {
     res <- .null_hp_res()
+    
+    # Add density plot to null result
+    data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+    res$density_plot <- .plot_large_density(data, reg_start, reg_stop)
+    
+    # Add gtf plot to null result
+    if (annotate_region) {
+      res$gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+    }
+    
     return(res)
   }
 
@@ -353,9 +360,14 @@
   .write.quiet(plus_phased_out, plus_hp_phasedz_file)
   .write.quiet(minus_phased_out, minus_hp_phasedz_file)
 
-  ### 7/4/24 refactor to combine siRNA and hairpin functions
+  # Base results for machine learning that get returned regardless of plot_output status
+  results <- list(
+    minus_res = minus_res,
+    plus_res = plus_res
+  )
 
-  if (plot_output == TRUE) {
+  # Add additional data and plots to results
+  if (plot_output) {
     plus_overhangs <- data.frame(shift = plus_res$dicer_tbl.shift, zscore = plus_res$dicer_tbl.zscore)
     plus_overhangs$zscore[is.na(plus_overhangs$zscore)] <- 0
 
@@ -366,7 +378,7 @@
     plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
     minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
 
-    data <- .read_densityBySize(bam_obj, chrom_name, reg_start, reg_stop, bam_file, wkdir)
+    data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- .plot_density(data, reg_start, reg_stop)
 
@@ -386,22 +398,18 @@
 
     minus_phasedz <- .plot_hp_phasedz(minus_hp_phased_tbl, "-")
 
-    ## plot genome annotations (optional)
-    if (annotate_region == TRUE) {
+    results$plus_overhang_plot = plus_overhang_plot
+    results$minus_overhang_plot = minus_overhang_plot
+    results$density_plot = density_plot
+    results$arc_plot = arc_plot
+    results$plus_phasedz = plus_phasedz
+    results$minus_phasedz = minus_phasedz
+    
+    # Plot genome annotations (optional)
+    if (annotate_region) {
       gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
-      return(list(
-        minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
-        arc_plot, gtf_plot, plus_phasedz, minus_phasedz
-      ))
-    } else {
-      return(list(
-        minus_res, plus_res, plus_overhang_plot, minus_overhang_plot, density_plot,
-        arc_plot, plus_phasedz, minus_phasedz
-      ))
+      results$gtf_plot = gtf_plot
     }
-  } else {
-    # if plot == FALSE just return ML res
-
-    return(list(minus_res, plus_res))
   }
+  return(results)
 }
