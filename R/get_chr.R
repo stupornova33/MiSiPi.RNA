@@ -9,11 +9,13 @@
 # @param strand - Character - "plus" or "minus"
 # @return chrom obj
 
-.get_chr <- function(bam_obj, chrom_name, reg_start, reg_stop, strand = c("minus", "plus")) {
+.get_chr <- function(bam_obj, chrom_name, reg_start, reg_stop, strand = c("minus", "plus", "-", "+")) {
   strand <- match.arg(strand)
   is_minus <- switch(strand,
     "minus" = TRUE,
-    "plus" = FALSE
+    "plus" = FALSE,
+    "-" = TRUE,
+    "+" = FALSE
   )
 
   Rsamtools::open.BamFile(bam_obj)
