@@ -17,17 +17,23 @@
 # @param write_fastas a bool, TRUE or FALSE
 # @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
+# @param i The current iteration number
+# @param i_total The total number of iterations
+# @param pb The progress bar identifying string
 # @return plots
 
 .miRNA <- function(chrom_name, reg_start, reg_stop, chromosome, length, strand,
                    genome_file, bam_file, logfile, wkdir,
                    plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
-                   weight_reads, out_type, i = NULL, i_total = NULL) {
+                   weight_reads, out_type, i = NULL, i_total = NULL, pb = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
     .inform_iteration(i, i_total, chrom_name, strand)
   }
+  
+  #cli::cli_progress_update(id = pb, force = TRUE)
+  #flush.console()
   
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   
@@ -46,35 +52,11 @@
 
   bam_header <- NULL
 
-  #### THIS IS INEFFICIENT -- FIX ###
   # for the read size distribution plot
-  chrom_m <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
-  chrom_p <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
-
   read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-
-  if (strand == "-") {
-    chrom <- chrom_m
-  } else {
-    chrom <- chrom_p
-  }
   
-  chrom_m <- NULL
-  chrom_p <- NULL
-  
-  which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
+  chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand)
 
-  if (strand == "-") {
-    bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE), what = c("rname", "pos", "qwidth"), which = which)
-  } else if (strand == "+") {
-    bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE), what = c("rname", "pos", "qwidth"), which = which)
-  } else {
-    bam_scan <- Rsamtools::ScanBamParam(what = c("rname", "pos", "strand", "qwidth"), which = which)
-  }
-
-  #### END OF INEFFICIENT SECTION ####
-
-  ########################################################## main logic ################################################################
   ## make the read data tables
 
   # Processing one strand, so make copy of df to transform
@@ -108,7 +90,7 @@
 
   pileup_start <- min(r1_dt$start)
   pileup_stop <- max(r2_dt$end)
-  pileups <- .get_read_pileups(pileup_start, pileup_stop, bam_scan, bam_file)
+  pileups <- .get_read_pileups(chrom_name, pileup_start, pileup_stop, strand, bam_file)
   # dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
 
   empty_table <- data.frame(pos = c(seq(pileup_start, pileup_stop)), count = c(0))
@@ -328,7 +310,7 @@
   z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
   
   # create empty z_df
-  z_df <- data.frame("Overlap" = z_res[, 1], "Z_score" = .calc_zscore(z_res$count))
+  z_df <- data.frame("Overlap" = z_res[, 1], "zscore" = .calc_zscore(z_res$count))
   
   # calculate the zscores, if there are results
   if (is.na(dicer_overlaps[1, 1]) | dicer_overlaps[1, 1] == 0) {
@@ -372,7 +354,7 @@
 
     # get the per-base coverage
     # returns a two column df with pos and coverage
-    new_pileups <- .get_read_pileups(fold_list$start, fold_list$stop, bam_scan, bam_file) %>%
+    new_pileups <- .get_read_pileups(chrom_name, fold_list$start, fold_list$stop, strand, bam_file) %>%
       dplyr::group_by(pos) %>%
       dplyr::summarise(count = sum(count))
 
