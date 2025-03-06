@@ -93,7 +93,6 @@
   sRes$folded <- FALSE
   
   for (strand in strands) {
-    print(strand)
     strand_name <- switch(strand, "+" = "plus", "-" = "minus")
     
     chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = strand)
@@ -146,16 +145,20 @@
       
       # -33 is an arbitrary value for machine learning purposes
       sRes[[strand_name]]$hp_phased_z <- -33
+      sRes[[strand_name]]$hp_phased_mlz <- -33
       sRes[[strand_name]]$perc_paired <- -33
       sRes[[strand_name]]$overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
       sRes[[strand_name]]$overhangs$zscore <- .calc_zscore(sRes[[strand_name]]$overhangs$proper_count)
+      sRes[[strand_name]]$overhangs$ml_zscore <- .calc_ml_zscore(sRes[[strand_name]]$overhangs$proper_count)
       sRes[[strand_name]]$hp_overhangs_counts <- sum(sRes[[strand_name]]$overhangs$proper_count[5])
       sRes[[strand_name]]$hp_overhangz <- mean(sRes[[strand_name]]$overhangs$zscore[5])
+      sRes[[strand_name]]$hp_overhang_mlz <- mean(sRes[[strand_name]]$overhangs$ml_zscore[5])
       
     } else { ## r2_dt has rows
       sRes[[strand_name]]$hp_phased_tbl <- .calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
       sRes[[strand_name]]$hp_phased_counts <- sum(sRes[[strand_name]]$hp_phased_tbl$phased_num[1:4])
       sRes[[strand_name]]$hp_phased_z <- mean(sRes[[strand_name]]$hp_phased_tbl$phased_z[1:4])
+      sRes[[strand_name]]$hp_phased_mlz <- mean(sRes[[strand_name]]$hp_phased_tbl$phased_ml_z[1:4])
       
       # We don't want to fold the dna twice. So once it's been folded
       # set sRes$folded to TRUE
@@ -187,13 +190,17 @@
           r2_dupes = sRes[[strand_name]]$all_overlaps$r2_dupes
         )
         sRes[[strand_name]]$overhangs$zscore <- .calc_zscore(sRes[[strand_name]]$overhangs$proper_count)
+        sRes[[strand_name]]$overhangs$ml_zscore <- .calc_ml_zscore(sRes[[strand_name]]$overhangs$proper_count)
         sRes[[strand_name]]$hp_overhangz <- mean(sRes[[strand_name]]$overhangs$zscore[5])
+        sRes[[strand_name]]$hp_overhang_mlz <- mean(sRes[[strand_name]]$overhangs$ml_zscore[5])
       } else {
         sRes[[strand_name]]$overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
         sRes[[strand_name]]$overhangs$zscore <- .calc_zscore(sRes[[strand_name]]$overhangs$proper_count)
+        sRes[[strand_name]]$overhangs$ml_zscore <- .calc_ml_zscore(sRes[[strand_name]]$overhangs$proper_count)
         # return arbitrary "null" value if there are no valid results for ML
         sRes[[strand_name]]$hp_overhangs_counts <- 0
-        sRes[[strand_name]]$hp_overhangz <- -33
+        sRes[[strand_name]]$hp_overhangz <- 0
+        sRes[[strand_name]]$hp_overhang_mlz <- -33
       }
     }
     
@@ -204,11 +211,15 @@
       res <- list(
         MFE = sRes$MFE,
         hp_overhangz = sRes[[strand_name]]$hp_overhangz,
+        hp_overhang_mlz = sRes[[strand_name]]$hp_overhang_mlz,
         hp_phasedz = sRes[[strand_name]]$hp_phased_z,
+        hp_phased_mlz = sRes[[strand_name]]$hp_phased_mlz,
         phased_tbl.dist = sRes[[strand_name]]$hp_phased_tbl$phased_dist,
         phased_tbl.phased_z = sRes[[strand_name]]$hp_phased_tbl$phased_z,
+        phased_tbl.phased_mlz = sRes[[strand_name]]$hp_phased_tbl$phased_ml_z,
         dicer_tbl.shift = sRes[[strand_name]]$overhangs$shift,
         dicer_tbl.zscore = sRes[[strand_name]]$overhangs$zscore,
+        dicer_tbl.ml_zscore = sRes[[strand_name]]$overhangs$ml_zscore,
         perc_paired = sRes$perc_paired
       )
       sRes[[strand_name]]$res <- res
@@ -253,10 +264,7 @@
   # Add additional data and plots to results
   if (plot_output) {
     plus_overhangs <- data.frame(shift = sRes$plus$res$dicer_tbl.shift, zscore = sRes$plus$res$dicer_tbl.zscore)
-    plus_overhangs$zscore[is.na(plus_overhangs$zscore)] <- 0
-
     minus_overhangs <- data.frame(shift = sRes$minus$res$dicer_tbl.shift, zscore = sRes$minus$res$dicer_tbl.zscore)
-    minus_overhangs$zscore[is.na(minus_overhangs$zscore)] <- 0
 
     ## return these as plot objects
     plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
