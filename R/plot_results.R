@@ -1,4 +1,76 @@
-.plot_siRNA_results <- function(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir) {
+.plot_miRNA <- function(chrom_name, start, stop, strand, bam_file, fold_list, overhangs, read_dist, z_df, wkdir) {
+  
+  # Shouldn't be necessary to check for this once refactoring of zscores has been finished
+  # if (all(is.nan(overhangs$zscore[1]))) {
+  #   overhangs$zscore <- 0
+  # }
+  
+  dicer_sig <- .plot_overhangz(overhangs, strand = strand)
+  
+  # make new pileups dt for structure
+  
+  # get the per-base coverage
+  # returns a two column df with pos and coverage
+  new_pileups <- .get_read_pileups(chrom_name, fold_list$start, fold_list$stop, strand, bam_file) %>%
+    dplyr::group_by(pos) %>%
+    dplyr::summarise(count = sum(count))
+  
+  # make a table with the same positions but empty cov column for combining with pileups
+  # necessary because the pileups table doesn't have all positions from the first nt to the last because
+  # coverages of zero aren't reported
+  # set these to zero below
+  empty_table <- data.frame(pos = c(seq(fold_list$start, fold_list$stop)), count = c(0))
+  
+  density <- .read_densityBySize(chrom_name, start, stop, bam_file, wkdir)
+  
+  density_plot <- .plot_density(density, start, stop)
+  
+  dist_plot <- .plot_sizes(read_dist)
+  
+  zplot <- .plot_overlapz(z_df)
+  
+  left_top <- cowplot::plot_grid(
+    dist_plot,
+    dicer_sig,
+    ncol = 1,
+    rel_widths = c(1, 1),
+    rel_heights = c(1, 1),
+    align = "vh",
+    axis = "lrtb"
+  )
+  
+  right_top <- cowplot::plot_grid(
+    NULL,
+    density_plot,
+    zplot,
+    ncol = 1,
+    rel_widths = c(1, 1, 1),
+    rel_heights = c(0.4, 1, 1),
+    align = "vh",
+    axis = "lrtb"
+  )
+  
+  all_plot <- cowplot::plot_grid(
+    left_top,
+    right_top,
+    rel_heights = c(1, 1),
+    rel_widths = c(1, 1),
+    align = "vh",
+    axis = "lrtb"
+  )
+  
+  if (out_type == "png") {
+    grDevices::png(file = file.path(wkdir, paste(prefix, strand, "combined.png", sep = "_")), height = 8, width = 11, units = "in", res = 300)
+  } else {
+    grDevices::pdf(file = file.path(wkdir, paste(prefix, strand, "combined.pdf", sep = "_")), height = 8, width = 11)
+  }
+  print(all_plot)
+  grDevices::dev.off()
+}
+
+
+
+.plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir) {
   ### combine siRNA and hpRNA plots
   
   
@@ -17,7 +89,7 @@
     #### RLT10K - Annotate True ####
     if (annotate_region) {
       gtf_plot <- dsh$gtf_plot
-    
+      
       # if there are results for the heatmap, plot, otherwise omit
       if (results_present) {
         left <- cowplot::plot_grid(
@@ -44,7 +116,7 @@
           axis = "lrtb")
       }
       
-    #### RLT10K - Annotate False ####
+      #### RLT10K - Annotate False ####
     } else {
       if (results_present) {
         left <- cowplot::plot_grid(
@@ -100,7 +172,7 @@
     print(all_plot)
     grDevices::dev.off()
     
-  
+    
   } else {
     #### Regions Greater Than 10kb (RGT10k) ####
     
@@ -157,7 +229,7 @@
       print(all_plot)
       grDevices::dev.off()
       
-    #### RGT10k - Annotate False ####
+      #### RGT10k - Annotate False ####
     } else {
       if (results_present) {
         left <- cowplot::plot_grid(
@@ -189,7 +261,7 @@
           rel_heights = c(1, 1, 1),
           align = "vh",
           axis = "lrtb")
-      
+        
       } else {
         bottom <- cowplot::plot_grid(
           dicer_plot,

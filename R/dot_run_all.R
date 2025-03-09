@@ -275,54 +275,31 @@
   )
 
   max_si_heat <- .get_max_si_heat(si_res)
-
   local_ml$highest_si_col <- max_si_heat$highest_si_col
-  si_dicerz <- si_res$si_dicer$Z_score[5]
+  
+  si_dicerz <- si_res$si_dicer$ml_zscore[5]
+  local_ml$si_dicerz <- si_dicerz
 
-  if (is.na(si_dicerz)) {
-    local_ml$si_dicerz <- -33
-  } else {
-    local_ml$si_dicerz <- si_dicerz
-  }
-
-  plus_perc_paired <- si_res[[3]][[2]]$perc_paired
-  minus_perc_paired <- si_res[[3]][[2]]$perc_paired
+  plus_perc_paired <- si_res$dsh$plus_res$perc_paired
+  minus_perc_paired <- si_res$dsh$minus_res$perc_paired
 
   # changed 3/25 to be RPM
-  local_ml$num_si_dicer_reads <- (si_res[[2]]$proper_count[5] * 1000000) / total_read_count
+  local_ml$num_si_dicer_reads <- (si_res$si_dicer$proper_count[5] * 1000000) / total_read_count
   local_ml$hp_perc_paired <- max(plus_perc_paired, minus_perc_paired)
 
   ######################################################################### get hairpin-specific results ###############################################################
 
-  plus_phasedz <- si_res[[3]][[2]]$phased_tbl.phased_z
-
-  if (!is.na(plus_phasedz[1] && !plus_phasedz[1] == -33)) {
-    plus_mean <- mean(plus_phasedz[1:4])
-  } else {
-    plus_mean <- -33
-  }
-
-  minus_phasedz <- si_res[[3]][[1]]$phased_tbl.phased_z
-
-  if (!is.na(minus_phasedz[1] && !minus_phasedz[1] == -33)) {
-    minus_mean <- mean(minus_phasedz[1:4])
-  } else {
-    minus_mean <- -33
-  }
+  plus_phasedz <- si_res$dsh$plus_res$phased_tbl.phased_mlz
+  plus_mean <- mean(plus_phasedz[1:4])
+  
+  minus_phasedz <- si_res$dsh$minus_res$phased_tbl.phased_mlz
+  minus_mean <- mean(minus_phasedz[1:4])
 
   local_ml$hp_phasedz <- max(plus_mean, minus_mean)
-  local_ml$hp_mfe <- min(unlist(unname(si_res[[3]][[1]][1])), unlist(unname(si_res[[3]][[2]][1])))
+  local_ml$hp_mfe <- min(unlist(unname(si_res$dsh$minus_res$MFE)), unlist(unname(si_res$dsh$plus_res$MFE)))
 
-  plus_dicerz <- si_res[[3]][[2]]$plus_hp_overhangz
-  minus_dicerz <- si_res[[3]][[1]]$minus_hp_overhangz
-
-  if (is.na(plus_dicerz)) {
-    plus_dicerz <- -33
-  }
-
-  if (is.na(minus_dicerz)) {
-    minus_dicerz <- -33
-  }
+  plus_dicerz <- si_res$dsh$plus_res$hp_overhang_mlz
+  minus_dicerz <- si_res$dsh$minus_res$hp_overhang_mlz
 
   local_ml$hp_dicerz <- max(plus_dicerz, minus_dicerz)
 

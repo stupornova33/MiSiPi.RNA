@@ -192,7 +192,7 @@
     size_plot <- .plot_sizes(dist)
     dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
     
-    .plot_siRNA_results(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir)
+    .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir)
   }
 
   return(list(heat = results, si_dicer = dicer_overhangs, dsh = dsh))
