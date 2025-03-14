@@ -54,8 +54,8 @@ miRNA <- function(vars) {
       total_iterations
     )
   )
-  
-  pb <- cli::cli_inform(c("", "Starting minus strand"))
+
+  cli::cli_inform(c("", "Starting minus strand"))
   # Process the minus strand
   invisible(
     mapply(

@@ -91,7 +91,6 @@
   pileup_start <- min(r1_dt$start)
   pileup_stop <- max(r2_dt$end)
   pileups <- .get_read_pileups(chrom_name, pileup_start, pileup_stop, strand, bam_file)
-  # dt <- pileups %>% dplyr::group_by(pos) %>% dplyr::summarise(count = sum(count))
 
   empty_table <- data.frame(pos = c(seq(pileup_start, pileup_stop)), count = c(0))
 
@@ -104,11 +103,6 @@
     dplyr::rename("count" = count.y)
 
   dt_table[is.na(dt_table)] <- 0
-
-  # returns overlaps
-  # using find_overlaps instead of find_hp_overlaps
-  # find_overlaps only requires one df passed in and doesn't transform end of reads to original
-  # find_hp_overlaps requires two dfs and automatically transforms ends of reads
 
   r1_summarized <- r1_dt %>%
     dplyr::group_by_all() %>%
@@ -167,9 +161,6 @@
   if (nrow(read_pileups) == 0) {
     return(.null_mi_res())
   }
-
-  # remove results where loop sequence has greater than 5% of total read count
-  total_count <- sum(pileups$count)
 
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
@@ -237,7 +228,6 @@
   final <- most_abundant[1, ]
   final_seq <- final$whole_seq
 
-
   # RNAfold wants U's not T's, so convert to U
   converted <- list(convertU(final_seq, 1))
 
@@ -284,7 +274,6 @@
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   # make the plots for all the sequences in the "fold_list"
-  # prefix <- paste0(wkdir, chrom_name, "-", (fold_list$start - 1), "-", (fold_list$stop - 1))
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   mfe <- fold_list$mfe
@@ -310,29 +299,38 @@
   z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
   
   # create empty z_df
-  z_df <- data.frame("Overlap" = z_res[, 1], "zscore" = .calc_zscore(z_res$count))
+  z_df <- data.frame("Overlap" = z_res[, 1], "zscore" = .calc_zscore(z_res$count), "ml_zscore" = .calc_ml_zscore(z_res$count))
+  
+  z_output <- z_df %>%
+    dplyr::select(-ml_zscore)
+  
+  zdf_output <- as.data.frame(t(z_output[,-1]))
+  colnames(zdf_output) <- z_output$Overlap
+  
+  zdf_file <- file.path(wkdir, "overlap_probability_old.txt")
+  .write.quiet(zdf_output, zdf_file)
   
   # calculate the zscores, if there are results
   if (is.na(dicer_overlaps[1, 1]) | dicer_overlaps[1, 1] == 0) {
     overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
-    #overhangs$zscore <- .calc_zscore(overhangs$proper_count)
-    overhangs$zscore <- 0
+    overhangs$zscore <- .calc_zscore(overhangs$proper_count)
+    overhangs$ml_zscore <- .calc_ml_zscore(overhangs$proper_count)
   } else {
     # if(write_fastas == TRUE) .write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
-    overhangs <- data.frame(
-      calc_overhangs(
-        dicer_overlaps$r2_start, dicer_overlaps$r2_end,
-        dicer_overlaps$r1_start, dicer_overlaps$r1_width,
-        dupes_present = TRUE,
-        r1_dupes = dicer_overlaps$r1_dupes,
-        r2_dupes = dicer_overlaps$r2_dupes
-    ))
+    overhangs <- calc_overhangs(
+      dicer_overlaps$r2_start, dicer_overlaps$r2_end,
+      dicer_overlaps$r1_start, dicer_overlaps$r1_width,
+      dupes_present = TRUE,
+      r1_dupes = dicer_overlaps$r1_dupes,
+      r2_dupes = dicer_overlaps$r2_dupes
+    )
     
     overhangs$zscore <- .calc_zscore(overhangs$proper_count)
+    overhangs$ml_zscore <- .calc_ml_zscore(overhangs$proper_count)
   }
 
   # transform data frame from table to row
-  overhang_output <- data.frame(t(overhangs$zscore))
+  overhang_output <- data.frame(t(overhangs$ml_zscore))
   colnames(overhang_output) <- overhangs$shift
   overhang_output$original_locus <- .get_region_string(chrom_name, reg_start, reg_stop)
   overhang_output$most_abundant_locus <- .get_region_string(chrom_name, fold_list$start, fold_list$stop)
@@ -342,52 +340,10 @@
   .write.quiet(overhang_output, dice_file)
 
   if (plot_output == TRUE) {
-    # make the plots
-    
-    if (all(is.nan(overhangs$zscore[1]))) {
-      overhangs$zscore <- 0
-    }
-    
-    dicer_sig <- .plot_overhangz(overhangs, strand = strand)
-    
-    # make new pileups dt for structure
-
-    # get the per-base coverage
-    # returns a two column df with pos and coverage
-    new_pileups <- .get_read_pileups(chrom_name, fold_list$start, fold_list$stop, strand, bam_file) %>%
-      dplyr::group_by(pos) %>%
-      dplyr::summarise(count = sum(count))
-
-    # make a table with the same positions but empty cov column for combining with pileups
-    # necessary because the pileups table doesn't have all positions from the first nt to the last because
-    # coverages of zero aren't reported
-    # set these to zero below
-    empty_table <- data.frame(pos = c(seq(fold_list$start, fold_list$stop)), count = c(0))
-
-    density <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
-    density_plot <- .plot_density(density, reg_start, reg_stop)
-
-    dist_plot <- .plot_sizes(read_dist)
-
-    zplot <- .plot_overlapz(z_df)
-
-    left_top <- cowplot::plot_grid(dist_plot, dicer_sig, ncol = 1, rel_widths = c(1, 1), rel_heights = c(1, 1), align = "vh", axis = "lrtb")
-    right_top <- cowplot::plot_grid(NULL, density_plot, zplot, ncol = 1, rel_widths = c(1, 1, 1), rel_heights = c(0.4, 1, 1), align = "vh", axis = "lrtb")
-
-    all_plot <- cowplot::plot_grid(left_top, right_top, rel_heights = c(1, 1), rel_widths = c(1, 1), align = "vh", axis = "lrtb")
-
-    if (out_type == "png" || out_type == "PNG") {
-      grDevices::png(file = file.path(wkdir, paste(prefix, strand, "combined.png", sep = "_")), height = 8, width = 11, units = "in", res = 300)
-      print(all_plot)
-      grDevices::dev.off()
-    } else {
-      grDevices::pdf(file = file.path(wkdir, paste(prefix, strand, "combined.pdf", sep = "_")), height = 8, width = 11)
-      print(all_plot)
-      grDevices::dev.off()
-    }
+    .plot_miRNA(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, read_dist, z_df, out_type, prefix, wkdir)
   }
 
-  results <- list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = c(overhangs, z_df))
+  results <- list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = overhangs, "overlaps" = z_df)
 
   return(results)
 }
