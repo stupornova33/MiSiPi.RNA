@@ -3,42 +3,35 @@
 # dicer_dt - Data Frame
 # helix_df - Data Frame
 # chrom_name - Character
-# reg_start - Integer
+# original_start - Integer
 # return - Data Frame
 
-.dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, reg_start) {
+.dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, original_start) {
   bin <- j <- X.End <- X.Start <- Y.Start <- Y.End <- paired_pos <- start <- width <- NULL
 
   if (nrow(helix_df) == 0) {
-    return(i_j_overlaps <- data.frame(
-      r1_start = 0, r1_width = 0, r1_end = 0,
-      r2_start = 0, r2_width = 0, r2_end = 0
-    ))
+    return(.null_dicer_res())
   }
 
   #### Convert helix positions to chromosome positions ####
   # Positions returned by [RNAFold.exe or R4RNA::viennaToHelix] are indexed at 1 being the smallest
   # But viennaToHelix does keep track of the start and stop positions
-  # We've passed in the start position here with the parameter reg_start (not to be confused with reg_start calculated in set_vars)
-  # So we're adding reg_start - 1 to each helix position to get the actual positions
+  # We've passed in the start position here with the parameter original_start
+  # So we're adding original_start - 1 to each helix position to get the actual positions
   helix_df <- helix_df %>%
     dplyr::mutate(
-      i = i + (reg_start - 1),
-      j = j + (reg_start - 1)
+      i = i + original_start - 1,
+      j = j + original_start - 1
     )
 
-  ### paired bases are several nucleotides diff. than read starts... pad the ends of the helix
-  # there was an annoying thing where like... RNA fold was giving back paired positions
-  # and the reads were starting before the first paired position, so I was padding the data frame
-  # by about eight but in cases where the region of interest starts at less than 8,
-  # it would result in a negative number
+  #### Pad Data Frame ####
 
   i_begin <- helix_df$i[1]
   i_end <- helix_df$i[nrow(helix_df)]
   j_begin <- helix_df$j[1]
   j_end <- helix_df$j[nrow(helix_df)]
 
-  if (reg_start < 8) {
+  if (original_start < 8) {
     final_helix_df <- helix_df
   } else {
     # This section is just adding up to 16 observations to the helix_df
@@ -53,65 +46,53 @@
     startdf <- data.frame(
       i = i_start_vals,
       j = j_start_vals,
-      length = rep(1, times = 4),
-      value = rep(NA, times = 4)
+      length = 1,
+      value = NA
     )
 
     enddf <- data.frame(
       i = i_end_vals,
       j = j_end_vals,
-      length = rep(1, times = 4),
-      value = rep(NA, times = 4)
+      length = 1,
+      value = NA
     )
 
     # check to make sure start and end values are not the same. If they are, remove
-    new_startdf <- data.frame(matrix(ncol = 4, nrow = 0))
-    new_enddf <- data.frame(matrix(ncol = 4, nrow = 0))
-
-    for (i in 1:nrow(startdf)) {
-      if (startdf$i[i] != startdf$j[i]) {
-        new_startdf <- rbind(new_startdf, startdf[i, ])
-      }
-    }
-    for (i in 1:nrow(enddf)) {
-      if (enddf$i[i] != enddf$j[i]) {
-        new_enddf <- rbind(new_enddf, enddf[i, ])
-      }
-    }
-
-    startdf <- new_startdf
-    enddf <- new_enddf
-    new_startdf <- NULL
-    new_enddf <- NULL
+    startdf <- startdf %>%
+      dplyr::filter(i != j)
+    
+    enddf <- enddf %>%
+      dplyr::filter(i != j)
 
     # add the new intervals to helix_df
     final_helix_df <- dplyr::bind_rows(startdf, helix_df, enddf)
   }
 
-  # remove results where segment of paired bases is less than 15nt
-  # for example the loop sequence
+  #### Filter ####
+  # Originally we were removing results where the segment of paired
+  # bases was less than 15nt (for example, the loop sequence)
+  # Currently, the filtering is just to ensure the paired position is
+  # greater than the original position
   final_helix_df <- final_helix_df %>%
     dplyr::filter(j - i > 0)
 
   if (nrow(final_helix_df) == 0) {
-    i_j_overlaps <- data.frame(
-      r1_start = 0, r1_width = 0, r1_end = 0, r1_dupes = 0,
-      r2_start = 0, r2_width = 0, r2_end = 0, r2_dupes = 0
-    )
-    return(i_j_overlaps)
+    return(.null_dicer_res())
   }
 
   # group together regions which are paired
   grouped_helix <- group_helix_res(final_helix_df$i, final_helix_df$j)
+  
+  # Filter 
   filter_helix <- grouped_helix %>%
     dplyr::filter(X.End - X.Start > 17 | Y.Start - Y.End > 17)
 
-  # 10/28/24 removed num_shifted column from i_dat as it appears to never be used in the package
   i_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), n = numeric(0), paired_start = numeric(0), paired_end = numeric(0))
   j_dat <- data.frame(start = numeric(0), end = numeric(0), rname = character(0), n = numeric(0), paired_start = numeric(0), paired_end = numeric(0))
 
+  ## This is not selecting columns as the data frame is currently grouped. might need to ungroup first
   dicer_dt <- dicer_dt %>%
-    data.frame() %>%
+    dplyr::ungroup() %>%
     dplyr::select(c(start, end, rname, n))
 
   ## Start
@@ -126,6 +107,12 @@
       # get i & j reads that start or end at pos in helix_df
       x_idx <- which(dicer_dt$start %in% x_rng | dicer_dt$end %in% x_rng)
       x_dat <- dicer_dt[x_idx, ]
+      
+      # R gives warnings when trying to add to a new column at an indexed position
+      # Initializing the columns now
+      x_dat$paired_start <- NA
+      x_dat$paired_end <- NA
+      
 
       # eliminate reads which extend to a highly unpaired region
       x_dat <- x_dat %>%
@@ -260,27 +247,21 @@
   j_dat <- j_dat %>%
     dplyr::relocate(rname)
 
-  # Summarize the data for faster processing
-  # 10/28/24 removed the summarizing here as it had to be added in earlier in this function
-  # TODO need to ensure that the call from .miRNA still works with this change
-  # i_dat <- i_dat %>%
-  #  dplyr::group_by_all() %>%
-  #  dplyr::count()
-
-  # j_dat <- j_dat %>%
-  #  dplyr::group_by_all() %>%
-  #  dplyr::count()
-
-
-  if (!nrow(i_dat) == 0 && !nrow(j_dat) == 0) {
-    i_j_overlaps <- .find_overlaps(i_dat, j_dat)
-  } else {
-    i_j_overlaps <- data.frame(
-      r1_start = 0, r1_width = 0, r1_end = 0, r1_dupes = 0,
-      r2_start = 0, r2_width = 0, r2_end = 0, r2_dupes = 0
-    )
+  
+  if (nrow(i_dat) == 0 || nrow(j_dat) == 0) {
+    return(.null_dicer_res())
   }
+  
+  i_j_overlaps <- .find_overlaps(i_dat, j_dat)
 
   # return table of overlapping read pairs
+  return(i_j_overlaps)
+}
+
+.null_dicer_res <- function() {
+  i_j_overlaps <- data.frame(
+    r1_start = 0, r1_width = 0, r1_end = 0, r1_dupes = 0,
+    r2_start = 0, r2_width = 0, r2_end = 0, r2_dupes = 0
+  )
   return(i_j_overlaps)
 }
