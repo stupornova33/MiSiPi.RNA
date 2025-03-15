@@ -335,13 +335,10 @@
   mirnaMFE_plus <- mi_res$mfe
 
   pp_plus <- mi_res$perc_paired
-  mirna_dicerz_plus <- mi_res$overhangs$zscore[5]
+  
+  mirna_dicerz_plus <- mi_res$overhangs$ml_zscore[5]
 
-  if (mi_res$overhangs$zscore[1] != "NaN") {
-    plus_overlapz <- mean(mi_res$overhangs$Z_score[17:19])
-  } else {
-    plus_overlapz <- NA
-  }
+  plus_overlapz <- mean(mi_res$overlaps$ml_zscore[17:19])
 
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
@@ -358,21 +355,13 @@
 
   # mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
+  
   pp_minus <- mi_res$perc_paired
-  mirna_dicerz_minus <- mi_res$overhangs$zscore[5]
+  
+  mirna_dicerz_minus <- mi_res$overhangs$ml_zscore[5]
+  
+  minus_overlapz <- mean(mi_res$overlaps$ml_zscore[17:19])
 
-  if (mi_res$overhangs$zscore[1] != "NaN") {
-    minus_overlapz <- mean(mi_res$overhangs$Z_score[17:19])
-  } else {
-    minus_overlapz <- NA
-  }
-
-  if (mirna_dicerz_plus == "NaN") {
-    mirna_dicerz_plus <- -33
-  }
-  if (mirna_dicerz_minus == "NaN") {
-    mirna_dicerz_minus <- -33
-  }
 
   if (is.na(mirnaMFE_minus) && !is.na(mirnaMFE_plus)) {
     local_ml$mirna_mfe <- mirnaMFE_plus
@@ -383,19 +372,20 @@
   } else {
     local_ml$mirna_mfe <- min(mirnaMFE_plus, mirnaMFE_minus)
   }
+  
   local_ml$mi_perc_paired <- max(pp_plus, pp_minus)
   local_ml$mirna_dicerz <- max(mirna_dicerz_plus, mirna_dicerz_minus)
 
-
-  if (is.na(minus_overlapz) && !is.na(plus_overlapz)) {
+  if (minus_overlapz == -33 && plus_overlapz != -33) {
     local_ml$mirna_overlapz <- plus_overlapz
-  } else if (!is.na(minus_overlapz) && is.na(plus_overlapz)) {
+  } else if (minus_overlapz != -33 && plus_overlapz == -33) {
     local_ml$mirna_overlapz <- minus_overlapz
-  } else if (is.na(minus_overlapz) && is.na(plus_overlapz)) {
+  } else if (minus_overlapz == -33 && plus_overlapz == -33) {
     local_ml$mirna_overlapz <- -33
   } else {
     local_ml$mirna_overlapz <- max(minus_overlapz, plus_overlapz)
   }
+  
 
   ############################################################################# run piRNA function ####################################################################
   # calculates pingpong_col
@@ -416,12 +406,12 @@
     out_type
   )
 
-  if (sum(pi_res[[1]]) != 0) {
+  if (sum(pi_res$heat_results) != 0) {
     max_pi_heat <- .get_max_pi_heat(pi_res)
     local_ml$pingpong_col <- max_pi_heat$highest_pi_col
     # changed pi_count to CPM
     local_ml$max_pi_count <- ((max_pi_heat$highest_pi_count) * 1000000) / total_read_count
-    local_ml$max_piz_overlap <- .get_max_zscore(unlist(pi_res$z_df$Z_score), unlist(pi_res$z_df$Overlap))[[1]]
+    local_ml$max_piz_overlap <- .get_max_zscore(unlist(pi_res$z_df$ml_zscore), unlist(pi_res$z_df$Overlap))[[1]]
   } else {
     local_ml$pingpong_col <- -33
     local_ml$max_pi_count <- -33
@@ -438,21 +428,21 @@
   phasedz26_minus <- pi_res$phased_26minus_z
 
 
-  if (is.na(phasedz_minus) && !is.na(phasedz_plus)) {
+  if (phasedz_minus == -33 & phasedz_plus != -33) {
     local_ml$pi_phasedz <- phasedz_plus
-  } else if (!is.na(phasedz_minus) && is.na(phasedz_plus)) {
+  } else if (phasedz_minus != -33 & phasedz_plus == -33) {
     local_ml$pi_phasedz <- phasedz_minus
-  } else if (is.na(phasedz_minus) && is.na(phasedz_plus)) {
+  } else if (phasedz_minus == -33 & phasedz_plus == -33) {
     local_ml$pi_phasedz <- -33
   } else {
     local_ml$pi_phasedz <- max(phasedz_plus, phasedz_minus)
   }
-
-  if (is.na(phasedz26_minus) && !is.na(phasedz26_plus)) {
+  
+  if (phasedz26_minus == -33 & phasedz26_plus != -33) {
     local_ml$pi_phased26z <- phasedz26_plus
-  } else if (!is.na(phasedz26_minus) && is.na(phasedz26_plus)) {
+  } else if (phasedz26_minus != -33 & phasedz26_plus == -33) {
     local_ml$pi_phased26z <- phasedz26_minus
-  } else if (is.na(phasedz26_minus) && is.na(phasedz26_plus)) {
+  } else if (phasedz26_minus == -33 & phasedz26_plus == -33) {
     local_ml$pi_phased26z <- -33
   } else {
     local_ml$pi_phased26z <- max(phasedz26_plus, phasedz26_minus)
