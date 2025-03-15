@@ -102,9 +102,15 @@
   forward_dt <- .weight_reads(forward_dt, weight_reads, locus_length, sum(forward_dt$count))
   reverse_dt <- .weight_reads(reverse_dt, weight_reads, locus_length, sum(reverse_dt$count))
 
-  # if there are both forward and reverse results
-  if (!nrow(forward_dt) == 0 && !nrow(reverse_dt) == 0) {
-    # Resummarize the reads for more efficient processing
+  
+  # Set default results for empty data frames
+  if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0) {
+    z_df <- data.frame(Overlap = c(seq(4, 30)), zscore = 0, ml_zscore = -33)
+    heat_results <- matrix(data = 0, nrow = 17, ncol = 17)
+    row.names(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    colnames(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+  } else { 
+    # Summarize the reads for more efficient processing
     f_summarized <- forward_dt %>%
       dplyr::group_by_all() %>%
       dplyr::count()
@@ -181,7 +187,8 @@
 
     cat(file = logfile, paste0("Finding overlaps.", "\n"), append = TRUE)
 
-    heat_results <- get_overlap_counts(forward_dt$start, forward_dt$end, forward_dt$width,
+    heat_results <- get_overlap_counts(
+      forward_dt$start, forward_dt$end, forward_dt$width,
       reverse_dt$end, reverse_dt$start, reverse_dt$width,
       check_pi = TRUE
     )
@@ -223,16 +230,24 @@
     output <- NULL
 
     # Put results into table
-    z_df <- data.frame("Overlap" = z_res[, 1], "Z_score" = .calc_zscore(z_res$count))
+    z_df <- data.frame("Overlap" = z_res[, 1], "zscore" = .calc_zscore(z_res$count), "ml_zscore" = .calc_ml_zscore(z_res$count))
     # z_res <- NULL
-  } else {
-    z_df <- data.frame(Overlap = c(seq(4, 30)), Z_score = c(rep(0, times = 27)))
-    heat_results <- matrix(data = 0, nrow = 17, ncol = 17)
-    row.names(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
-    colnames(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
   }
 
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   f_summarized <- NULL
   r_summarized <- NULL
   overlaps <- NULL
@@ -270,7 +285,8 @@
     phased_plus_counts <- data.table::data.table(
       phased_dist = c(seq(0, 50)),
       phased_num = c(rep(0, times = 51)),
-      phased_z = NA
+      phased_z = 0,
+      phased_ml_z = -33
     )
     phased_plus_counts <- data.table::setDT(dplyr::full_join(phased_plus_counts,
       all_table,
@@ -278,7 +294,6 @@
     )) %>%
       dplyr::select(-phased_num.y) %>%
       dplyr::rename("phased_num" = phased_num.x)
-    # phased_plus_counts[is.na(phased_plus_counts)] <- NA
   }
 
   cat(file = logfile, paste0("Calculating plus strand phasing.", "\n"), append = TRUE)
@@ -298,7 +313,8 @@
     phased_26_plus_counts <- data.table::data.table(
       phased_dist = c(seq(0, 50)),
       phased_num = c(rep(0, times = 51)),
-      phased_z = NA
+      phased_z = 0,
+      phased_ml_z = -33
     )
     phased_26_plus_counts <- data.table::setDT(dplyr::full_join(phased_26_plus_counts,
       all_table,
@@ -312,20 +328,21 @@
     dplyr::rename(
       phased26_dist = phased_dist,
       phased26_num = phased_num,
-      phased26_z = phased_z
+      phased26_z = phased_z,
+      phased26_ml_z = phased_ml_z
     )
 
   # combine the results tables
   plus_df <- cbind(phased_plus_counts, phased_26_plus_counts)
 
   phased_plus_output <- phased_plus_counts %>%
-    dplyr::select(phased_z)
+    dplyr::select(phased_ml_z)
 
   # transform table to one line for writing output
   phased_plus_output <- t(c(prefix, t(phased_plus_output)))
 
   phased26_plus_output <- phased_26_plus_counts %>%
-    dplyr::select(phased26_z)
+    dplyr::select(phased26_ml_z)
   phased26_plus_output <- t(c(prefix, t(phased26_plus_output)))
 
   phased_file <- file.path(wkdir, "phased_plus_piRNA_zscores.txt")
@@ -361,7 +378,8 @@
     phased_minus_counts <- data.table::data.table(
       phased_dist = c(seq(0, 50)),
       phased_num = c(rep(0, times = 51)),
-      phased_z = NA
+      phased_z = 0,
+      phased_ml_z = -33
     )
     phased_minus_counts <- data.table::setDT(dplyr::full_join(phased_minus_counts,
       all_table,
@@ -386,7 +404,8 @@
     phased_26_minus_counts <- data.table::data.table(
       phased_dist = c(seq(0, 50)),
       phased_num = c(rep(0, times = 51)),
-      phased_z = NA
+      phased_z = 0,
+      phased_ml_z = -33
     )
     phased_26_minus_counts <- data.table::setDT(dplyr::full_join(phased_26_minus_counts,
       all_table,
@@ -402,25 +421,29 @@
     dplyr::rename(
       phased26_dist = phased_dist,
       phased26_num = phased_num,
-      phased26_z = phased_z
+      phased26_z = phased_z,
+      phased26_ml_z = phased_ml_z
     )
 
   minus_df <- cbind(phased_minus_counts, phased_26_minus_counts)
 
   phased_minus_output <- phased_minus_counts %>%
-    dplyr::select(phased_z)
+    dplyr::select(phased_ml_z)
   phased_minus_output <- t(c(prefix, t(phased_minus_output)))
 
   phased26_minus_output <- phased_26_minus_counts %>%
-    dplyr::select(phased26_z)
+    dplyr::select(phased26_ml_z)
   phased26_minus_output <- t(c(prefix, t(phased26_minus_output)))
 
   all_phased <- data.frame(dist = phased_minus_counts$phased_dist)
   all_phased <- all_phased %>%
     dplyr::mutate(count = phased_plus_counts$phased_num + phased_minus_counts$phased_num)
+  
   all_phased$zscore <- .calc_zscore(all_phased$count)
+  all_phased$ml_zscore <- .calc_ml_zscore(all_phased$count)
+  
   tbl <- all_phased %>%
-    dplyr::select(zscore)
+    dplyr::select(ml_zscore)
   tbl <- as.data.frame(t(tbl))
   tbl$locus <- prefix
   colnames(tbl) <- c(all_phased$dist, "locus")
@@ -447,8 +470,6 @@
     ## calculate read density by size
     data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
-    z_df$Z_score[is.na(z_df$Z_score)] <- 0
-
     z <- .plot_overlapz(z_df)
     dist_plot <- .plot_sizes(read_dist)
 
@@ -460,14 +481,8 @@
     data <- NULL
     dist_plot <- .plot_sizes(read_dist)
 
-    plus_df$phased_z[is.na(plus_df$phased_z)] <- 0
-    plus_df$phased26_z[is.na(plus_df$phased26_z)] <- 0
-    minus_df$phased_z[is.na(minus_df$phased_z)] <- 0
-    minus_df$phased26_z[is.na(minus_df$phased26_z)] <- 0
-
     plus_phased_plot <- .plot_phasedz(plus_df, "+")
     minus_phased_plot <- .plot_phasedz(minus_df, "-")
-
 
     if (sum(heat_results) > 0) {
       options(scipen = 999)
@@ -526,36 +541,22 @@
   }
 
 
-  if (!is.na(sum(phased_plus_counts$phased_z))) {
-    # get average zscore for first 4 distances (1-4nt)
-    ave_plus_z <- mean(phased_plus_counts$phased_z[1:4])
-  } else {
-    ave_plus_z <- -33
-  }
+  # get average zscore for first 4 distances (1-4nt)
+  ave_plus_z <- mean(phased_plus_counts$phased_ml_z[1:4])
 
-  if (!is.na(sum(phased_26_plus_counts$phased26_z))) {
-    ave_plus_26z <- mean(phased_26_plus_counts$phased26_z[1:4])
-  } else {
-    ave_plus_26z <- -33
-  }
+  ave_plus_26z <- mean(phased_26_plus_counts$phased26_ml_z[1:4])
 
-  if (!is.na(sum(phased_minus_counts$phased_z))) {
-    ave_minus_z <- mean(phased_minus_counts$phased_z[1:4])
-  } else {
-    ave_minus_z <- -33
-  }
+  ave_minus_z <- mean(phased_minus_counts$phased_ml_z[1:4])
 
-  if (!is.na(sum(phased_26_minus_counts$phased26_z))) {
-    ave_minus_26z <- mean(phased_26_minus_counts$phased26_z[1:4])
-  } else {
-    ave_minus_26z <- -33
-  }
+  ave_minus_26z <- mean(phased_26_minus_counts$phased26_ml_z[1:4])
 
-  # return(c(ave_z, ave_26z))
-  # cat(file = logfile, paste0("Returning results for ML table.", "\n"), append = TRUE)
   # results for ML table
   return(list(
-    heat_results = heat_results, z_df = z_df, phased_plus_z = ave_plus_z, phased_26plus_z = ave_plus_26z,
-    phased_minus_z = ave_minus_z, phased_26minus_z = ave_minus_26z
+    heat_results = heat_results,
+    z_df = z_df,
+    phased_plus_z = ave_plus_z,
+    phased_26plus_z = ave_plus_26z,
+    phased_minus_z = ave_minus_z,
+    phased_26minus_z = ave_minus_26z
   ))
 }

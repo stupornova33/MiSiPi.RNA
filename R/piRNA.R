@@ -13,7 +13,7 @@ piRNA <- function(vars) {
     method = "piRNA"
   )
 
-  pi_dir <- "piRNA_outputs/"
+  pi_dir <- "piRNA_outputs"
   logfile <- file.path(pi_dir, "piRNA_logfile.txt")
   
   if (dir.exists(pi_dir)) {
