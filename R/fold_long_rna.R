@@ -48,8 +48,12 @@
     vien_split <- stringi::stri_split_fixed(fold[4], pattern = " ")[[1]][2]
     vien_struct <- paste0(fold[3], stringi::stri_split_fixed(fold[4], pattern = " ")[[1]][1])
   } else {
-    vien_split <- stringi::stri_split_fixed(fold[[2]], pattern = " ")[[1]][2]
-    vien_struct <- stringi::stri_split_fixed(fold[[2]], pattern = " ")[[1]][1]
+    # In some cases, RNAFold returns a string with a different amount of spaces in the result
+    # This can throw of string splitting
+    # Adding the parameter n = 2 ensures that only 1 space is considered when
+    # Splitting the result string into its separate parts
+    vien_split <- stringi::stri_split_fixed(fold[[2]], pattern = " ", n = 2)[[1]][2]
+    vien_struct <- stringi::stri_split_fixed(fold[[2]], pattern = " ", n = 2)[[1]][1]
   }
 
   ct <- RRNA::makeCt(vien_struct, fold[1])
