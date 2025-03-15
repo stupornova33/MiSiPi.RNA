@@ -61,12 +61,12 @@ make_count_table <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwi
     .Call(`_MiSiPi_RNA_make_count_table`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
 }
 
-make_miRNA_count_table <- function(fdt_start, fdt_end, fwidth, fdupes, rdt_start, rdt_end, rwidth, rdupes) {
-    .Call(`_MiSiPi_RNA_make_miRNA_count_table`, fdt_start, fdt_end, fwidth, fdupes, rdt_start, rdt_end, rwidth, rdupes)
+make_miRNA_count_table_dcroverlap <- function(fdt_start, fdt_end, fwidth, fdupes, rdt_start, rdt_end, rwidth, rdupes) {
+    .Call(`_MiSiPi_RNA_make_miRNA_count_table_dcroverlap`, fdt_start, fdt_end, fwidth, fdupes, rdt_start, rdt_end, rwidth, rdupes)
 }
 
-make_miRNA_count_table2 <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth) {
-    .Call(`_MiSiPi_RNA_make_miRNA_count_table2`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
+make_miRNA_count_table <- function(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth) {
+    .Call(`_MiSiPi_RNA_make_miRNA_count_table`, fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth)
 }
 
 map_and_count <- function(fstart, fstart_size, rend, proper_overlap) {

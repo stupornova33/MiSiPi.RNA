@@ -229,9 +229,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// make_miRNA_count_table
-DataFrame make_miRNA_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> fdupes, std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth, std::vector<int> rdupes);
-RcppExport SEXP _MiSiPi_RNA_make_miRNA_count_table(SEXP fdt_startSEXP, SEXP fdt_endSEXP, SEXP fwidthSEXP, SEXP fdupesSEXP, SEXP rdt_startSEXP, SEXP rdt_endSEXP, SEXP rwidthSEXP, SEXP rdupesSEXP) {
+// make_miRNA_count_table_dcroverlap
+DataFrame make_miRNA_count_table_dcroverlap(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> fdupes, std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth, std::vector<int> rdupes);
+RcppExport SEXP _MiSiPi_RNA_make_miRNA_count_table_dcroverlap(SEXP fdt_startSEXP, SEXP fdt_endSEXP, SEXP fwidthSEXP, SEXP fdupesSEXP, SEXP rdt_startSEXP, SEXP rdt_endSEXP, SEXP rwidthSEXP, SEXP rdupesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -243,13 +243,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<int> >::type rdt_end(rdt_endSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type rwidth(rwidthSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type rdupes(rdupesSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_miRNA_count_table(fdt_start, fdt_end, fwidth, fdupes, rdt_start, rdt_end, rwidth, rdupes));
+    rcpp_result_gen = Rcpp::wrap(make_miRNA_count_table_dcroverlap(fdt_start, fdt_end, fwidth, fdupes, rdt_start, rdt_end, rwidth, rdupes));
     return rcpp_result_gen;
 END_RCPP
 }
-// make_miRNA_count_table2
-DataFrame make_miRNA_count_table2(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth);
-RcppExport SEXP _MiSiPi_RNA_make_miRNA_count_table2(SEXP fdt_startSEXP, SEXP fdt_endSEXP, SEXP fwidthSEXP, SEXP rdt_startSEXP, SEXP rdt_endSEXP, SEXP rwidthSEXP) {
+// make_miRNA_count_table
+DataFrame make_miRNA_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth);
+RcppExport SEXP _MiSiPi_RNA_make_miRNA_count_table(SEXP fdt_startSEXP, SEXP fdt_endSEXP, SEXP fwidthSEXP, SEXP rdt_startSEXP, SEXP rdt_endSEXP, SEXP rwidthSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -259,7 +259,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<int> >::type rdt_start(rdt_startSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type rdt_end(rdt_endSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type rwidth(rwidthSEXP);
-    rcpp_result_gen = Rcpp::wrap(make_miRNA_count_table2(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth));
+    rcpp_result_gen = Rcpp::wrap(make_miRNA_count_table(fdt_start, fdt_end, fwidth, rdt_start, rdt_end, rwidth));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -393,8 +393,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MiSiPi_RNA_get_si_overlaps", (DL_FUNC) &_MiSiPi_RNA_get_si_overlaps, 6},
     {"_MiSiPi_RNA_get_phased_dist", (DL_FUNC) &_MiSiPi_RNA_get_phased_dist, 5},
     {"_MiSiPi_RNA_make_count_table", (DL_FUNC) &_MiSiPi_RNA_make_count_table, 6},
-    {"_MiSiPi_RNA_make_miRNA_count_table", (DL_FUNC) &_MiSiPi_RNA_make_miRNA_count_table, 8},
-    {"_MiSiPi_RNA_make_miRNA_count_table2", (DL_FUNC) &_MiSiPi_RNA_make_miRNA_count_table2, 6},
+    {"_MiSiPi_RNA_make_miRNA_count_table_dcroverlap", (DL_FUNC) &_MiSiPi_RNA_make_miRNA_count_table_dcroverlap, 8},
+    {"_MiSiPi_RNA_make_miRNA_count_table", (DL_FUNC) &_MiSiPi_RNA_make_miRNA_count_table, 6},
     {"_MiSiPi_RNA_map_and_count", (DL_FUNC) &_MiSiPi_RNA_map_and_count, 4},
     {"_MiSiPi_RNA_get_pi_overlaps", (DL_FUNC) &_MiSiPi_RNA_get_pi_overlaps, 6},
     {"_MiSiPi_RNA_get_overlap_counts", (DL_FUNC) &_MiSiPi_RNA_get_overlap_counts, 7},
