@@ -121,6 +121,7 @@
     dplyr::mutate(r1_width = r1_end - r1_start + 1) %>%
     dplyr::mutate(dist = r2_start - r1_end) %>% # This line and the next effectively replace the cpp function get_nearby()
     dplyr::filter(r1_end < r2_start & dist <= MAX_DIST_APART) %>%
+    # dist > 2 to allow for at least a minimal loop
     dplyr::filter(dist > 2) %>% # only want read pairs where start position of read 2 is after the end of read 1
     dplyr::select(-dist)
 
@@ -239,7 +240,11 @@
   write.table(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
 
   mx_idx <- which(c(final$r1_count_avg, final$r2_count_avg) == max(final$r1_count_avg, final$r2_count_avg))
-  mx <- c(final$r1_count_avg, final$r2_count_avg)[mx_idx]
+  # mx doesn't appear to be used, and I think the code for this line is wrong
+  # If the intention is to create a vector of final$r1_count_avg[mx_idx] and final$r2_count_avg[mx_idx]
+  # This will not do that. Instead it should be:
+  # mx <- c(final$r1_count_avg[mx_idx], final$r2_count_avg[mx_idx])
+  #mx <- c(final$r1_count_avg, final$r2_count_avg)[mx_idx]
 
   if (length(mx_idx) < 2) {
     # colors <- vector(mode = "character", length = 2)
@@ -284,10 +289,11 @@
   #dicer_dt, helix_df, chrom_name, reg_start
 
   dicer_overlaps <- .dicer_overlaps(r2_summarized, fold_list$helix, chrom_name, fold_list$start)
+  
   # summarize the counts by the # overlapping nucleotides
   z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
-
-  r1_dt <- r2_dt <- NULL
+  #z_res <- make_miRNA_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
+  
   
   # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
   # TODO
@@ -297,6 +303,23 @@
   # I think this is mutation is in correct, and if we want overlaps from 1-30 or 1-27,
   # We'll need to modify the make_count_table to run differently for miRNA than piRNA
   z_res <- z_res %>% dplyr::mutate(overlap = overlap - 3)
+  
+  # filtered_dcr_overlaps <- dicer_overlaps %>%
+  #   dplyr::filter(r1_width >= 18 & r1_width <= 30,
+  #                 r2_width >= 18 & r2_width <= 30)
+  # 
+  # z_res <- make_miRNA_count_table_dcroverlap(
+  #   filtered_dcr_overlaps$r2_start,
+  #   filtered_dcr_overlaps$r2_end,
+  #   filtered_dcr_overlaps$r2_width,
+  #   filtered_dcr_overlaps$r2_dupes,
+  #   filtered_dcr_overlaps$r1_start,
+  #   filtered_dcr_overlaps$r1_end,
+  #   filtered_dcr_overlaps$r1_width,
+  #   filtered_dcr_overlaps$r1_dupes
+  # )
+  
+  r1_dt <- r2_dt <- NULL
   
   # create empty z_df
   z_df <- data.frame("Overlap" = z_res[, 1], "zscore" = .calc_zscore(z_res$count), "ml_zscore" = .calc_ml_zscore(z_res$count))
