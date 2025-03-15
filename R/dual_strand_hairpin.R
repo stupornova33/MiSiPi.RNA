@@ -274,15 +274,25 @@
 
     density_plot <- .plot_density(data, reg_start, reg_stop)
 
-    if (!Sys.info()["sysname"] == "Windows") {
-      arc_plot <- .plot_helix(file.path(wkdir, "helix.txt"))
-      grDevices::dev.control("enable")
-      R4RNA::plotHelix(helix = R4RNA::readHelix(file.path(wkdir, "helix.txt")), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-      arc_plot <- grDevices::recordPlot() # don't touch this...the boss gets mad
+    # Check to see if helix.txt has actual data
+    helix_file <- file.path(wkdir, "helix.txt")
+    # First line in helix.txt is just a comment, like # 22, so skip this line
+    invisible(nrows_helix_file <- nrow(readr::read_tsv(helix_file, skip = 1, show_col_types = FALSE)))
+    
+    if (nrows_helix_file != 0) {
+      if (!Sys.info()["sysname"] == "Windows") {
+        arc_plot <- .plot_helix(helix_file)
+        grDevices::dev.control("enable")
+        R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+        arc_plot <- grDevices::recordPlot() # don't touch this...the boss gets mad
+      } else {
+        R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+        arc_plot <- grDevices::recordPlot()
+      }
     } else {
-      R4RNA::plotHelix(helix = R4RNA::readHelix(file.path(wkdir, "helix.txt")), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-      arc_plot <- grDevices::recordPlot()
+      arc_plot <- NA
     }
+    
 
     ## why? No one knows
 
