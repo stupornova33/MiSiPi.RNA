@@ -896,6 +896,170 @@ DataFrame make_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end,
   return(df);
 }
 
+// make_miRNA_count_table_dcroverlap
+//
+// This functions calculates the counts of each overlap to be used for z score
+//
+// @param fdt_start A vector of ints
+// @param fdt_end A vector of ints
+// @param fwidth An integer
+// @param fdupes An integer tracking the number of duplicates
+// @param rdt_start A vector of ints
+// @param rdt_end A vector of ints
+// @param rwidth An integer
+// @param rdupes An integer tracking the number of duplicates
+// @return df A data.frame containing the counts of each overlap to be used for a z score
+// [[Rcpp::export]]
+DataFrame make_miRNA_count_table_dcroverlap(
+    std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth, std::vector<int> fdupes,
+    std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth, std::vector<int> rdupes) {
+  
+  int res_size = 27;
+  
+  std::vector<int> overlap_res(res_size);
+  
+  // Fill the vector with overlap values of 1 - 27
+  std::iota(std::begin(overlap_res), std::end(overlap_res), 1);
+  
+  std::vector<double> counts_res(res_size);
+  
+  int f_size = int(fdt_start.size());
+  int r_size = int(rdt_start.size());
+  
+  // Make an unordered map of the rdt_end vector for easy look up
+  std::unordered_map<int, double> counts;
+  // for each value in rdt_end, add the number of duplicates to the total of counts at that value in the unordered map.
+  for (int i = 0; i < r_size; i++) {
+    if (counts.find(rdt_end[i]) == counts.end()) {
+      counts[rdt_end[i]] = rdupes[i];
+    } else {
+      counts[rdt_end[i]] += rdupes[i];
+    }
+  }
+  
+  for (int overlap = 1; overlap <= 27; overlap++) {
+    double current_count = 0;
+    
+    // Iterate through each fstart position and calculate the overlap position
+    // Then iterate through the map to see if that position exists
+    // If so, then add that count total to the running total plus one (for the forward position)
+    for (int i = 0; i < f_size; i++) {
+      int calculated_r_pos = fdt_start[i] + overlap - 1;
+      std::unordered_map<int, double>::const_iterator found = counts.find(calculated_r_pos);
+      
+      // if found == counts.end(), that means we reached the end of the unordered_map without finding anything
+      if (found == counts.end()) {
+        continue;
+      } else {
+        // If we did find something in the unordered_map, then the syntax found->second will return the value associated with that key
+        // Current count will increase also by the number of forward start duplicates
+        current_count += found->second + fdupes[i];
+      }
+    }
+    
+    // Since c++ is 0 based, let's subtract 1 from the overlap to ensure proper vector placement
+    counts_res[overlap - 1] = current_count;
+  }
+  
+  DataFrame df = DataFrame::create(Named("overlap") = overlap_res, Named("count") = counts_res);
+  return(df);
+}
+
+// make_miRNA_count_table
+//
+// This functions calculates the counts of each overlap to be used for z score
+//
+// @param fdt_start A vector of ints
+// @param fdt_end A vector of ints
+// @param fwidth An integer
+// @param rdt_start A vector of ints
+// @param rdt_end A vector of ints
+// @param rwidth An integer
+// @return df A data.frame containing the counts of each overlap to be used for a z score
+// [[Rcpp::export]]
+DataFrame make_miRNA_count_table(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
+                                 std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth) {
+  
+  int res_size = 27;
+  
+  std::vector<int> overlap_res(res_size);
+  
+  // Fill the vector with overlap values of 1 - 27
+  std::iota(std::begin(overlap_res), std::end(overlap_res), 1);
+  
+  std::vector<double> counts_res(res_size);
+  
+  int f_size = int(fdt_start.size());
+  int r_size = int(rdt_start.size());
+  
+  std::vector<int> fstart_res;
+  fstart_res.reserve(f_size);
+  std::vector<int> fend_res;
+  fend_res.reserve(f_size);
+  std::vector<int> rstart_res;
+  rstart_res.reserve(r_size);
+  std::vector<int> rend_res;
+  rend_res.reserve(r_size);
+  
+  // Only keep reads between 18 and 30 nt
+  for (int i = 0; i < f_size; i++) {
+    if (fwidth[i] >= 18 && fwidth[i] <= 30) {
+      fstart_res.emplace_back(fdt_start[i]);
+      fend_res.emplace_back(fdt_end[i]);
+    }
+  }
+  
+  for (int i = 0; i < r_size; i++) {
+    if (rwidth[i] >= 18 && rwidth[i] <= 30) {
+      rstart_res.emplace_back(rdt_start[i]);
+      rend_res.emplace_back(rdt_end[i]);
+    }
+  }
+  
+  int fstart_size = int(fstart_res.size());
+  
+  // Make an unordered map of the rend_res vector for easy lookup
+  std::unordered_map<int, int> counts;
+  for (auto v : rend_res) {
+    ++counts[v];
+  }
+  
+  for (int overlap = 1; overlap <= 27; overlap++) {
+    double current_count = 0;
+    
+    // Iterate through each fstart position and calculate the overlap position
+    // Then iterate through the map to see if that position exists
+    // If so, then add that count total to the running total plus one (for the forward position)
+    for (int i = 0; i < fstart_size; i++) {
+      int calculated_r_pos = fstart_res[i] + overlap - 1;
+      std::unordered_map<int, int>::const_iterator found = counts.find(calculated_r_pos);
+      
+      if (found == counts.end()) {
+        continue;
+      } else {
+        current_count += found->second + 1;
+      }
+    }
+    
+    counts_res[overlap - 1] = current_count;
+  }
+  
+  DataFrame df = DataFrame::create(Named("overlap") = overlap_res, Named("count") = counts_res);
+  return(df);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 // map_and_count
 //
 // This function takes in a vector of start positions from read group 1 and
