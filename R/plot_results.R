@@ -1,19 +1,6 @@
-.plot_miRNA <- function(chrom_name, start, stop, strand, bam_file, fold_list, overhangs, read_dist, z_df, wkdir) {
-  
-  # Shouldn't be necessary to check for this once refactoring of zscores has been finished
-  # if (all(is.nan(overhangs$zscore[1]))) {
-  #   overhangs$zscore <- 0
-  # }
+.plot_miRNA <- function(chrom_name, start, stop, strand, bam_file, fold_list, overhangs, read_dist, z_df, out_type, prefix, wkdir) {
   
   dicer_sig <- .plot_overhangz(overhangs, strand = strand)
-  
-  # make new pileups dt for structure
-  
-  # get the per-base coverage
-  # returns a two column df with pos and coverage
-  new_pileups <- .get_read_pileups(chrom_name, fold_list$start, fold_list$stop, strand, bam_file) %>%
-    dplyr::group_by(pos) %>%
-    dplyr::summarise(count = sum(count))
   
   # make a table with the same positions but empty cov column for combining with pileups
   # necessary because the pileups table doesn't have all positions from the first nt to the last because
@@ -82,6 +69,17 @@
     
     density_plot <- dsh$density_plot
     arc_plot <- dsh$arc_plot
+    # In the case that no arc plot get made in dual_strand_hairpins
+    # In order to keep track of that fact, we set the arc_plot to NA
+    # Setting it to NULL at the time wouldn't have allowed us to store that
+    # In a list with the other results. But we do need it to be NULL to keep
+    # cowplot from complaining, so check for NA here and set to NULL
+    # if it is not NA, then we can't really check it for NA, since the length
+    # of the object will be greater than 1, so check for length should be
+    # sufficient
+    if (length(arc_plot) == 1) {
+      arc_plot <- NULL
+    }
     
     plus_phasedz <- dsh$plus_phasedz
     minus_phasedz <- dsh$minus_phasedz
