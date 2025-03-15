@@ -23,7 +23,7 @@
   if (sd(counts) == 0) {
     return(rep(0, length(counts)))
   }
-  return(counts - mean(counts)) / sd(counts)
+  return((counts - mean(counts)) / sd(counts))
 }
 
 .calc_ml_zscore <- function(counts) {
@@ -32,5 +32,5 @@
   if (sd(counts) == 0) {
     return(rep(-33, length(counts)))
   }
-  return(counts - mean(counts) / sd(counts))
+  return((counts - mean(counts)) / sd(counts))
 }
