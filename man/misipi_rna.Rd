@@ -2,16 +2,18 @@
 % Please edit documentation in R/misipi_rna.R
 \name{misipi_rna}
 \alias{misipi_rna}
-\title{run the run_all function}
+\title{Wrapper function that calls core functions}
 \usage{
-misipi_rna(vars)
+misipi_rna(vars, method = c("all", "miRNA", "piRNA", "siRNA"))
 }
 \arguments{
-\item{vars}{a list}
+\item{vars}{a list of parameters created by set_vars}
+
+\item{method}{a string indicating which processing method should be used}
 }
 \value{
 plots
 }
 \description{
-run the run_all function
+Wrapper function that calls core functions
 }

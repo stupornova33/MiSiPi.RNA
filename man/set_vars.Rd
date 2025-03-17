@@ -8,16 +8,15 @@ set_vars(
   roi,
   bam_file,
   genome,
-  min_read_count = 1,
-  plot_output = TRUE,
   path_to_RNAfold,
   path_to_RNAplot,
+  plot_output = TRUE,
   pi_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
   si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
-  annotate_region = FALSE,
   weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"),
-  gtf_file = FALSE,
   write_fastas = FALSE,
+  annotate_region = FALSE,
+  gtf_file = FALSE,
   out_type = c("pdf", "png", "PDF", "PNG")
 )
 }
@@ -28,25 +27,23 @@ set_vars(
 
 \item{genome}{The path to a genome Fasta file}
 
-\item{min_read_count}{An integer. Default is 1}
-
-\item{plot_output}{Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.}
-
 \item{path_to_RNAfold}{The full path to the RNAfold binary executable.}
 
 \item{path_to_RNAplot}{The full path to the RNAplot binary executable.}
+
+\item{plot_output}{Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.}
 
 \item{pi_pal}{The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
 
 \item{si_pal}{The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
 
-\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.}
-
 \item{weight_reads}{Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.}
 
-\item{gtf_file}{a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.}
-
 \item{write_fastas}{TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.}
+
+\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.}
+
+\item{gtf_file}{a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.}
 
 \item{out_type}{The type of file for plots. Options are "png" or "pdf". Default is PDF.}
 }

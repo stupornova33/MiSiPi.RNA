@@ -1,31 +1,22 @@
-#' run the run_all function
-#' @param vars a list
+#' Wrapper function that calls core functions
+#' @param vars a list of parameters created by set_vars
+#' @param method a string indicating which processing method should be used
 #' @return plots
 
 #' @export
 
-misipi_rna <- function(vars){
-
-
-mapply(new_run_all,
-       vars$chrom_name,
-       vars$reg_start,
-       vars$reg_stop,
-       vars$chromosome,
-       vars$length,
-       vars$bam_file,
-       vars$roi,
-       vars$genome,
-       1,
-       vars$si_pal,
-       vars$pi_pal,
-       vars$plot_output,
-       vars$path_to_RNAfold,
-       vars$path_to_RNAplot,
-       vars$annotate_region,
-       vars$weight_reads,
-       vars$gtf_file,
-       vars$write_fastas,
-       vars$out_type)
-
+misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
+  method <- match.arg(method)
+  
+  if (method == "all") {
+    run_all(vars)
+  } else if (method == "miRNA") {
+    miRNA(vars)
+  } else if (method == "piRNA") {
+    piRNA(vars)
+  } else if (method == "siRNA") {
+    siRNA(vars)
+  } else {
+    stop(paste("`method`:", method, "is not valid."))
+  }
 }
