@@ -211,6 +211,9 @@
     overlap_out <- data.frame(t(z_res))
     colnames(overlap_out) <- overlap_out[1, ]
     overlap_out <- overlap_out[-1, ]
+
+    overlap_out$locus <- prefix
+
     overlap_file <- file.path(wkdir, "piRNA_alloverlaps_counts.txt")
     
     .write.quiet(overlap_out, overlap_file)
@@ -231,23 +234,20 @@
 
     # Put results into table
     z_df <- data.frame("Overlap" = z_res[, 1], "zscore" = .calc_zscore(z_res$count), "ml_zscore" = .calc_ml_zscore(z_res$count))
+
+    overlapz <- z_df %>% dplyr::select(Overlap, ml_zscore)
+    overlapz_out <- data.frame(t(overlapz))
+    colnames(overlapz_out) <- overlapz_out[1, ]
+    overlapz_out <- overlapz_out[-1, ]
+    overlapz_out$locus <- prefix
+    overlapz_file <- file.path(wkdir, "piRNA_alloverlaps_zscores.txt")
+    
+    .write.quiet(overlapz_out, overlapz_file)
+
     # z_res <- NULL
   }
 
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
   f_summarized <- NULL
   r_summarized <- NULL
   overlaps <- NULL
@@ -332,6 +332,11 @@
       phased26_ml_z = phased_ml_z
     )
 
+
+  
+  phased_plus_counts <- phased_plus_counts[order(phased_plus_counts$phased_dist), ]
+  phased_26_plus_counts <- phased_26_plus_counts[order(phased_26_plus_counts$phased26_dist), ]
+
   # combine the results tables
   plus_df <- cbind(phased_plus_counts, phased_26_plus_counts)
 
@@ -415,6 +420,7 @@
       dplyr::rename("phased_num" = phased_num.x)
   }
 
+
   # make the results data table
 
   phased_26_minus_counts <- phased_26_minus_counts %>%
@@ -424,6 +430,11 @@
       phased26_z = phased_z,
       phased26_ml_z = phased_ml_z
     )
+
+
+  # order the data frame by dist
+  phased_minus_counts <- phased_minus_counts[order(phased_minus_counts$phased_dist), ]
+  phased_26_minus_counts <- phased_26_minus_counts[order(phased_26_minus_counts$phased26_dist), ]
 
   minus_df <- cbind(phased_minus_counts, phased_26_minus_counts)
 
@@ -441,13 +452,18 @@
   
   all_phased$zscore <- .calc_zscore(all_phased$count)
   all_phased$ml_zscore <- .calc_ml_zscore(all_phased$count)
+
+  all_phased <- all_phased[order(all_phased$dist), ]
+
   
   tbl <- all_phased %>%
     dplyr::select(ml_zscore)
   tbl <- as.data.frame(t(tbl))
   tbl$locus <- prefix
   colnames(tbl) <- c(all_phased$dist, "locus")
-  tbl <- dplyr::select(tbl, 52, 1:51)
+
+  tbl <- dplyr::select(tbl, 0:50)
+
 
   phased_file <- file.path(wkdir, "phased_minus_piRNA_zscores.txt")
   phased26_file <- file.path(wkdir, "phased26_minus_piRNA_zscores.txt")
