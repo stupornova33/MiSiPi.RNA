@@ -225,8 +225,10 @@
   most_abundant <- read_pileups[most_abundant_idx, ]
   
   # Will write this to a file in order to keep track of which strand of each region had the most expression
+
   # index first value in the even there is more than one most abundant read
   most_abundant_avg_count <- mean(most_abundant$r1_count_avg[1], most_abundant$r2_count_avg[1])
+
 
   read_pileups <- NULL
   
