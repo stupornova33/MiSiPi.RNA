@@ -223,6 +223,9 @@
 
   most_abundant_idx <- which((read_pileups$r1_count_avg + read_pileups$r2_count_avg) == max(read_pileups$r1_count_avg + read_pileups$r2_count_avg))
   most_abundant <- read_pileups[most_abundant_idx, ]
+  
+  # Will write this to a file in order to keep track of which strand of each region had the most expression
+  most_abundant_avg_count <- mean(most_abundant$r1_count_avg, most_abundant$r2_count_avg)
 
   read_pileups <- NULL
   
@@ -357,9 +360,16 @@
   colnames(overhang_output) <- overhangs$shift
   overhang_output$original_locus <- .get_region_string(chrom_name, reg_start, reg_stop)
   overhang_output$most_abundant_locus <- .get_region_string(chrom_name, fold_list$start, fold_list$stop)
-  overhang_output <- overhang_output[, c(10, 11, 1:9)]
+  overhang_output$strand <- strand
+  overhang_output$count_avg <- most_abundant_avg_count
+  overhang_output <- overhang_output[, c(10, 11, 12, 13, 1:9)]
 
-  dice_file <- file.path(wkdir, "miRNA_dicerz.txt")
+  dice_file <- switch(
+    strand,
+    "+" = "miRNA_plus_dicerz.txt",
+    "-" = "miRNA_minus_dicerz.txt"
+  )
+  dice_file <- file.path(wkdir, dice_file)
   .write.quiet(overhang_output, dice_file)
 
   if (plot_output == TRUE) {

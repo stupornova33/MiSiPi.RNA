@@ -81,5 +81,7 @@ miRNA <- function(vars) {
     )
   )
   
+  .compare_miRNA_strands(calling_func = "miRNA")
+  
   .inform_complete(mi_dir)
 }
