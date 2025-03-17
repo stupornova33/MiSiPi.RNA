@@ -4,28 +4,25 @@
 #' @return nothing
 #' @export
 
-
-
-ps2png <- function(path_to_magick_exe, file_dir){
+ps2png <- function(path_to_magick_exe, file_dir) {
+  old_dir <- getwd()
   setwd(file_dir)
   ps_files <- list.files(file_dir, pattern = "_ss.ps")
-  last <- tail(unlist(strsplit(file_dir, "")),1)
-  
+  last <- tail(unlist(strsplit(file_dir, "")), 1)
 
-  for(i in 1:length(ps_files)){
-    if(last == "\\/"){
+  for (i in 1:length(ps_files)) {
+    if (last == "\\/") {
       input_file <- paste0(file_dir, ps_files[i])
       output_file_pref <- unlist(strsplit(ps_files[i], ".ps"))
       out_file <- paste0(file_dir, output_file_pref, ".png")
     } else {
       input_file <- paste0(file_dir, "\\/", ps_files[i])
       output_file_pref <- unlist(strsplit(ps_files[i], ".ps"))
-      out_file <- paste0(file_dir,"\\/", output_file_pref, ".png")
-      
+      out_file <- paste0(file_dir, "\\/", output_file_pref, ".png")
     }
 
-    args <- paste0( "-density 300 ",input_file, " -quality 100 ", out_file)
+    args <- paste0("-density 300 ", input_file, " -quality 100 ", out_file)
     system2(path_to_magick_exe, args = args)
   }
-
+  setwd(old_dir)
 }
