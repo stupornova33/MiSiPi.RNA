@@ -105,10 +105,31 @@
   
   # Set default results for empty data frames
   if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0) {
+    z_res <- data.frame(overlap = 4:30, count = 0)
     z_df <- data.frame(Overlap = c(seq(4, 30)), zscore = 0, ml_zscore = -33)
     heat_results <- matrix(data = 0, nrow = 17, ncol = 17)
     row.names(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
     colnames(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    
+    # Setup overlap counts and overlap zscore data for appending to files
+    overlap_out <- data.frame(t(z_res))
+    colnames(overlap_out) <- overlap_out[1, ]
+    overlap_out <- overlap_out[-1, ]
+    overlap_out$locus <- prefix
+    
+    overlap_file <- file.path(wkdir, "piRNA_alloverlaps_counts.txt")
+    .write.quiet(overlap_out, overlap_file)
+
+    overlapz <- z_df %>%
+      dplyr::select(Overlap, ml_zscore)
+    overlapz_out <- data.frame(t(overlapz))
+    colnames(overlapz_out) <- overlapz_out[1, ]
+    overlapz_out <- overlapz_out[-1, ]
+    overlapz_out$locus <- prefix
+    
+    overlapz_file <- file.path(wkdir, "piRNA_alloverlaps_zscores.txt")
+    .write.quiet(overlapz_out, overlapz_file)
+    
   } else { 
     # Summarize the reads for more efficient processing
     f_summarized <- forward_dt %>%

@@ -39,10 +39,12 @@
   
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
+  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
+  
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
   if (reg_stop - reg_start > 300) {
     cat(file = logfile, "length of region is greater than 300. \n", append = TRUE)
-    return(.null_mi_res())
+    return(.null_mi_res(prefix, strand, wkdir))
   }
 
   bam_obj <- .open_bam(bam_file, logfile)
@@ -72,7 +74,7 @@
   chrom <- NULL
 
   if (nrow(r2_dt) == 0) {
-    return(.null_mi_res())
+    return(.null_mi_res(prefix, strand, wkdir))
   } else {
     locus_length <- reg_stop - reg_start + 1
     r2_dt <- .weight_reads(r2_dt, weight_reads, locus_length, sum(r2_dt$count))
@@ -85,7 +87,7 @@
 
   if (nrow(r1_dt) == 0 || nrow(r2_dt) == 0) {
     cat(file = logfile, "After filtering for width and strand, zero reads remain. Please check bam BAM file.\n", append = TRUE)
-    return(.null_mi_res())
+    return(.null_mi_res(prefix, strand, wkdir))
   }
 
   pileup_start <- min(r1_dt$start)
@@ -128,7 +130,7 @@
   # write out pairs here
   if (nrow(overlaps) == 0) {
     cat(file = logfile, "No overlapping reads found.\n", append = TRUE)
-    return(.null_mi_res())
+    return(.null_mi_res(prefix, strand, wkdir))
   }
 
   read_pileups <- getPileupsMap(
@@ -141,7 +143,7 @@
   overlaps <- NULL
 
   if (nrow(read_pileups) == 0) {
-    return(.null_mi_res())
+    return(.null_mi_res(prefix, strand, wkdir))
   }
 
   read_pileups <- read_pileups %>%
@@ -160,7 +162,7 @@
 
   # loop_coord <- loop_coord %>% dplyr::filter((lstop - lstart + 1) > 2)
   if (nrow(read_pileups) == 0) {
-    return(.null_mi_res())
+    return(.null_mi_res(prefix, strand, wkdir))
   }
 
   mygranges <- GenomicRanges::GRanges(
@@ -285,8 +287,6 @@
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   # make the plots for all the sequences in the "fold_list"
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
-
   mfe <- fold_list$mfe
   perc_paired <- (length(fold_list$helix$i) * 2) / (fold_list$stop - fold_list$start)
   
@@ -336,7 +336,7 @@
   zdf_output <- as.data.frame(t(z_output[,-1]))
   colnames(zdf_output) <- z_output$Overlap
   
-  zdf_file <- file.path(wkdir, "overlap_probability_old.txt")
+  zdf_file <- file.path(wkdir, "overlap_probability.txt")
   .write.quiet(zdf_output, zdf_file)
   
   # calculate the zscores, if there are results
@@ -361,7 +361,7 @@
   # transform data frame from table to row
   overhang_output <- data.frame(t(overhangs$ml_zscore))
   colnames(overhang_output) <- overhangs$shift
-  overhang_output$original_locus <- .get_region_string(chrom_name, reg_start, reg_stop)
+  overhang_output$original_locus <- prefix
   overhang_output$most_abundant_locus <- .get_region_string(chrom_name, fold_list$start, fold_list$stop)
   overhang_output$strand <- strand
   overhang_output$count_avg <- most_abundant_avg_count
