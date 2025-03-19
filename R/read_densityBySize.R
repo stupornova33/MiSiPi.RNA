@@ -137,15 +137,15 @@
 
 
   # close the bamfiles to be deleted
-  Rsamtools::close.BamFile(filtered_pos_18_19_bam)
-  Rsamtools::close.BamFile(filtered_neg_18_19_bam)
-  Rsamtools::close.BamFile(filtered_pos_20_22_bam)
-  Rsamtools::close.BamFile(filtered_neg_20_22_bam)
-  Rsamtools::close.BamFile(filtered_pos_23_25_bam)
-  Rsamtools::close.BamFile(filtered_neg_23_25_bam)
-  Rsamtools::close.BamFile(filtered_pos_26_32_bam)
-  Rsamtools::close.BamFile(filtered_neg_26_32_bam)
-
+  .close_bam(filtered_pos_18_19_bam)
+  .close_bam(filtered_neg_18_19_bam)
+  .close_bam(filtered_pos_20_22_bam)
+  .close_bam(filtered_neg_20_22_bam)
+  .close_bam(filtered_pos_23_25_bam)
+  .close_bam(filtered_neg_23_25_bam)
+  .close_bam(filtered_pos_26_32_bam)
+  .close_bam(filtered_neg_26_32_bam)
+  
   # Clean up, clean up
   del_files <- list.files(path = bam_path, pattern = "\\.bam$")
   del_files <- append(del_files, list.files(path = bam_path, pattern = "\\.bai$"))
