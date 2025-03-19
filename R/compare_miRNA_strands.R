@@ -1,4 +1,4 @@
-.compare_miRNA_strands <- function(calling_func = c("miRNA", "all")) {
+.compare_miRNA_strands <- function(chrom, start, stop, calling_func = c("miRNA", "all")) {
   
   calling_func <- match.arg(calling_func)
   output_dir <- switch(
@@ -44,8 +44,10 @@
     return()
   }
   
+  # Create a vector of region strings for iterating through
   original_loci <- unique(c(plus_df$original_locus, minus_df$original_locus))
-  nRows <- length(original_loci)
+  bed_loci <- .get_region_string(chrom, start, stop)
+  nRows <- length(bed_loci)
   
   final_df <- data.frame(
     original_locus = character(nRows),
@@ -63,26 +65,42 @@
     check.names = FALSE
   )
   
-  for (i in seq_along(original_loci)) {
-    plus_row <- plus_df[plus_df$original_locus == original_loci[i], ]
-    minus_row <- minus_df[minus_df$original_locus == original_loci[i], ]
+  for (locus in original_loci) {
+    plus_row <- plus_df[plus_df$original_locus == locus, ]
+    minus_row <- minus_df[minus_df$original_locus == locus, ]
 
-    if (nrow(plus_row) == 0) {
+    nRow_plus <- nrow(plus_row)
+    nRow_minus <- nrow(minus_row)
+    
+    # Get each row index where this locus is present in the bed file
+    bed_idx <- which(bed_loci %in% locus)
+    
+    # If we have more than 1 result, then they are duplicates
+    # Take the first row
+    plus_row <- plus_row %>%
+      dplyr::slice_head(n = 1)
+    minus_row <- minus_row %>%
+      dplyr::slice_head(n = 1)
+    
+    # There will never be a situation where both nRows are 0
+    if (nRow_plus == 0) {
       minus_row <- minus_row %>%
         dplyr::select(-count_avg)
-      final_df[i,] <- minus_row
-    } else if (nrow(minus_row) == 0) {
+
+      final_df[bed_idx,] <- minus_row
+    } else if (nRow_minus == 0) {
       plus_row <- plus_row %>%
         dplyr::select(-count_avg)
-      final_df[i,] <- plus_row
+      
+      final_df[bed_idx,] <- plus_row
     } else if (plus_row$count_avg > minus_row$count_avg) {
       plus_row <- plus_row %>%
         dplyr::select(-count_avg)
-      final_df[i,] <- plus_row
+      final_df[bed_idx,] <- plus_row
     } else {
       minus_row <- minus_row %>%
         dplyr::select(-count_avg)
-      final_df[i,] <- minus_row
+      final_df[bed_idx,] <- minus_row
     }
   }
   
