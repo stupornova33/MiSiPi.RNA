@@ -81,7 +81,7 @@ miRNA <- function(vars) {
     )
   )
   
-  .compare_miRNA_strands(calling_func = "miRNA")
+  .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, calling_func = "miRNA")
   
   .inform_complete(mi_dir)
 }

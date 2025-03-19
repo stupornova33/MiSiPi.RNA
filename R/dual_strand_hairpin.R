@@ -93,6 +93,7 @@
   sRes$folded <- FALSE
   
   for (strand in strands) {
+    null_results <- FALSE
     strand_name <- switch(strand, "+" = "plus", "-" = "minus")
     
     chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = strand)
@@ -132,6 +133,7 @@
         "+" = 2
       )
       null_res <- .null_hp_res()[[null_res_idx]]
+      null_results <- TRUE
     }
     
     # calculate phasing signatures
@@ -205,8 +207,10 @@
     }
     
     # results for the ML table
-    if ("null_res" %in% names(sRes[[strand]])) {
-      sRes[[strand_name]]$res <- sRes[[strand_name]]$null_res
+    if (null_results) {
+      sRes$MFE <- null_res[[strand_name]]$MFE
+      sRes$perc_paired <- null_res[[strand_name]]$perc_paired
+      sRes[[strand_name]]$res <- null_res
     } else {
       res <- list(
         MFE = sRes$MFE,

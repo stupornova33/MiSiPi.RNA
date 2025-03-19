@@ -191,67 +191,72 @@
 
   all_widths <- NULL
 
-  # TO DO: make a null_res to return
+  # If no data present, set machine learning defaults
   if (nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) {
-    return()
-  }
-
-  perc_plus <- nrow(forward_dt) / (nrow(forward_dt) + nrow(reverse_dt))
-  perc_minus <- nrow(reverse_dt) / (nrow(reverse_dt) + nrow(forward_dt))
-
-  # combine perc minus and perc plus into "strand bias"
-
-  if (perc_plus > perc_minus) {
-    local_ml$strand_bias <- perc_plus
+    
+    local_ml$strand_bias <- -33
+    local_ml$perc_GC <- -33
+    local_ml$ave_size <- -33
+    local_ml$perc_first_nucT <- -33
+    local_ml$perc_A10 <- -33
+    
   } else {
-    local_ml$strand_bias <- perc_minus
-  }
-
-  all_seqs <- c(forward_dt$seq, reverse_dt$seq)
-  local_ml$perc_GC <- .get_GC_content(all_seqs)
-
-  read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
-
-  ave_size <- .highest_sizes(read_dist)
-
-  local_ml$ave_size <- ave_size
-
-  cat(file = logfile, "Creating size plots\n", append = TRUE)
-
-  if (plot_output == TRUE) {
-    size_dir <- file.path(getwd(), "run_all", "size_plots")
-
-    if (!dir.exists(size_dir)) {
-      dir.create(size_dir)
+    perc_plus <- nrow(forward_dt) / (nrow(forward_dt) + nrow(reverse_dt))
+    perc_minus <- nrow(reverse_dt) / (nrow(reverse_dt) + nrow(forward_dt))
+    
+    # combine perc minus and perc plus into "strand bias"
+    if (perc_plus > perc_minus) {
+      local_ml$strand_bias <- perc_plus
+    } else {
+      local_ml$strand_bias <- perc_minus
     }
-
-    plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
-
-    size_plot <- .plot_sizes(read_dist)
-    plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
-    plot_file <- file.path(size_dir, plot_filename)
-    ggplot2::ggsave(
-      plot = size_plot,
-      filename = plot_file,
-      device = out_type,
-      height = 8,
-      width = 11,
-      units = "in"
-    )
+    
+    all_seqs <- c(forward_dt$seq, reverse_dt$seq)
+    local_ml$perc_GC <- .get_GC_content(all_seqs)
+    
+    read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
+    
+    ave_size <- .highest_sizes(read_dist)
+    
+    local_ml$ave_size <- ave_size
+    
+    cat(file = logfile, "Creating size plots\n", append = TRUE)
+    
+    if (plot_output == TRUE) {
+      size_dir <- file.path(getwd(), "run_all", "size_plots")
+      
+      if (!dir.exists(size_dir)) {
+        dir.create(size_dir)
+      }
+      
+      plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
+      
+      size_plot <- .plot_sizes(read_dist)
+      plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
+      plot_file <- file.path(size_dir, plot_filename)
+      ggplot2::ggsave(
+        plot = size_plot,
+        filename = plot_file,
+        device = out_type,
+        height = 8,
+        width = 11,
+        units = "in"
+      )
+    }
+    
+    local_ml$perc_first_nucT <- .first_nuc_T(forward_dt, reverse_dt)
+    
+    all_nuc_10 <- all_seqs %>%
+      stringr::str_sub(10, 10)
+    all_nuc_10_A <- sum(all_nuc_10 == "A")
+    local_ml$perc_A10 <- all_nuc_10_A / length(all_nuc_10)
+    
+    all_seqs <- NULL
+    all_nuc_10 <- NULL
+    all_nuc_10_A <- NULL
+    max_sizes <- NULL
+    read_dist <- NULL
   }
-
-  local_ml$perc_first_nucT <- .first_nuc_T(forward_dt, reverse_dt)
-
-  all_nuc_10 <- all_seqs %>%
-    stringr::str_sub(10, 10)
-  all_nuc_10_A <- sum(all_nuc_10 == "A")
-  local_ml$perc_A10 <- all_nuc_10_A / length(all_nuc_10)
-
-  all_seqs <- NULL
-  all_nuc_10 <- NULL
-  all_nuc_10_A <- NULL
-  max_sizes <- NULL
-  read_dist <- NULL
 
   ############################################################################ run siRNA function #######################################################################
   # calculate

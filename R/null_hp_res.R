@@ -3,66 +3,41 @@
 # @return list
 
 .null_hp_res <- function() {
-  neg_results <- function() {
-    MFE <- 0
-    
+  null_results <- function() {
     dicer_tbl <- data.frame(
-      shift = c(seq(-4, 4)),
-      zscore = c(rep(NA, times = 9)))
+      shift = seq(-4, 4),
+      zscore = rep(0, times = 9),
+      ml_zscore = rep(-33, times = 9)
+    )
     
     phased_tbl <- data.frame(
-      phased_dist = c(seq(0, 50)),
-      phased_num = c(rep(0, times = 51)),
-      zscore = c(rep(NA, times = 51)))
-
-    minus_hp_phasedz <- -33
-    minus_hp_overhangz <- -33
+      dist = seq(0, 50),
+      phased_num = rep(0, times = 51),
+      zscore = rep(0, times = 51),
+      ml_zscore = rep(-33, times = 51)
+    )
     
     return(list(
-      minusMFE = MFE,
-      minus_hp_overhangz = minus_hp_overhangz,
-      minus_hp_phasedz = minus_hp_phasedz,
+      MFE = 0,
+      hp_overhangz = 0,
+      hp_overhang_mlz = -33,
+      hp_phasedz = 0,
+      hp_phased_mlz = -33,
+      phased_tbl.dist = phased_tbl$dist,
+      phased_tbl.phased_z = phased_tbl$zscore,
+      phased_tbl.phased_mlz = phased_tbl$ml_zscore,
       dicer_tbl.shift = dicer_tbl$shift,
       dicer_tbl.zscore = dicer_tbl$zscore,
-      phased_tbl.phased_z = phased_tbl$zscore,
-      phased_tbl.dist = phased_tbl$dist,
+      dicer_tbl.ml_zscore = dicer_tbl$ml_zscore,
       perc_paired = 0
     ))
   }
 
-
-
-  pos_results <- function() {
-    MFE <- 0
-    
-    dicer_tbl <- data.frame(
-      shift = c(seq(-4, 4)),
-      zscore = c(rep(NA, times = 9)))
-    
-    phased_tbl <- data.frame(
-      dist = c(seq(0, 50)),
-      phased_num = c(rep(0, times = 51)),
-      zscore = c(rep(NA, times = 51)))
-    
-    plus_hp_phasedz <- -33
-    plus_hp_overhangz <- -33
-    
-    return(list(
-      plusMFE = MFE,
-      plus_hp_overhangz = plus_hp_overhangz,
-      plus_hp_phasedz = plus_hp_phasedz,
-      dicer_tbl.shift = dicer_tbl$shift,
-      dicer_tbl.zscore = dicer_tbl$zscore,
-      phased_tbl.phased_z = phased_tbl$zscore,
-      phased_tbl.dist = phased_tbl$dist,
-      perc_paired = 0
-    ))
-  }
-
-  minus_res <- neg_results()
-  plus_res <- pos_results()
+  minus_res <- null_results()
+  plus_res <- null_results()
   
   return(list(
     minus_res = minus_res,
-    plus_res = plus_res))
+    plus_res = plus_res)
+  )
 }

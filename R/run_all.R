@@ -70,7 +70,7 @@ run_all <- function(vars) {
   )
   
   # Compare dicer zscores in miRNA_zscore files and write final miRNA_zscore.txt
-  .compare_miRNA_strands(calling_func = "all")
+  .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, calling_func = "all")
   
   .inform_complete(all_dir)
 }
