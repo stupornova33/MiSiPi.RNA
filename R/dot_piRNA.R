@@ -571,7 +571,7 @@
       print(all_plot)
       grDevices::dev.off()
     } else {
-      grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_pi-zscore.pdf")), width = 10, height = 11)
+      grDevices::cairo_pdf(file = file.path(wkdir, paste0(prefix, "_pi-zscore.pdf")), width = 10, height = 11)
       print(all_plot)
       grDevices::dev.off()
     }

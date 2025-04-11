@@ -1,22 +1,31 @@
 #' ml_probability
 #' @param path_to_table A string specifying the full path to the folder which contains the _ml table. This directory will be the location of the probability plots.
 #' @param table A string specifying the full path to the _ml table produced by misipi_rna
+#' @param library_size An integer specifying the number of mapped reads from the BAM file that was used to create the table. This is used for RPM-mapped count normalization.
 #' @return nothing
 #' @export
 
-ml_probability <- function(path_to_table, table) {
+ml_probability <- function(path_to_table, table, library_size) {
   wkdir <- setwd(path_to_table)
 
   ml_table <- read.table(paste0(path_to_table, table), header = TRUE)
+  
+  ml_table <- ml_table %>% dplyr::distinct()
   names <- ml_table$locus
-  ml_table <- ml_table %>% dplyr::select(-c(locus, locus_length))
-
+  #ml_table <- ml_table %>% dplyr::select(-c(locus, locus_length))
+  
+  # normalize read counts 
+  ml_table <- ml_table %>% dplyr::select(-c(locus_length))
   ml_table$mirna_mfe <- abs(ml_table$mirna_mfe)
 
   ml_table$hp_mfe <- abs(ml_table$hp_mfe)
 
+  ml_table <- ml_table %>% dplyr::mutate(pi_norm = max_pi_count/library_size/1000000, 
+                                         si_norm = num_si_dicer_reads/library_size/1000000) %>%
+    dplyr::select(-c(num_si_dicer_reads, max_pi_count, locus))
+  #for testing whether removing low cor variables helps
 
-  model_path <- system.file("extdata", "xgb_all_classes.rds", package = "MiSiPi.RNA")
+  model_path <- system.file("extdata", "xgb_tuned.rds", package = "MiSiPi.RNA")
   all_model <- xgboost::xgb.load(model_path)
 
   # columns are always in alphabetical order
@@ -31,16 +40,20 @@ ml_probability <- function(path_to_table, table) {
   colnames(all_df) <- c("Prob. cisNAT", "Prob. contam", "Prob. hpRNA", "Prob. miRNA", "Prob. piRNA")
 
   all_df <- all_df * 100
-  all_df$locus <- names
-  all_df <- all_df %>% dplyr::select(c(locus, `Prob. cisNAT`, `Prob. contam`, `Prob. hpRNA`, `Prob. miRNA`, `Prob. piRNA`))
+  #all_df$locus <- names
+  #all_df <- all_df %>% dplyr::select(c(locus, `Prob. cisNAT`, `Prob. contam`, `Prob. hpRNA`, `Prob. miRNA`, `Prob. piRNA`))
 
-  all_df[, 2:6] <- round(all_df[, 2:6], digits = 2)
+  all_df <- round(all_df, digits = 2)
+
   ml_file <- file.path(path_to_table, "ml_probability.txt")
-  .write.quiet(all_df, ml_file)
+  out_tab <- all_df
+  out_tab$locus <- names
+
+  .write.quiet(out_tab, ml_file)
   
   max <- c(100, 100, 100, 100, 100)
   min <- c(0, 0, 0, 0, 0)
-
+  
 
   if (!dir.exists(paste0(wkdir, "/radar_plots/"))) {
     dir.create(paste0(wkdir, "/radar_plots/"))
@@ -49,7 +62,6 @@ ml_probability <- function(path_to_table, table) {
   radar_dir <- paste0(wkdir, "/radar_plots/")
   for (i in 1:nrow(all_df)) {
     new_df <- rbind(max, min, all_df[i, ])
-
     rownames(new_df) <- c("Max.", "Min.", "Values")
 
     png(paste0(radar_dir, names[i], "_prob.png"), width = 850, height = 800, units = "px")
