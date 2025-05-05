@@ -14,6 +14,13 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     dir.create(paste0(path_to_tables, "summary_inputs"))
   }
 
+  linked_exist <- list.files(path_to_tables, pattern = "linked_*")
+  
+  suppressMessages(
+    if(!identical(linked_exist, character(0))){
+      file.remove(paste0(path_to_tables, linked_exist))
+    }
+  )
   input_dir <- paste0(path_to_tables, "summary_inputs/")
 
   ml_file <- list.files(path_to_tables, pattern = "_ml.txt")
@@ -33,9 +40,8 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     size_dist_mat <- size_dist_mat[-c(idx), ]
   }
 
-  names <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
-  colnames(size_dist_mat) <- names
-  heatmap <- pheatmap::pheatmap(size_dist_mat, main = "Read size distribution", cluster_cols = FALSE, show_rownames = F, show_colnames = T, scale = "row")
+  heatmap <- pheatmap::pheatmap(size_dist_mat, main = "Read size distribution", cluster_cols = FALSE, show_rownames = F, show_colnames = T, 
+                                scale = "row", labels_col =  c("16", "", "18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32"))
 
   ggplot2::ggsave(heatmap, file = paste0(input_dir, "size_dist_heatmap.png"))
 
@@ -43,7 +49,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
   nplots <- vector()
   ################################################################# siRNA ###################################################################
   if (type == "siRNA" || type == "sirna") {
-    dicerz <- read.table(paste0(path_to_tables, "siRNA_dir/", "siRNA_dicerz.txt"), header = TRUE)
+    dicerz <- read.table(paste0(path_to_tables, "siRNA_outputs/", "siRNA_dicerz.txt"), header = TRUE)
     dicerz[is.na(dicerz)] <- -33
     dicerz <- dicerz %>% dplyr::select(-c(locus))
     colnames(dicerz) <- c("-4", "-3", "-2", "-1", "0", "1", "2", "3", "4")
@@ -68,10 +74,12 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
       print("siRNA dicer heat table contained two few loci to make a clustered heatmap.")
     }
 
-    minus_hp_phasedz <- read.table(paste0(path_to_tables, "siRNA_dir/", "minus_hp_phasedz.txt"), header = TRUE)
+    minus_hp_phasedz <- read.table(paste0(path_to_tables, "siRNA_outputs/", "minus_hp_phasedz.txt"), header = TRUE)
     minus_hp_phasedz[is.na(minus_hp_phasedz)] <- -33
-    colnames(minus_hp_phasedz) <- c("locus", seq(1, 51, 1))
-    minus_hp_phasedz <- minus_hp_phasedz %>% dplyr::select(-c(locus))
+
+    minus_hp_phasedz <- minus_hp_phasedz[,-c(1)]
+    minus_hp_phasedz <- minus_hp_phasedz[, 1:10]
+    
     var <- RowVar(minus_hp_phasedz)
     idx <- which(var == 0)
     if (length(idx) > 0) {
@@ -79,19 +87,22 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     }
 
     if (nrow(minus_hp_phasedz) > 2) {
-      minus_hp_heat <- pheatmap::pheatmap(minus_hp_phasedz, main = "Minus hp phased z-scores", fontsize = 15, cluster_cols = FALSE, show_rownames = FALSE, cluster_rows = TRUE, scale = "row")
+      minus_hp_heat <- pheatmap::pheatmap(minus_hp_phasedz, main = "Minus hp phased z-scores", fontsize = 10, cluster_cols = FALSE, 
+                                          show_rownames = FALSE, cluster_rows = TRUE, scale = "row", 
+                                          labels_col = c("1","", "3", "", "5", "", "7", "", "9", ""))
+      
       ggplot2::ggsave(minus_hp_heat, file = paste0(input_dir, "minus_hp_phasedz_heat.png"))
       # nplots <- append(nplots, paste0(path_to_tables, 'minus_hp_heatmap.png'))
-      nplots <- append(nplots, paste0(input_dir, "minus_phasedz_heat.png"))
+      nplots <- append(nplots, paste0(input_dir, "minus_hp_phasedz_heat.png"))
     } else {
       print("Minus_hp_phasedz table contained two few loci to make a clustered heatmap.")
     }
 
-    plus_hp_phasedz <- read.table(paste0(path_to_tables, "siRNA_dir/", "plus_hp_phasedz.txt"), header = TRUE)
+    plus_hp_phasedz <- read.table(paste0(path_to_tables, "siRNA_outputs/", "plus_hp_phasedz.txt"), header = TRUE)
 
     plus_hp_phasedz <- plus_hp_phasedz %>% dplyr::select(-c(V1))
     plus_hp_phasedz <- na.omit(plus_hp_phasedz)
-    colnames(plus_hp_phasedz) <- c(seq(1, 10))
+    #colnames(plus_hp_phasedz) <- c(seq(1, 10))
     plus_hp_phasedz <- plus_hp_phasedz[, 1:10]
     var <- RowVar(plus_hp_phasedz)
     idx <- which(var == 0)
@@ -103,7 +114,8 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     # plus_hp_phasedz <- plus_hp_phasedz[,1:10]
 
     if (nrow(plus_hp_phasedz) > 2) {
-      plus_hp_heat <- pheatmap::pheatmap(plus_hp_phasedz, main = "Plus hp phased z-scores", fontsize = 14, cluster_cols = FALSE, show_rownames = FALSE, cluster_rows = TRUE, scale = "row")
+      plus_hp_heat <- pheatmap::pheatmap(plus_hp_phasedz, main = "Plus hp phased z-scores", fontsize = 10, cluster_cols = FALSE, show_rownames = FALSE, 
+                                         cluster_rows = TRUE, scale = "row",  labels_col = c("1","", "3", "", "5", "", "7", "", "9", ""))
       ggplot2::ggsave(plus_hp_heat, file = paste0(input_dir, "plus_hp_phasedz_heat.png"))
 
       nplots <- append(nplots, paste0(input_dir, "plus_hp_phasedz_heat.png"))
@@ -124,7 +136,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
 
     ############################################################### miRNA ##################################################################
   } else if (type == "miRNA" || type == "mirna") {
-    mirna_dicerz <- read.table(paste0(path_to_tables, "miRNA_dir/", "miRNA_dicerz.txt"), header = TRUE) %>% dplyr::select(-c(locus))
+    mirna_dicerz <- read.table(paste0(path_to_tables, "miRNA_outputs/", "miRNA_dicerz.txt"), header = TRUE) %>% dplyr::select(-c(locus))
     colnames(mirna_dicerz) <- c(seq(-4, 4, by = 1))
     mirna_dicerz[is.na(mirna_dicerz)] <- -33
 
@@ -134,7 +146,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
       mirna_dicerz <- mirna_dicerz[-c(idx), ]
     }
     if (nrow(mirna_dicerz) > 2) {
-      mirna_dicerz_heat <- pheatmap::pheatmap(mirna_dicerz, main = "miRNA Dicer Z-scores", fontsize = 14, cluster_cols = FALSE, show_rownames = FALSE, cluster_rows = TRUE, scale = "row")
+      mirna_dicerz_heat <- pheatmap::pheatmap(mirna_dicerz, main = "miRNA Dicer Z-scores", fontsize = 12, cluster_cols = FALSE, show_rownames = FALSE, cluster_rows = TRUE, scale = "row")
       ggplot2::ggsave(mirna_dicerz_heat, file = paste0(input_dir, "mirna_dicerz_heatmap.png"))
 
       nplots <- append(nplots, paste0(input_dir, "mirna_dicerz_heatmap.png"))
@@ -154,11 +166,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
 
     ################################################################# piRNA #####################################################################
   } else {
-    all_pirna_phasedz <- read.table(paste0(path_to_tables, "piRNA_dir/", "all_phased_piRNA_zscores.txt"), header = TRUE) %>% dplyr::select(-c(locus))
-    colnames(all_pirna_phasedz) <- c(
-      "0", "", "", "3", "", "", "6", "", "", "9", "", "", "12", "", "", "15", "", "", "18", "", "", "21", "", "", "24", "", "",
-      "27", "", "", "30", "", "", "33", "", "", "36", "", "", "39", "", "", "42", "", "", "45", "", "", "48", "", ""
-    )
+    all_pirna_phasedz <- read.table(paste0(path_to_tables, "piRNA_outputs/", "all_phased_piRNA_zscores.txt"), header = TRUE) %>% dplyr::select(-c(locus))
 
     all_pirna_phasedz[is.na(all_pirna_phasedz)] <- -33
     var <- RowVar(all_pirna_phasedz)
@@ -169,7 +177,12 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     }
 
     if (nrow(all_pirna_phasedz) > 2) {
-      pi_phased_heat <- pheatmap::pheatmap(all_pirna_phasedz, main = "phased piRNA Z-scores", fontsize_col = 10, cluster_cols = FALSE, show_rownames = FALSE, cluster_rows = TRUE, scale = "row")
+      pi_phased_heat <- pheatmap::pheatmap(all_pirna_phasedz, main = "phased piRNA Z-scores", fontsize_col = 12, 
+                                           cluster_cols = FALSE, show_rownames = FALSE, cluster_rows = TRUE, scale = "row",
+                                           labels_col = c(
+                                             "0", "", "", "3", "", "", "6", "", "", "9", "", "", "12", "", "", "15", "", "", "18", "", "", "21", "", "", "24", "", "",
+                                             "27", "", "", "30", "", "", "33", "", "", "36", "", "", "39", "", "", "42", "", "", "45", "", "", "48", "", ""
+                                           ))
 
       ggplot2::ggsave(pi_phased_heat, file = paste0(input_dir, "pi_phased_heat.png"))
 
@@ -178,7 +191,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
       print("piRNA phasedz table contained two few loci to make a clustered heatmap.")
     }
 
-    max_piz_overlap <- read.table(paste0(path_to_tables, "piRNA_dir/", "piRNA_alloverlaps_counts.txt"), header = TRUE)
+    max_piz_overlap <- read.table(paste0(path_to_tables, "piRNA_outputs/", "piRNA_alloverlaps_counts.txt"), header = TRUE)
 
     colnames(max_piz_overlap) <- c(
       "4", "", "6", "", "8", "", "10", "", "12", "", "14", "", "16", "", "18", "", "20",
@@ -194,7 +207,10 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     }
 
     if (nrow(max_piz_overlap) > 0) {
-      pi_overlap <- pheatmap::pheatmap(max_piz_overlap, main = "Overlap Counts", fontsize_col = 12, cluster_cols = FALSE, show_rownames = FALSE, cluster_rows = TRUE, scale = "row")
+      pi_overlap <- pheatmap::pheatmap(max_piz_overlap, main = "Overlap Counts", fontsize_col = 12, cluster_cols = FALSE, 
+                                       show_rownames = FALSE, cluster_rows = TRUE, scale = "row",
+                                       labels_col = c("4", "", "6", "", "8", "", "10", "", "12", "", "14", "", "16", "", "18", "", "20",
+                                         "", "22", "", "24", "", "26", "", "28", "", "30"))
       ggplot2::ggsave(pi_overlap, file = paste0(input_dir, "pi_overlapz_heat.png"))
 
       # nplots <- append(nplots, paste0(path_to_tables, "max_piz_overlap_heat.png"))
@@ -203,7 +219,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
       print("max_piz_overlap contained two few loci to make a clustered heatmap.")
     }
 
-    minus_phasedz <- read.table(paste0(path_to_tables, "piRNA_dir/", "phased_minus_piRNA_zscores.txt"), header = FALSE) %>% dplyr::select(c(V2, V3, V4, V5))
+    minus_phasedz <- read.table(paste0(path_to_tables, "piRNA_outputs/", "phased_minus_piRNA_zscores.txt"), header = FALSE) %>% dplyr::select(c(V2, V3, V4, V5))
 
     minus_phasedz[is.na(minus_phasedz)] <- -33
 
@@ -227,7 +243,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     }
 
 
-    plus_phasedz <- read.table(paste0(path_to_tables, "piRNA_dir/", "phased_plus_piRNA_zscores.txt"), header = TRUE, sep = "\t") %>%
+    plus_phasedz <- read.table(paste0(path_to_tables, "piRNA_outputs/", "phased_plus_piRNA_zscores.txt"), header = TRUE, sep = "\t") %>%
       dplyr::select(V2, V3, V4, V5)
     plus_phasedz[is.na(plus_phasedz)] <- -33
     colnames(plus_phasedz) <- c("0nt", "1nt", "2nt", "3nt")
@@ -270,10 +286,10 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
 
   ml_tab <- ml_tab %>% dplyr::select(c(locus, mi_plus_col, mi_minus_col, pi_col, si_col, prob_col), 7:ncol(ml_tab))
 
-  si_files <- list.files(paste0(path_to_tables, "siRNA_dir/"), pattern = "_si_plot")
-  mi_plus_files <- list.files(paste0(path_to_tables, "miRNA_dir/"), pattern = "_\\+_combined")
-  mi_minus_files <- list.files(paste0(path_to_tables, "miRNA_dir/"), pattern = "_-_combined")
-  pi_files <- list.files(paste0(path_to_tables, "piRNA_dir/"), pattern = "_pi-zscore")
+  si_files <- list.files(paste0(path_to_tables, "siRNA_outputs/"), pattern = "_si_plot")
+  mi_plus_files <- list.files(paste0(path_to_tables, "miRNA_outputs/"), pattern = "_\\+_combined")
+  mi_minus_files <- list.files(paste0(path_to_tables, "miRNA_outputs/"), pattern = "_-_combined")
+  pi_files <- list.files(paste0(path_to_tables, "piRNA_outputs/"), pattern = "_pi-zscore")
 
   if (ml_plots == TRUE) {
     radar_files <- list.files(paste0(path_to_tables, "radar_plots/"), pattern = "_prob.png")
@@ -287,7 +303,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
     loc <- ml_tab$locus[i]
     mi_plus_idx <- grep(loc, mi_plus_files)
     if (!identical(mi_plus_idx, integer(0))) {
-      mi_plus_file <- paste0(pref, "'", "miRNA_dir/", mi_plus_files[mi_plus_idx], "'", suff, "miRNA plus</a>")
+      mi_plus_file <- paste0(pref, "'", "miRNA_outputs/", mi_plus_files[mi_plus_idx], "'", suff, "miRNA plus</a>")
     } else {
       mi_plus_file <- NA
     }
@@ -295,7 +311,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
 
     mi_minus_idx <- grep(loc, mi_minus_files)
     if (!identical(mi_minus_idx, integer(0))) {
-      mi_minus_file <- paste0(pref, "'", "miRNA_dir/", mi_minus_files[mi_minus_idx], "'", suff, "miRNA minus</a>")
+      mi_minus_file <- paste0(pref, "'", "miRNA_outputs/", mi_minus_files[mi_minus_idx], "'", suff, "miRNA minus</a>")
     } else {
       mi_minus_file <- NA
     }
@@ -303,7 +319,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
 
     pi_idx <- grep(loc, pi_files)
     if (!identical(pi_idx, integer(0))) {
-      pi_file <- paste0(pref, "'", "piRNA_dir/", pi_files[pi_idx], "'", suff, "piRNA</a>")
+      pi_file <- paste0(pref, "'", "piRNA_outputs/", pi_files[pi_idx], "'", suff, "piRNA</a>")
     } else {
       pi_file <- NA
     }
@@ -311,14 +327,14 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
 
     si_idx <- grep(loc, si_files)
     if (!identical(si_idx, integer(0))) {
-      si_file <- paste0(pref, "'", "siRNA_dir/", si_files[si_idx], "'", suff, "siRNA</a>")
+      si_file <- paste0(pref, "'", "siRNA_outputs/", si_files[si_idx], "'", suff, "siRNA</a>")
     } else {
       si_file <- NA
     }
     ml_tab$si_col[i] <- si_file
 
     if (ml_plots == TRUE) {
-      radar_idx <- grep(loc, radar_plots)
+      radar_idx <- grep(loc, radar_files)
       if (!identical(radar_idx, integer(0))) {
         radar_file <- paste0(pref, "'", "radar_plots/", radar_files[radar_idx], "'", suff, "probability<a>")
       } else {
