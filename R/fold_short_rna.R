@@ -43,7 +43,7 @@
   }
 
   # Delete unwanted .ps file
-  ps_filename_to_remove <- paste0(chrom_name, "-", start - 1, "_", stop - 1, "_ss.ps")
+  ps_filename_to_remove <- paste0(chrom_name, "-", start - 1, "_", stop - 1, "_ss.eps")
   file.remove(file.path(ps_filename_to_remove))
 
   pos_vec <- seq(2, length(fold), by = 2)
