@@ -27,9 +27,8 @@ library(MiSiPi.RNA)
 ```
 
 ### RNAfold
-In order for this package to work, you must also have RNAfold from the ViennaRNA
-package installed. You will need the path to the RNAfold executable.
-See https://www.tbi.univie.ac.at/RNA/ for installation.
+In order for this package to work, you must also have RNAfold and RNAplot (version 2.7.0) from the ViennaRNA
+package installed. See https://www.tbi.univie.ac.at/RNA/ for installation.
 
 #### Optional dependencies 
 For converting the .eps output files from the miRNA module to .png, install [ImageMagick](https://imagemagick.org/index.php) and [ghostscript](https://www.ghostscript.com/), 
