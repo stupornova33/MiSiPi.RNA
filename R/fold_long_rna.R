@@ -68,7 +68,7 @@
   start <- start
   stop <- stop
 
-  ps_file_to_remove <- file.path(dirname(dirname(wkdir)), "rna.eps")
+  ps_file_to_remove <- file.path(dirname(dirname(wkdir)), "rna.ps")
   file.remove(ps_file_to_remove)
 
   return(list(start, stop, mfe, coord, vien_struct))
