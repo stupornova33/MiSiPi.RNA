@@ -22,7 +22,7 @@ set_vars <- function(roi, bam_file, genome,
                      weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), 
                      write_fastas = FALSE, annotate_region = FALSE, gtf_file = FALSE,
                      out_type = c("pdf", "png", "PDF", "PNG")) {
-  ## Parameter Validation
+  #### Parameter Validation ####
   # roi
   stopifnot("Parameter `roi` must be a valid filepath to a BED file." = file.exists(roi))
   bed_columns_vector <- utils::count.fields(roi, sep = "\t")
@@ -64,8 +64,83 @@ set_vars <- function(roi, bam_file, genome,
   # out_type
   out_type <- match.arg(out_type)
   out_type <- tolower(out_type)
-  ## End Parameter Validation
-
+  
+  #### Vienna Software Version Validation ####
+  os <- Sys.info()["sysname"]
+  
+  # To be used for RNAFold and RNAPlot version checking
+  getVersion <- function(os, supplied_path) {
+    if (os == "Windows") {
+      rnafold_version <- system2(
+        command = supplied_path,
+        args = "--version",
+        stdout = TRUE,
+        wait = TRUE,
+        invisible = TRUE
+      )
+    } else if (os == "Linux" | os == "Darwin") {
+      rnafold_version <- system(
+        command = paste(supplied_path, "--version", sep = " "),
+        intern = TRUE
+      )
+    } else {
+      warning("Operating system is not Windows or Linux/Darwin. Report as a bug if you think this is a mistake.")
+      return(NULL)
+    }
+    return(rnafold_version)
+  }
+  
+  # Attempt a system call to get RNAFold version
+  tryCatch(
+    rnafold_version <- getVersion(os, path_to_RNAfold),
+    error = function(e) {
+      if (grepl("not found", e$message)) {
+        msg <- paste(cli::col_br_red("PATH ERROR:"), path_to_RNAfold, "not found. Provide correct path to RNAfold.")
+      } else {
+        msg <- e$message
+      }
+      cli::cli_abort(msg, call = NULL)
+    }
+  )
+  
+  # Attempt a system call to get RNAPlot version
+  tryCatch(
+    rnaplot_version <- getVersion(os, path_to_RNAplot),
+    error = function(e) {
+      if (grepl("not found", e$message)) {
+        msg <- paste(cli::col_br_red("PATH ERROR:"), path_to_RNAplot, "not found. Provide correct path to RNAplot.")
+      } else {
+        msg <- e$message
+      }
+      cli::cli_abort(msg, call = NULL)
+    }
+  )
+  
+  # Validate RNAFold
+  rnafold_version <- stringr::str_split_1(rnafold_version, " ")[2]
+  # str_split uses regex to split, so when splitting by ".", brackets must be placed around it
+  version_split <- stringr::str_split_1(rnafold_version, "[.]")
+  major <- as.integer(version_split[1])
+  minor <- as.integer(version_split[2])
+  
+  if (major < 2L || (major >= 2L && minor < 7L)) {
+    msg <- paste(cli::col_br_red("VERSION ERROR"), "RNAFold version:", rnafold_version, "---- Must be at least 2.7.0")
+    cli::cli_abort(msg, call = NULL)
+  }
+  
+  # Validate RNAPlot
+  rnaplot_version <- stringr::str_split_1(rnaplot_version, " ")[2]
+  # str_split uses regex to split, so when splitting by ".", brackets must be placed around it
+  version_split <- stringr::str_split_1(rnaplot_version, "[.]")
+  major <- as.integer(version_split[1])
+  minor <- as.integer(version_split[2])
+  
+  if (major < 2L || (major >= 2L && minor < 7L)) {
+    msg <- paste(cli::col_br_red("VERSION ERROR"), "RNAPlot version:", rnaplot_version, "---- Must be at least 2.7.0")
+    cli::cli_abort(msg, call = NULL)
+  }
+  
+  #### Create vars object ####
   bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[["targets"]])

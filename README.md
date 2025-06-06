@@ -27,7 +27,7 @@ library(MiSiPi.RNA)
 ```
 
 ### RNAfold
-In order for this package to work, you must also have RNAfold and RNAplot (version 2.7.0) from the ViennaRNA
+In order for this package to work, you must also have RNAfold and RNAplot (version >= 2.7.0) from the ViennaRNA
 package installed. See https://www.tbi.univie.ac.at/RNA/ for installation.
 
 #### Optional dependencies 
