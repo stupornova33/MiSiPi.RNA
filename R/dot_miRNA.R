@@ -283,7 +283,7 @@
 
   ################################################################################################################
   # .fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
-  fold_list <- .fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, chrom_name, wkdir)[[1]]
+  fold_list <- .fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, chrom_name, wkdir)
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   # make the plots for all the sequences in the "fold_list"
