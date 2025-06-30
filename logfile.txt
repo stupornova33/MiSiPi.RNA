@@ -1,0 +1,4 @@
+chrom_name: NC_035107.1 reg_start: 79219421 reg_stop: 79227865
+Filtering forward and reverse reads by length
+chrom_name: NC_035107.1 reg_start: 79219421 reg_stop: 79227865
+Filtering forward and reverse reads by length

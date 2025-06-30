@@ -77,6 +77,14 @@
   #            FIELD 2: Fasta Header
   #            FIELD 3: Input Sequence
   #            FIELD 4: Dot Bracket and MFE
+  # Length 4+ and length sequence > 8000? 
+  #            FIELD 1: FASTA header 
+  #            FIELD 2: Sequence part 1
+  #            FIELD 3: Sequence part 2
+  #            FIELD 4: Dot bracket part 1
+  #            FIELD 5: Dot bracket part 2 and MFE
+  # 
+  
   
   
   if (length(fold) == 0) {                        # EMPTY RESULTS
@@ -113,6 +121,13 @@
     vien_mfe <- stringi::stri_split_fixed(fold[4], pattern = " ", n = 2)[[1]][2]
     vien_struct <- stringi::stri_split_fixed(fold[4], pattern = " ", n = 2)[[1]][1]
     
+  } else if(length(fold) > 4 &&
+            identical(grep("WARNING", fold), integer(0)) ){
+    output_file <- paste0(region_string, "_ss.ps")
+    vien_seq <- paste0(fold[2], fold[3])
+    vien_mfe <- stringi::stri_split_fixed(fold[5], pattern = " ", n = 2)[[1]][2]
+    struct <- paste0(fold[4], fold[5])
+    vien_struct <- stringi::stri_split_fixed(struct, pattern = " ", n = 2)[[1]][1]
   }
   
   ct <- RRNA::makeCt(vien_struct, vien_seq)
