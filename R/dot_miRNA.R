@@ -106,11 +106,21 @@
 
   dt_table[is.na(dt_table)] <- 0
 
+  #r1_summarized <- r1_dt %>%
+  #  dplyr::group_by_all() %>%
+  #  dplyr::count()
+  
   r1_summarized <- r1_dt %>%
+    dplyr::select(-c(first, seq)) %>%
     dplyr::group_by_all() %>%
     dplyr::count()
-
+  
+  #r2_summarized <- r2_dt %>%
+  #  dplyr::group_by_all() %>%
+  #  dplyr::count()
+  
   r2_summarized <- r2_dt %>%
+    dplyr::select(-c(first, seq)) %>%
     dplyr::group_by_all() %>%
     dplyr::count()
 
@@ -152,7 +162,6 @@
       width_r2 = (r2_end - r2_start) + 1
     )
 
-
   read_pileups <- read_pileups %>%
     dplyr::mutate(
       "lstart" = r1_end + 1,
@@ -170,6 +179,7 @@
     ranges = IRanges::IRanges(start = c(1), end = c(length))
   )
 
+  
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
   geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
 
@@ -182,6 +192,8 @@
   r2_seqs <- getFastas(geno_seq, read_pileups$r2_start, read_pileups$r2_end, nrow(read_pileups)) %>%
     dplyr::rename("r2_start" = "start", "r2_end" = "stop")
 
+  # Subset the current region indicated by the bed file observation
+  bed_seq <- stringr::str_sub(geno_seq, reg_start - 1, reg_stop - 1)
   geno_seq <- NULL
 
   read_pileups <- read_pileups %>%
@@ -213,8 +225,7 @@
 
   grouped <- grouped %>%
     dplyr::mutate(Chrom = chrom_name, Reg_start = reg_start, Reg_stop = reg_stop) %>%
-    dplyr::select(c(Chrom, Reg_start, Reg_stop, r1_alt_start, r1_alt_end, r1_count_avg, r2_alt_start, r2_alt_end))
-
+    dplyr::select(c(Chrom, Reg_start, Reg_stop, r1_alt_start, r1_alt_end, r1_count_avg, r2_alt_start, r2_alt_end, r2_count_avg))
 
   if (nrow(grouped > 1)) {
     alt_file <- file.path(wkdir, "alt_miRNAs_coord.bed")
@@ -231,19 +242,24 @@
   # index first value in the even there is more than one most abundant read
   most_abundant_avg_count <- mean(most_abundant$r1_count_avg[1], most_abundant$r2_count_avg[1])
 
-
   read_pileups <- NULL
   
   final <- most_abundant[1, ]
   final_seq <- final$whole_seq
 
   # RNAfold wants U's not T's, so convert to U
-  converted <- list(convertU(final_seq, 1))
+  converted <- list(convertU(bed_seq, 1))
 
+  region_string <- paste0(">", chrom_name, "-", reg_start - 1, "_", reg_stop - 1)
   converted <- data.frame("V1" = unname(unlist(converted)))
-
-  colnames(converted) <- paste0(">", chrom_name, "-", final$r1_start - 1, "_", final$r2_end - 1)
-  final$converted <- converted$V1
+  
+  # Use bed file coords in column name unless alternate coordinates used
+  colnames(converted) <- region_string
+  
+  ma_relative_r1_start <- final$r1_start - reg_start + 1
+  ma_relative_r2_end <- final$r2_end - reg_start + 1
+  most_abundant_seq <- stringr::str_sub(converted[region_string], ma_relative_r1_start, ma_relative_r2_end)
+  final$converted <- most_abundant_seq
 
   write.table(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
 
@@ -273,17 +289,17 @@
 
   # Get the relative start and stop positions of the reads in the context of final_seq for plotting purposes
   pos_df <- data.frame(
-    r1_start = stringr::str_locate(final_seq, final$r1_seq)[1],
-    r1_end = stringr::str_locate(final_seq, final$r1_seq)[2],
-    r2_start = stringr::str_locate(final_seq, final$r2_seq)[1],
-    r2_end = stringr::str_locate(final_seq, final$r2_seq)[2]
+    r1_start = stringr::str_locate(bed_seq, final$r1_seq)[1],
+    r1_end = stringr::str_locate(bed_seq, final$r1_seq)[2],
+    r2_start = stringr::str_locate(bed_seq, final$r2_seq)[1],
+    r2_end = stringr::str_locate(bed_seq, final$r2_seq)[2]
   )
 
   .rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
 
   ################################################################################################################
   # .fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
-  fold_list <- .fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, chrom_name, wkdir)
+  fold_list <- .fold_short_rna(reg_start, reg_stop, converted, path_to_RNAfold, chrom_name, wkdir)
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   # make the plots for all the sequences in the "fold_list"
