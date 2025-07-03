@@ -64,12 +64,16 @@
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>%
-    dplyr::summarise(count = sum(count))
+  #size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+  #  dplyr::group_by(width) %>%
+  #  dplyr::summarise(count = sum(count))
 
-  .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
+  #.output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
+  
+  #stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  #.plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
+  
   chromP <- NULL
   chromM <- NULL
   size_dist <- NULL
@@ -188,8 +192,10 @@
       heat_plot <- NULL
     }
     
-    dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
-    size_plot <- .plot_sizes(dist)
+    #dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
+    #size_plot <- .plot_sizes(dist)
+    stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+    size_plot <- .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
     dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
     
     .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir)

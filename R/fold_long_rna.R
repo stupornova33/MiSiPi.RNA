@@ -69,11 +69,11 @@
   #            FIELD 2: Input Sequence
   #            FIELD 3: Dot Bracket and MFE
   #
-  # Length 4+: This can occur in 2 known situations. The first is when multiple input sequences are
-  #            passed into RNAfold. The second is when a warning is present along with the results.
+  # Length 4+: This can occur in 3 known situations. The first is when multiple input sequences are
+  #            passed into RNAfold. The second is when a warning (or multiple warnings?) is present along with the results.
   #            For the purposes of this test, the fields below assume only a single input sequence was
   #            provided.
-  #            FIELD 1: [WARNING] - Warning Message
+  #            FIELD 1: [WARNING] - Warning Message/+
   #            FIELD 2: Fasta Header
   #            FIELD 3: Input Sequence
   #            FIELD 4: Dot Bracket and MFE
@@ -115,11 +115,13 @@
     vien_struct <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][1]
     
   } else if (length(fold) == 4 &&
-             length(grep("WARNING", fold)) > 0) { # Warning result 
+             length(grep("WARNING", fold)) > 0) { # Warning result/s
+    idx <- grep("WARNING", fold)
+    fold <- fold[-idx] # remove warnings since the number of warnings is unknown and need consistent indices
     output_file <- paste0(region_string, "_ss.ps")
-    vien_seq <- fold[3]
-    vien_mfe <- stringi::stri_split_fixed(fold[4], pattern = " ", n = 2)[[1]][2]
-    vien_struct <- stringi::stri_split_fixed(fold[4], pattern = " ", n = 2)[[1]][1]
+    vien_seq <- fold[2]
+    vien_mfe <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][2]
+    vien_struct <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][1]
     
   } else if(length(fold) > 4 &&
             identical(grep("WARNING", fold), integer(0)) ){
@@ -132,20 +134,29 @@
   
   ct <- RRNA::makeCt(vien_struct, vien_seq)
 
-  # Using capture.output to silence the excessive console output from ct2coord
-  utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
-  # RRNA::RNAPlot(coord, nt = TRUE)
-  # split the string to get mfe
-  # Split based on space and remove parentheses
-  mfe <- gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_mfe)))
-  mfe <- as.numeric(mfe)
-  start <- start
-  stop <- stop
-
-  # RNAfold creates files in the base directory in which MiSiPi was originally called
-  # Move to results siRNA directory
-  file.rename(from = output_file,
-              to = file.path(wkdir, output_file))
-
-  return(list(start, stop, mfe, coord, vien_struct))
+  if(sum(ct$bound) > 0){
+    # Using capture.output to silence the excessive console output from ct2coord
+    utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
+    # RRNA::RNAPlot(coord, nt = TRUE)
+    # split the string to get mfe
+    # Split based on space and remove parentheses
+    mfe <- gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_mfe)))
+    mfe <- as.numeric(mfe)
+    start <- start
+    stop <- stop
+  
+    # RNAfold creates files in the base directory in which MiSiPi was originally called
+    # Move to results siRNA directory
+    file.rename(from = output_file,
+                to = file.path(wkdir, output_file))
+  
+    return(list(start, stop, mfe, coord, vien_struct))
+  } else {
+    mfe <- 0
+    start <- start
+    stop <- stop
+    coord <- NA
+    res <- c(start, stop, mfe, coord, vien_struct)
+    return(res)
+  }
 }

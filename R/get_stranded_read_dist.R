@@ -1,4 +1,4 @@
-# get_stranded_read_dist
+# .get_stranded_read_dist
 # takes forward and reverse data frames
 # summarizes read size by count
 # returns table of size distribution
@@ -10,7 +10,7 @@
 
 .get_stranded_read_dist <- function(bam_obj, chrom_name, reg_start, reg_stop) {
   options(scipen = 999)
-
+  
   chrom_p <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
   plus_dt <- data.table::setDT(.makeBamDF(chrom_p)) %>%
     base::subset(width <= 32 & width >= 18) %>%
@@ -29,14 +29,14 @@
   plus_dist <- plus_dt %>%
     dplyr::group_by(width, first) %>%
     dplyr::summarize(count = dplyr::n()) %>%
-    dplyr::mutate(strand = "positive")
+    dplyr::mutate(strand = "plus")
 
   minus_dist <- minus_dt %>%
     dplyr::group_by(width, first) %>%
     dplyr::summarize(count = dplyr::n())
 
   minus_dist <- minus_dist %>%
-    dplyr::mutate(neg_count = (count * -1), strand = "negative") %>%
+    dplyr::mutate(neg_count = (count * -1), strand = "minus") %>%
     dplyr::select(-c(count)) %>%
     dplyr::rename("count" = "neg_count")
   # plus_dt <- minus_dt <- NULL
@@ -55,13 +55,13 @@
     dplyr::select(-c(count.y)) %>%
     dplyr::rename("count" = count.x)
   p_size_dist["count"][is.na(p_size_dist["count"])] <- 0
-  p_size_dist["strand"][is.na(p_size_dist["strand"])] <- "positive"
+  p_size_dist["strand"][is.na(p_size_dist["strand"])] <- "plus"
 
   m_size_dist <- merge(minus_dist, empty_dt, by = c("width", "first"), all = TRUE) %>%
     dplyr::select(-c(count.y)) %>%
     dplyr::rename("count" = count.x)
   m_size_dist["count"][is.na(m_size_dist["count"])] <- 0
-  m_size_dist["strand"][is.na(m_size_dist["strand"])] <- "negative"
+  m_size_dist["strand"][is.na(m_size_dist["strand"])] <- "minus"
 
   all_sizes <- rbind(p_size_dist, m_size_dist)
 

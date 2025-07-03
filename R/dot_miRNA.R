@@ -55,7 +55,10 @@
   bam_header <- NULL
 
   # for the read size distribution plot
-  read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  #read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  
+  stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
   
   chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand)
 

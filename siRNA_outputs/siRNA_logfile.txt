@@ -1,0 +1,2 @@
+chrom_name: NC_035159.1 reg_start: 39 reg_stop: 7910
+Filtering forward and reverse reads by length

@@ -60,13 +60,11 @@
 .plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir) {
   ### combine siRNA and hpRNA plots
   
-  
   if (is_small_locus) {
     #### Regions Less Than or Equal to 10kb (RLT10K) ####
-    
+
     plus_hp_overhangs <- dsh$plus_overhang_plot
     minus_hp_overhangs <- dsh$minus_overhang_plot
-    
     density_plot <- dsh$density_plot
     arc_plot <- dsh$arc_plot
     # In the case that no arc plot get made in dual_strand_hairpins
@@ -173,7 +171,9 @@
     
   } else {
     #### Regions Greater Than 10kb (RGT10k) ####
-    
+    plus_hp_overhangs <- dsh$plus_overhang_plot
+    minus_hp_overhangs <- dsh$minus_overhang_plot
+
     # None of the hairpin plots were made because the region > 10kb
     density_plot <- dsh$density_plot
     
