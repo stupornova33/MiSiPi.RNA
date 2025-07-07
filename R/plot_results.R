@@ -1,4 +1,4 @@
-.plot_miRNA <- function(chrom_name, start, stop, strand, bam_file, fold_list, overhangs, read_dist, z_df, out_type, prefix, wkdir) {
+.plot_miRNA <- function(chrom_name, start, stop, strand, bam_file, fold_list, overhangs, stranded_size_dist, z_df, out_type, prefix, wkdir) {
   
   dicer_sig <- .plot_overhangz(overhangs, strand = strand)
   
@@ -12,8 +12,7 @@
   
   density_plot <- .plot_density(density, start, stop)
   
-  dist_plot <- .plot_sizes(read_dist)
-  
+  dist_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
   zplot <- .plot_overlapz(z_df)
   
   left_top <- cowplot::plot_grid(

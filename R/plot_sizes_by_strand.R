@@ -7,13 +7,13 @@
 # @param libsize a numeric value
 # @return A plot
 
-.plot_sizes_by_strand <- function(wkdir, size_dist, chrom_name, reg_start, reg_stop) {
+.plot_sizes_by_strand <- function(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop) {
   options(scipen = 999)
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   
-  p_size_dist <- size_dist %>% dplyr::filter(strand == "plus")
-  m_size_dist <- size_dist %>% dplyr::filter(strand == "minus")
+  p_size_dist <- stranded_size_dist %>% dplyr::filter(strand == "plus")
+  m_size_dist <- stranded_size_dist %>% dplyr::filter(strand == "minus")
 
   m_size_dist$count <- m_size_dist$count * -1
 

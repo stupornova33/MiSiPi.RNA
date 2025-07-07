@@ -29,8 +29,8 @@
   # the dot thing and the mfe
   # R4RNA viennaToHelix is used to create the helix from the dot
   fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir) {
-    dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
-
+    #dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
+    dna_vec <- as.character(geno_seq)
     converted <- convertU(dna_vec, 1)
     dna_vec <- NULL
 
@@ -77,15 +77,18 @@
   }
 
   # Extract chromosome sequence from genome file
+  # Bedtools start is 0-indexed, stop is half open 1-based 
+  # Need to substract 1 from end to avoid exceeding chromosome length
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
-    ranges = IRanges::IRanges(start = c(1), end = c(length))
+    ranges = IRanges::IRanges(start = c(reg_start), end = c((reg_stop - 1)))
   )
 
 
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
-  geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
-
+  #geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+  geno_seq <- as.character(unlist(geno_seq))
+  
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 

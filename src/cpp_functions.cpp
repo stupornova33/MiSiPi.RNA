@@ -1545,7 +1545,7 @@ NumericMatrix new_get_si_overlaps(std::vector<int> fdt_start, std::vector<int> f
     for (int j = 15; j <= 32; j++) {
 
       int p_overlap = proper_overlap(i,j);
-      int current_count = 0;
+      double current_count = 0;     //changed to correct integer overflow
 
       if (i == j) {
         std::vector<int> fstart_res;

@@ -114,7 +114,7 @@
     vien_mfe <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][2]
     vien_struct <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][1]
     
-  } else if (length(fold) == 4 &&
+  } else if (length(fold) >= 4 &&
              length(grep("WARNING", fold)) > 0) { # Warning result/s
     idx <- grep("WARNING", fold)
     fold <- fold[-idx] # remove warnings since the number of warnings is unknown and need consistent indices

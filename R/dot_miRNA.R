@@ -57,8 +57,8 @@
   # for the read size distribution plot
   #read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
   
-  stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-  .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
+  stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  #.plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
   
   chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand)
 
@@ -395,7 +395,7 @@
   .write.quiet(overhang_output, dice_file)
 
   if (plot_output == TRUE) {
-    .plot_miRNA(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, read_dist, z_df, out_type, prefix, wkdir)
+    .plot_miRNA(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, stranded_size_dist, z_df, out_type, prefix, wkdir)
   }
 
   results <- list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = overhangs, "overlaps" = z_df)
