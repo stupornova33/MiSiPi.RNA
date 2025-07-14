@@ -5,18 +5,18 @@
 #' @export
 
 eps2png <- function(path_to_magick_exe, file_dir) {
-  old_dir <- getwd()
-  setwd(file_dir)
+  old_dir <- setwd(file_dir)
   eps_files <- list.files(file_dir, pattern = "_ss.eps")
 
   for (i in 1:length(eps_files)) {
     input_file <- file.path(file_dir, eps_files[i])
-    print(input_file)
-    file.exists(input_file)
-    output_file_pref <- unlist(strsplit(input_file, ".eps"))
-    out_file <- paste0(output_file_pref, ".png")
+    out_file <- paste0(tools::file_path_sans_ext(input_file), ".png")
     args <- paste0("-density 300 ", input_file, " -quality 100 ", out_file)
-    system2(path_to_magick_exe, args = args, stderr = NULL)
+    #try(
+      system2(path_to_magick_exe, args = args, stderr = NULL)#,
+    #  silent = TRUE
+    #)
+    
   }
   setwd(old_dir)
 }
