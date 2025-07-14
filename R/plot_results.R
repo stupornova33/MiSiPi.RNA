@@ -1,4 +1,4 @@
-.plot_miRNA <- function(chrom_name, start, stop, strand, bam_file, fold_list, overhangs, stranded_size_dist, z_df, out_type, prefix, wkdir) {
+.plot_miRNA <- function(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, stranded_size_dist, z_df, out_type, prefix, wkdir) {
   
   dicer_sig <- .plot_overhangz(overhangs, strand = strand)
   
@@ -8,9 +8,9 @@
   # set these to zero below
   empty_table <- data.frame(pos = c(seq(fold_list$start, fold_list$stop)), count = c(0))
   
-  density <- .read_densityBySize(chrom_name, start, stop, bam_file, wkdir)
+  density <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
   
-  density_plot <- .plot_density(density, start, stop)
+  density_plot <- .plot_density(density, reg_start, reg_stop)
   
   dist_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
   zplot <- .plot_overlapz(z_df)

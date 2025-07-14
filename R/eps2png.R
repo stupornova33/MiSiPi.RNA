@@ -14,9 +14,9 @@ eps2png <- function(path_to_magick_exe, file_dir) {
     print(input_file)
     file.exists(input_file)
     output_file_pref <- unlist(strsplit(input_file, ".eps"))
-    out_file <- paste0(file_dir, "/", output_file_pref, ".png")
+    out_file <- paste0(output_file_pref, ".png")
     args <- paste0("-density 300 ", input_file, " -quality 100 ", out_file)
-    system2(path_to_magick_exe, args = args)
+    system2(path_to_magick_exe, args = args, stderr = NULL)
   }
   setwd(old_dir)
 }

@@ -15,7 +15,6 @@
 
 .rna_plot <- function(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, most_abundant_start, most_abundant_stop, strand) {
   syscheck <- Sys.info()["sysname"]
-
   if (syscheck == "Windows") {
     fold <- system2(
       command = path_to_RNAfold,

@@ -104,12 +104,13 @@
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
 
-  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>%
-    dplyr::summarize(count = sum(count))
-
-  .output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
-
+  #size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+  #  dplyr::group_by(width) %>%
+  #  dplyr::summarize(count = sum(count))
+  stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  #.output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
+  .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
+  
   chromP <- NULL
   chromM <- NULL
   size_dist <- NULL
