@@ -1,8 +1,9 @@
 # miRNA function
 # calls the .miRNA function for both strands, creates miRNA logfile
 # @param vars a list of variables provided by user
+# @param output_dir the current iteration's output directory
 
-miRNA <- function(vars) {
+miRNA <- function(vars, output_dir) {
   total_iterations <- length(vars$chrom_name)
   idx_vec <- 1:total_iterations
 
@@ -13,18 +14,8 @@ miRNA <- function(vars) {
     method = "miRNA"
   )
 
-  mi_dir <- "miRNA_outputs"
+  mi_dir <- file.path(output_dir, "miRNA")
   logfile <- file.path(mi_dir, "miRNA_logfile.txt")
-  
-  if (dir.exists(mi_dir)) {
-    # If running interactively, give the option to delete old files if present,
-    # or move them to a new timestamped directory if not
-    if (!interactive()) {
-      unlink(mi_dir, recursive = TRUE)
-    } else {
-      .overwrite_warning(mi_dir)
-    }
-  }
   
   dir.create(mi_dir)
   file.create(logfile)
@@ -81,7 +72,7 @@ miRNA <- function(vars) {
     )
   )
   
-  .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, calling_func = "miRNA")
+  .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, output_dir)
   
   .inform_complete(mi_dir)
 }

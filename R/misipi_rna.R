@@ -54,13 +54,13 @@ misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
   write.table(metadata, metadata_file, quote = FALSE, col.names = FALSE, row.names = FALSE)
   
   if (method == "all") {
-    run_all(vars)
+    run_all(vars, output_dir)
   } else if (method == "miRNA") {
-    miRNA(vars)
+    miRNA(vars, output_dir)
   } else if (method == "piRNA") {
-    piRNA(vars)
+    piRNA(vars, output_dir)
   } else if (method == "siRNA") {
-    siRNA(vars)
+    siRNA(vars, output_dir)
   } else {
     stop(paste("`method`:", method, "is not valid."))
   }

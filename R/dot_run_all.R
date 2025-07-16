@@ -18,6 +18,7 @@
 # @param gtf_file a string
 # @param write_fastas a bool, TRUE or FALSE. Default is FALSE
 # @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
+# @param output_dir The current output directory
 # @param i
 # @param i_total
 # @return results
@@ -29,7 +30,7 @@
                      path_to_RNAfold, path_to_RNAplot,
                      annotate_region, weight_reads,
                      gtf_file, write_fastas, out_type,
-                     i, i_total) {
+                     output_dir, i, i_total) {
   width <- pos <- start <- end <- NULL
 
   .inform_iteration(i, i_total, chrom_name)
@@ -71,8 +72,7 @@
 
   ####################################################################### process bam input files #############################################################################
 
-  all_dir <- "run_all"
-  logfile <- file.path(all_dir, "run_all_logfile.txt")
+  logfile <- file.path(output_dir, "run_all_log.txt")
 
   bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
@@ -104,11 +104,8 @@
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
 
-  #size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-  #  dplyr::group_by(width) %>%
-  #  dplyr::summarize(count = sum(count))
   stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-  #.output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
+  
   .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
   
   chromP <- NULL
@@ -268,8 +265,8 @@
 
   cat(file = logfile, "Beginning siRNA function\n", append = TRUE)
 
-  si_dir <- file.path(all_dir, "siRNA_outputs")
-  si_log <- file.path(si_dir, "siRNA_logfile.txt")
+  si_dir <- file.path(output_dir, "siRNA")
+  si_log <- file.path(si_dir, "siRNA_log.txt")
 
   si_res <- .siRNA(
     chrom_name, reg_start, reg_stop,
@@ -320,8 +317,8 @@
 
   cat(file = logfile, "Beginning miRNA function\n", append = TRUE)
 
-  mi_dir <- file.path(all_dir, "miRNA_outputs")
-  mi_log <- file.path(mi_dir, "miRNA_logfile.txt")
+  mi_dir <- file.path(output_dir, "miRNA")
+  mi_log <- file.path(mi_dir, "miRNA_log.txt")
 
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
@@ -400,8 +397,8 @@
 
   cat(file = logfile, "Begin piRNA function\n", append = TRUE)
 
-  pi_dir <- file.path(all_dir, "piRNA_outputs")
-  pi_log <- file.path(pi_dir, "piRNA_logfile.txt")
+  pi_dir <- file.path(output_dir, "piRNA")
+  pi_log <- file.path(pi_dir, "piRNA_log.txt")
 
   pi_res <- .piRNA(chrom_name, reg_start, reg_stop,
     length, bam_file, genome_file,
@@ -466,7 +463,7 @@
   input_pref <- tmp[length(tmp)]
   input_pref <- strsplit(input_pref, "[.]")[[1]][1]
 
-  ml_file <- file.path(all_dir, paste0(tbl_pref, "_", input_pref, "_ml.txt"))
+  ml_file <- file.path(output_dir, paste0(tbl_pref, "_", input_pref, "_ml.txt"))
 
   local_ml <- as.matrix(local_ml)
 

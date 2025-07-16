@@ -2,7 +2,7 @@
 #
 # @param vars a list
 
-piRNA <- function(vars) {
+piRNA <- function(vars, output_dir) {
   total_iterations <- length(vars$chrom_name)
   idx_vec <- 1:total_iterations
   
@@ -13,18 +13,8 @@ piRNA <- function(vars) {
     method = "piRNA"
   )
 
-  pi_dir <- "piRNA_outputs"
-  logfile <- file.path(pi_dir, "piRNA_logfile.txt")
-  
-  if (dir.exists(pi_dir)) {
-    # If running interactively, give the option to delete old files if present,
-    # or move them to a new timestamped directory if not
-    if (!interactive()) {
-      unlink(pi_dir, recursive = TRUE)
-    } else {
-      .overwrite_warning(pi_dir)
-    }
-  }
+  pi_dir <- file.path(output_dir, "piRNA")
+  logfile <- file.path(pi_dir, "piRNA_log.txt")
   
   dir.create(pi_dir)
   file.create(logfile)

@@ -1,6 +1,6 @@
 # Wrapper function that calls .run_all for each region of interest
 
-run_all <- function(vars) {
+run_all <- function(vars, output_dir) {
   total_iterations <- length(vars$chrom_name)
   idx_vec <- 1:total_iterations
   
@@ -11,34 +11,26 @@ run_all <- function(vars) {
     method = "all"
   )
   
-  all_dir <- "run_all"
-  all_log <- "run_all_logfile.txt"
+  all_log <- "run_all_log.txt"
   
-  mi_dir <- file.path(all_dir, "miRNA_outputs")
-  mi_log <- "miRNA_logfile.txt"
+  mi_dir <- file.path(output_dir, "miRNA")
+  mi_log <- "miRNA_log.txt"
   
-  pi_dir <- file.path(all_dir, "piRNA_outputs")
-  pi_log <- "piRNA_logfile.txt"
+  pi_dir <- file.path(output_dir, "piRNA")
+  pi_log <- "piRNA_log.txt"
   
-  si_dir <- file.path(all_dir, "siRNA_outputs")
-  si_log <- "siRNA_logfile.txt"
+  si_dir <- file.path(output_dir, "siRNA")
+  si_log <- "siRNA_log.txt"
   
-  if (dir.exists(all_dir)) {
-    # If running interactively, give the option to delete old files if present,
-    # or move them to a new timestamped directory if not
-    if (!interactive()) {
-      unlink(all_dir, recursive = TRUE)
-    } else {
-      .overwrite_warning(all_dir)
-    }
-  }
+  plot_dir <- file.path(output_dir, "combined_plots")
   
-  dir.create(all_dir)
+  
   dir.create(mi_dir)
   dir.create(pi_dir)
   dir.create(si_dir)
+  dir.create(plot_dir)
   
-  file.create(file.path(all_dir, all_log))
+  file.create(file.path(output_dir, all_log))
   file.create(file.path(mi_dir, mi_log))
   file.create(file.path(pi_dir, pi_log))
   file.create(file.path(si_dir, si_log))
@@ -64,13 +56,14 @@ run_all <- function(vars) {
       vars$gtf_file,
       vars$write_fastas,
       vars$out_type,
+      output_dir,
       idx_vec,
       total_iterations
     )
   )
   
   # Compare dicer zscores in miRNA_zscore files and write final miRNA_zscore.txt
-  .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, calling_func = "all")
+  .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, output_dir)
   
-  .inform_complete(all_dir)
+  .inform_complete(output_dir)
 }
