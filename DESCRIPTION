@@ -19,6 +19,7 @@ Imports:
     dplyr,
     GenomicRanges,
     ggplot2,
+    ggplotify,
     glue,
     IRanges,
     KernSmooth,
