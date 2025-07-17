@@ -20,6 +20,8 @@ miRNA <- function(vars, output_dir) {
   dir.create(mi_dir)
   file.create(logfile)
   
+  calling_method <- "self"
+  
   cli::cli_inform("Starting plus strand")
   # Process the positive strand
   invisible(
@@ -41,6 +43,7 @@ miRNA <- function(vars, output_dir) {
       vars$write_fastas,
       vars$weight_reads,
       vars$out_type,
+      calling_method,
       idx_vec,
       total_iterations
     )
@@ -67,6 +70,7 @@ miRNA <- function(vars, output_dir) {
       vars$write_fastas,
       vars$weight_reads,
       vars$out_type,
+      calling_method,
       idx_vec,
       total_iterations
     )

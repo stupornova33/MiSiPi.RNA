@@ -18,6 +18,8 @@ siRNA <- function(vars, output_dir) {
   
   dir.create(si_dir)
   file.create(logfile)
+  
+  calling_method <- "self"
 
   invisible(
     mapply(
@@ -38,6 +40,7 @@ siRNA <- function(vars, output_dir) {
       vars$gtf_file,
       vars$write_fastas,
       vars$out_type,
+      calling_method,
       idx_vec,
       total_iterations
     )

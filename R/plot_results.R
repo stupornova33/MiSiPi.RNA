@@ -1,4 +1,6 @@
-.plot_miRNA <- function(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, stranded_size_dist, z_df, out_type, prefix, wkdir) {
+.plot_miRNA <- function(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, stranded_size_dist, z_df, out_type, prefix, wkdir, method = c("self", "all")) {
+  
+  method = match.arg(method)
   
   dicer_sig <- .plot_overhangz(overhangs, strand = strand)
   
@@ -14,6 +16,20 @@
   
   dist_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
   zplot <- .plot_overlapz(z_df)
+  
+  # If .miRNA was called by run_all, then don't write the plots yet
+  # Return each individual plot as an object to combine in .run_all
+  if (method == "all") {
+    plots <- list()
+    plots$prefix <- prefix
+    plots$strand <- strand
+    plots$density <- density_plot
+    plots$distribution <- dist_plot
+    plots$dicer_sig <- dicer_sig
+    plots$zplot <- zplot
+    return(plots)
+  }
+  
   
   left_top <- cowplot::plot_grid(
     dist_plot,
@@ -52,12 +68,15 @@
   }
   print(all_plot)
   grDevices::dev.off()
+  return(NULL)
 }
 
 
 
 .plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir) {
   ### combine siRNA and hpRNA plots
+  
+  method = match.arg(method)
   
   if (is_small_locus) {
     #### Regions Less Than or Equal to 10kb (RLT10K) ####

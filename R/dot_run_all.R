@@ -34,6 +34,8 @@
   width <- pos <- start <- end <- NULL
 
   .inform_iteration(i, i_total, chrom_name)
+  
+  calling_method <- "all"
 
   # create empty data table for results
   local_ml <- data.table::data.table(
@@ -274,8 +276,11 @@
     bam_file, si_log, si_dir,
     si_pal, plot_output, path_to_RNAfold,
     annotate_region, weight_reads, gtf_file,
-    write_fastas, out_type
+    write_fastas, out_type, calling_method
   )
+  
+  # If plots object is not in si_res, it will return NULL
+  siRNA_plots <- si_res$plots
 
   max_si_heat <- .get_max_si_heat(si_res)
   local_ml$highest_si_col <- max_si_heat$highest_si_col
@@ -330,8 +335,11 @@
     path_to_RNAplot,
     weight_reads,
     write_fastas,
-    out_type
+    out_type,
+    calling_method
   )
+
+  miRNA_plus_plots <- mi_res$plots
 
   # Look at first result
   # mi_res <- mi_res[[1]]
@@ -353,8 +361,11 @@
     path_to_RNAplot,
     weight_reads,
     write_fastas,
-    out_type
+    out_type,
+    calling_method
   )
+  
+  miRNA_minus_plots <- mi_res$plots
 
   # mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -406,8 +417,11 @@
     plot_output = plot_output,
     weight_reads,
     write_fastas,
-    out_type
+    out_type,
+    calling_method
   )
+  
+  piRNA_plots <- pi_res$plots
 
   if (sum(pi_res$heat_results) != 0) {
     max_pi_heat <- .get_max_pi_heat(pi_res)
@@ -469,4 +483,333 @@
 
   cat(file = logfile, "Writing machine learning results to table\n", append = TRUE)
   .write.quiet(local_ml, ml_file)
+ 
+  
+  #### Make combined plot for current locus #### 
+  # Set all possible plots to NULL initially
+  density_plot <- NULL
+  distribution_plot <- NULL
+  # miRNA specific plots
+  miRNA_dicer_overhang_plus_plot <- NULL # miRNA_plus_plots$dicer_sig
+  miRNA_overlap_probability_plus_plot <- NULL # miRNA_plus_plots$zplot
+  miRNA_dicer_overhang_minus_plot <- NULL # miRNA_minus_plots$dicer_sig
+  miRNA_overlap_probability_minus_plot <- NULL # miRNA_minus_plots$zplot
+  # piRNA specific plots
+  piRNA_overlap_probability_plot <- NULL # piRNA_plots$z
+  piRNA_proper_overlaps_by_size_plot <- NULL # piRNA_plots$heat_plot
+  piRNA_phasing_probability_plus_plot <- NULL # piRNA_plots$plus_phased_plot
+  piRNA_phasing_probability_minus_plot <- NULL # piRNA_plots$minus_phased_plot
+  # siRNA specific plots
+  siRNA_arc_plot <- NULL # siRNA_plots$arc_plot
+  siRNA_dicer_overhang_probability_plus_plot <- NULL # siRNA_plots$plus_overhang_plot
+  siRNA_dicer_overhang_probability_minus_plot <- NULL # siRNA_plots$minus_overhang_plot
+  siRNA_phasing_probability_plus_plot <- NULL # siRNA_plots$plus_phasedz
+  siRNA_phasing_probability_minus_plot <- NULL # siRNA_plots$minus_phasedz
+  siRNA_dual_strand_dicer_overhang_probability_plot <- NULL # siRNA_plots$dicer_plot
+  siRNA_proper_overhangs_by_size_plot <- NULL # siRNA_plots$heat_plot
+  siRNA_gtf_plot <- NULL # siRNA_plots$gtf_plot
+  
+  # miRNA Plus Strand
+  if (!is.null(miRNA_plus_plots)) {
+    # Redundant plots
+    density_plot <- miRNA_plus_plots$density
+    distribution_plot <- miRNA_plus_plots$distribution
+    # miRNA plus strand specific plots
+    miRNA_dicer_overhang_plus_plot <- miRNA_plus_plots$dicer_sig
+    miRNA_overlap_probability_plus_plot <- miRNA_plus_plots$zplot
+  }
+  
+  # miRNA Minus Strand
+  if (!is.null(miRNA_minus_plots)) {
+    # Redundant Plots
+    if (is.null(density_plot)) {
+      density_plot <- miRNA_minus_plots$density
+    }
+    if (is.null(distribution_plot)) {
+      distribution_plot <- miRNA_minus_plots$distribution
+    }
+    # miRNA minus strand specific plots
+    miRNA_dicer_overhang_minus_plot <- miRNA_minus_plots$dicer_sig
+    miRNA_overlap_probability_minus_plot <- miRNA_minus_plots$zplot
+  }
+  
+  # piRNA
+  if (!is.null(piRNA_plots)) {
+    # Redundant Plots
+    if (is.null(density_plot)) {
+      density_plot <- piRNA_plots$density_plot
+    }
+    if (is.null(distribution_plot)) {
+      distribution_plot <- piRNA_plots$dist_plot
+    }
+    # piRNA specific plots
+    piRNA_overlap_probability_plot <- piRNA_plots$z
+    piRNA_proper_overlaps_by_size_plot <-piRNA_plots$heat_plot
+    piRNA_phasing_probability_plus_plot <- piRNA_plots$plus_phased_plot
+    piRNA_phasing_probability_minus_plot <- piRNA_plots$minus_phased_plot
+  }
+  
+  # siRNA
+  if (!is.null(siRNA_plots)) {
+    # Redundant Plots
+    if (is.null(density_plot)) {
+      density_plot <- siRNA_plots$density_plot
+    }
+    if (is.null(distribution_plot)) {
+      distribution_plot <- siRNA_plots$size_plot
+    }
+    # siRNA specific plots
+    siRNA_arc_plot <- siRNA_plots$arc_plot
+    siRNA_dicer_overhang_probability_plus_plot <- siRNA_plots$plus_overhang_plot
+    siRNA_dicer_overhang_probability_minus_plot <- siRNA_plots$minus_overhang_plot
+    siRNA_phasing_probability_plus_plot <- siRNA_plots$plus_phasedz
+    siRNA_phasing_probability_minus_plot <- siRNA_plots$minus_phasedz
+    siRNA_dual_strand_dicer_overhang_probability_plot <- siRNA_plots$dicer_plot
+    siRNA_proper_overhangs_by_size_plot <- siRNA_plots$heat_plot
+    siRNA_gtf_plot <- siRNA_plots$gtf_plot
+  }
+  
+  # Generate plot object
+  # There are currently a total of 18 possible plots
+  # Work will be done to considate these plots soon, but for now,
+  # we'll test out making a plot that is 2 columns wide and up to
+  # 9 columns long
+  
+  # Check if each plot is null, if not place in all_plots list
+  all_plots <- list()
+  i <- 1
+  
+  if (!is.null(distribution_plot)) {
+    all_plots[[i]] <- distribution_plot
+    i <- i + 1
+  }
+  if (!is.null(density_plot)) {
+    all_plots[[i]] <- density_plot
+    i <- i + 1
+  }
+  
+  if (!is.null(miRNA_dicer_overhang_plus_plot)) {
+    all_plots[[i]] <- miRNA_dicer_overhang_plus_plot
+    i <- i + 1
+  }
+  if (!is.null(miRNA_overlap_probability_plus_plot)) {
+    all_plots[[i]] <- miRNA_overlap_probability_plus_plot
+    i <- i + 1
+  }
+  if (!is.null(miRNA_dicer_overhang_minus_plot)) {
+    all_plots[[i]] <- miRNA_dicer_overhang_minus_plot
+    i <- i + 1
+  }
+  if (!is.null(miRNA_overlap_probability_minus_plot)) {
+    all_plots[[i]] <- miRNA_overlap_probability_minus_plot
+    i <- i + 1
+  }
+  
+  if (!is.null(piRNA_overlap_probability_plot)) {
+    all_plots[[i]] <- piRNA_overlap_probability_plot
+    i <- i + 1
+  }
+  if (!is.null(piRNA_proper_overlaps_by_size_plot)) {
+    all_plots[[i]] <- piRNA_proper_overlaps_by_size_plot
+    i <- i + 1
+  }
+  if (!is.null(piRNA_phasing_probability_plus_plot)) {
+    all_plots[[i]] <- piRNA_phasing_probability_plus_plot
+    i <- i + 1
+  }
+  if (!is.null(piRNA_phasing_probability_minus_plot)) {
+    all_plots[[i]] <- piRNA_phasing_probability_minus_plot
+    i <- i + 1
+  }
+  
+  if (!is.null(siRNA_arc_plot)) {
+    all_plots[[i]] <- siRNA_arc_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_dicer_overhang_probability_plus_plot)) {
+    all_plots[[i]] <- siRNA_dicer_overhang_probability_plus_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_dicer_overhang_probability_minus_plot)) {
+    all_plots[[i]] <- siRNA_dicer_overhang_probability_minus_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_phasing_probability_plus_plot)) {
+    all_plots[[i]] <- siRNA_phasing_probability_plus_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_phasing_probability_minus_plot)) {
+    all_plots[[i]] <- siRNA_phasing_probability_minus_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_dual_strand_dicer_overhang_probability_plot)) {
+    all_plots[[i]] <- siRNA_dual_strand_dicer_overhang_probability_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_proper_overhangs_by_size_plot)) {
+    all_plots[[i]] <- siRNA_proper_overhangs_by_size_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_gtf_plot)) {
+    all_plots[[i]] <- siRNA_gtf_plot
+    i <- i + 1
+  }
+  
+  # Undo the last increment
+  i <- i - 1
+  
+  # Create plot row
+  # Since there will be 2 plots per row, we'll just round up
+  NUM_PLOT_ROWS <- ceiling(i / 2)
+  
+  plot_rows <- list() 
+  
+  for (i in seq(1, length(all_plots), 2)) {
+    left_plot <- all_plots[[i]]
+    if (length(all_plots) %% 2 == 0) { # TODO only trigger this if we're on the last row
+      right_plot <- all_plots[[i + 1]]
+    } else {
+      right_plot <- NULL
+    }
+    
+    current_row <- cowplot::plot_grid(
+      left_plot,
+      NULL,
+      right_plot,
+      ncol = 3,
+      rel_widths = c(1, 0.3, 1),
+      rel_heights = c(1, 1, 1),
+      align = "hv", # Align both vertically and horizontally
+      axis = "lrtb"
+    )
+    
+    current_row_number <- length(plot_rows) + 1
+    plot_rows[[current_row_number]] <- current_row
+  }
+  
+  print(paste0("NUM_PLOT_ROWS: ", NUM_PLOT_ROWS))
+  # I hate that we currently have to do this series of if checks
+  # TODO: revisit this later
+  if (NUM_PLOT_ROWS == 1) {
+    all_plot <- plot_rows[[1]]
+  } else if (NUM_PLOT_ROWS == 2) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 3) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 4) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      plot_rows[[4]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 5) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      plot_rows[[4]],
+      plot_rows[[5]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 6) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      plot_rows[[4]],
+      plot_rows[[5]],
+      plot_rows[[6]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 7) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      plot_rows[[4]],
+      plot_rows[[5]],
+      plot_rows[[6]],
+      plot_rows[[7]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 8) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      plot_rows[[4]],
+      plot_rows[[5]],
+      plot_rows[[6]],
+      plot_rows[[7]],
+      plot_rows[[8]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 9) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      plot_rows[[4]],
+      plot_rows[[5]],
+      plot_rows[[6]],
+      plot_rows[[7]],
+      plot_rows[[8]],
+      plot_rows[[9]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  }
+  
+  height <- 4 * NUM_PLOT_ROWS
+  
+  if (out_type == "png") {
+    grDevices::png(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.png", sep = "_")), height = height, width = 11, units = "in", res = 300)
+  } else {
+    grDevices::pdf(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.pdf", sep = "_")), height = height, width = 11)
+  }
+  print(all_plot)
+  grDevices::dev.off()
+  
 }

@@ -19,6 +19,8 @@ piRNA <- function(vars, output_dir) {
   dir.create(pi_dir)
   file.create(logfile)
   
+  calling_method <- "self"
+  
   invisible(
     mapply(
       .piRNA,
@@ -35,6 +37,7 @@ piRNA <- function(vars, output_dir) {
       vars$weight_reads,
       vars$write_fastas,
       vars$out_type,
+      calling_method,
       idx_vec,
       total_iterations
     )

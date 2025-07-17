@@ -104,7 +104,6 @@
   for (strand in strands) {
     null_results <- FALSE
     strand_name <- switch(strand, "+" = "plus", "-" = "minus")
-    print(paste0("strand_name: ", strand_name))
     
     chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = strand)
     
@@ -148,7 +147,6 @@
     
     # calculate phasing signatures
     if (nrow(r2_dt) == 0) {
-      print("nrow(r2_dt) == 0")
       # if read dfs are empty set results to null. Still need to create the empty tables for plots/ML
       cat(file = logfile, "No overlapping reads detected on this strand.\n", append = TRUE)
       
@@ -169,7 +167,6 @@
       sRes[[strand_name]]$all_overlaps <- data.frame()
       
     } else { ## r2_dt has rows
-      print("nrow(r2_dt) > 0")
       sRes[[strand_name]]$hp_phased_tbl <- .calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
       sRes[[strand_name]]$hp_phased_counts <- sum(sRes[[strand_name]]$hp_phased_tbl$phased_num[1:4])
       sRes[[strand_name]]$hp_phased_z <- mean(sRes[[strand_name]]$hp_phased_tbl$phased_z[1:4])
@@ -179,7 +176,6 @@
       # set sRes$folded to TRUE
       ## CHECK FOR FOLDED STATUS ##
       if (!sRes$folded) {
-        print("folding the rna")
         sRes$fold_list <- fold_the_rna(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir)
         sRes$MFE <- sRes$fold_list$MFE
         sRes$perc_paired <- (length(sRes$fold_list$helix$i) * 2) / (reg_stop - reg_start)
@@ -192,13 +188,11 @@
         dplyr::count()
       
       if(!is.null(sRes$fold_list$helix)){ # if RNAfold has problem (e.g. no paired bases, then dicer overlaps function cannot run
-        print("fold_list$helix exists in proper format")
         sRes[[strand_name]]$all_overlaps <- .dicer_overlaps(sRes[[strand_name]]$dicer_dt, sRes$fold_list$helix, chrom_name, reg_start)
       
       # .dicer_overlaps() returns zero values if there are no valid overlaps
       # so check to make sure the first values are not zero
       if (!is.na(sRes[[strand_name]]$all_overlaps[1, 1]) && !(nrow(sRes[[strand_name]]$all_overlaps) == 0)) {
-        print("sRes[[strand_name]]$all_overlaps != NA & != 0")
         sRes[[strand_name]]$overhangs <- calc_overhangs(
           sRes[[strand_name]]$all_overlaps$r1_start,
           sRes[[strand_name]]$all_overlaps$r1_end,
@@ -213,7 +207,6 @@
         sRes[[strand_name]]$hp_overhangz <- mean(sRes[[strand_name]]$overhangs$zscore[5])
         sRes[[strand_name]]$hp_overhang_mlz <- mean(sRes[[strand_name]]$overhangs$ml_zscore[5])
       } else {
-        print("sRes[[strand_name]]$all_overlaps == NA or 0")
         sRes[[strand_name]]$overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
         sRes[[strand_name]]$overhangs$zscore <- .calc_zscore(sRes[[strand_name]]$overhangs$proper_count)
         sRes[[strand_name]]$overhangs$ml_zscore <- .calc_ml_zscore(sRes[[strand_name]]$overhangs$proper_count)
@@ -224,7 +217,6 @@
       }
       
       } else {
-        print("fold_list$helix does not exist in proper format")
         sRes[[strand_name]]$all_overlaps <- data.frame()
       }  
         
@@ -232,12 +224,10 @@
     
     # results for the ML table
     if (null_results) {
-      print("setting null results")
       sRes$MFE <- null_res[[strand_name]]$MFE
       sRes$perc_paired <- null_res[[strand_name]]$perc_paired
       sRes[[strand_name]]$res <- null_res
     } else {
-      print("setting MFE, hp_overhangz, hp_phasedz, dicer_tbl")
       res <- list(
         MFE = sRes$MFE,
         hp_overhangz = sRes[[strand_name]]$hp_overhangz,

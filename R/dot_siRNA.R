@@ -21,7 +21,8 @@
 .siRNA <- function(chrom_name, reg_start, reg_stop, length,
                    genome_file, bam_file, logfile, wkdir, pal, plot_output,
                    path_to_RNAfold, annotate_region, weight_reads, gtf_file,
-                   write_fastas, out_type, i = NULL, i_total = NULL) {
+                   write_fastas, out_type, method = c("self", "all"),
+                   i = NULL, i_total = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
@@ -187,7 +188,7 @@
     is_small_locus <- (reg_stop - reg_start + 1) <= 10000
     
     if (results_present) {
-      heat_plot <- .plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+      heat_plot <- .plot_heat(results, chrom_name, reg_start, reg_stop, wkdir, "siRNA", pal = pal)
     } else {
       heat_plot <- NULL
     }
@@ -198,8 +199,32 @@
     size_plot <- .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
     dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
     
-    .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir)
+    if (method == "all") {
+      plots <- list()
+      plots$prefix <- prefix
+      plots$size_plot <- size_plot
+      plots$dicer_plot <- dicer_plot
+      
+      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
+      if (!is.null(heat_plot)) {
+        heat_plot <- ggplotify::as.grob(heat_plot)
+      }
+      
+      plots$heat_plot <- heat_plot
+      plots$density_plot <- dsh$density_plot
+      plots$plus_overhang_plot <- dsh$plus_overhang_plot
+      plots$minus_overhang_plot <- dsh$minus_overhang_plot
+      plots$arc_plot <- dsh$arc_plot
+      plots$plus_phasedz <- dsh$plus_phasedz
+      plots$minus_phasedz <- dsh$minus_phasedz
+      plots$gtf_plot <- dsh$gtf_plot
+    } else {
+      plots <- NULL
+      .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir)
+    }
+  } else {
+    plots <- NULL
   }
 
-  return(list(heat = results, si_dicer = dicer_overhangs, dsh = dsh))
+  return(list(heat = results, si_dicer = dicer_overhangs, dsh = dsh, plots = plots))
 }

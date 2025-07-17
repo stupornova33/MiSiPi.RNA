@@ -9,6 +9,7 @@
 # @param pal a string
 # @return plots
 
+# DEPRICATED - Use .plot_heat()
 .plot_si_heat <- function(results, chrom_name, reg_start, reg_stop, wkdir, pal = c("RdYlBl", "yelOrRed", "MagYel", "Greens", "BlYel")) {
   if (!missing(pal)) {
     m_pal <- match.arg(pal)
