@@ -31,7 +31,10 @@
   m_dist$total_count <- m_dist$total_count * -1
 
   df <- rbind(p_dist, m_dist)
-  df$first <- factor(df$first, levels = c("A", "C", "G", "T", "N"))
+  
+  df$first <- sub("T", "U", df$first)
+  
+  df$first <- factor(df$first, levels = c("A", "C", "G", "U", "N"))
   
   letter_levels <- df %>% dplyr::select(first) %>% dplyr::distinct()
   if(nrow(letter_levels) == 4){
