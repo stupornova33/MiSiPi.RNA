@@ -3,7 +3,6 @@
 # @param chrom_name a string
 # @param reg_stop an integer
 # @param reg_start an integer
-# @param chromosome an integer representing the chromosome number
 # @param length an integer
 # @param bam_file a string
 # @param roi a string
@@ -24,7 +23,7 @@
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
-                     chromosome, length, bam_file,
+                     length, bam_file,
                      roi, genome_file,
                      si_pal, pi_pal, plot_output,
                      path_to_RNAfold, path_to_RNAplot,
@@ -81,7 +80,6 @@
   chr_name <- names(bam_header[["targets"]])
   chr_length <- unname(bam_header[["targets"]])
   bam_header <- NULL
-  chromosome <- which(chr_name == chrom_name)
 
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
@@ -327,7 +325,7 @@
 
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
-    chromosome, length, "+",
+    length, "+",
     genome_file, bam_file,
     mi_log, mi_dir,
     plot_output,
@@ -336,10 +334,11 @@
     weight_reads,
     write_fastas,
     out_type,
-    calling_method
   )
 
   miRNA_plus_plots <- mi_res$plots
+  miRNA_plus_overhangs <- mi_res$overhangs
+  miRNA_plus_overlaps <- mi_res$overlaps
 
   # Look at first result
   # mi_res <- mi_res[[1]]
@@ -353,7 +352,7 @@
 
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
-    chromosome, length, "-",
+    length, "-",
     genome_file, bam_file,
     mi_log, mi_dir,
     plot_output,
@@ -362,10 +361,14 @@
     weight_reads,
     write_fastas,
     out_type,
-    calling_method
   )
   
   miRNA_minus_plots <- mi_res$plots
+  miRNA_minus_overhangs <- mi_res$overhangs
+  miRNA_minus_overlaps <- mi_res$overlaps
+  
+  miRNA_dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(miRNA_plus_overhangs, miRNA_minus_overhangs)
+  miRNA_overlap_probability_plot <- .plot_miRNA_overlap_probability(miRNA_plus_overlaps, miRNA_minus_overlaps)
 
   # mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -490,22 +493,16 @@
   density_plot <- NULL
   distribution_plot <- NULL
   # miRNA specific plots
-  miRNA_dicer_overhang_plus_plot <- NULL # miRNA_plus_plots$dicer_sig
-  miRNA_overlap_probability_plus_plot <- NULL # miRNA_plus_plots$zplot
-  miRNA_dicer_overhang_minus_plot <- NULL # miRNA_minus_plots$dicer_sig
-  miRNA_overlap_probability_minus_plot <- NULL # miRNA_minus_plots$zplot
+  # Generated above
+  
   # piRNA specific plots
   piRNA_overlap_probability_plot <- NULL # piRNA_plots$z
   piRNA_proper_overlaps_by_size_plot <- NULL # piRNA_plots$heat_plot
-  piRNA_phasing_probability_plus_plot <- NULL # piRNA_plots$plus_phased_plot
-  piRNA_phasing_probability_minus_plot <- NULL # piRNA_plots$minus_phased_plot
+  piRNA_phasing_probability_plot <- NULL # piRNA_plots$phased_plot
   # siRNA specific plots
   siRNA_arc_plot <- NULL # siRNA_plots$arc_plot
-  siRNA_dicer_overhang_probability_plus_plot <- NULL # siRNA_plots$plus_overhang_plot
-  siRNA_dicer_overhang_probability_minus_plot <- NULL # siRNA_plots$minus_overhang_plot
-  siRNA_phasing_probability_plus_plot <- NULL # siRNA_plots$plus_phasedz
-  siRNA_phasing_probability_minus_plot <- NULL # siRNA_plots$minus_phasedz
-  siRNA_dual_strand_dicer_overhang_probability_plot <- NULL # siRNA_plots$dicer_plot
+  siRNA_dicer_overhang_probability_plot <- NULL # siRNA_plots$overhang_probability_plot
+  siRNA_phasing_probability_plot <- NULL # siRNA_plots$phasedz
   siRNA_proper_overhangs_by_size_plot <- NULL # siRNA_plots$heat_plot
   siRNA_gtf_plot <- NULL # siRNA_plots$gtf_plot
   
@@ -514,9 +511,6 @@
     # Redundant plots
     density_plot <- miRNA_plus_plots$density
     distribution_plot <- miRNA_plus_plots$distribution
-    # miRNA plus strand specific plots
-    miRNA_dicer_overhang_plus_plot <- miRNA_plus_plots$dicer_sig
-    miRNA_overlap_probability_plus_plot <- miRNA_plus_plots$zplot
   }
   
   # miRNA Minus Strand
@@ -528,9 +522,6 @@
     if (is.null(distribution_plot)) {
       distribution_plot <- miRNA_minus_plots$distribution
     }
-    # miRNA minus strand specific plots
-    miRNA_dicer_overhang_minus_plot <- miRNA_minus_plots$dicer_sig
-    miRNA_overlap_probability_minus_plot <- miRNA_minus_plots$zplot
   }
   
   # piRNA
@@ -545,8 +536,7 @@
     # piRNA specific plots
     piRNA_overlap_probability_plot <- piRNA_plots$z
     piRNA_proper_overlaps_by_size_plot <-piRNA_plots$heat_plot
-    piRNA_phasing_probability_plus_plot <- piRNA_plots$plus_phased_plot
-    piRNA_phasing_probability_minus_plot <- piRNA_plots$minus_phased_plot
+    piRNA_phasing_probability_plot <- piRNA_plots$phased_plot
   }
   
   # siRNA
@@ -560,11 +550,8 @@
     }
     # siRNA specific plots
     siRNA_arc_plot <- siRNA_plots$arc_plot
-    siRNA_dicer_overhang_probability_plus_plot <- siRNA_plots$plus_overhang_plot
-    siRNA_dicer_overhang_probability_minus_plot <- siRNA_plots$minus_overhang_plot
-    siRNA_phasing_probability_plus_plot <- siRNA_plots$plus_phasedz
-    siRNA_phasing_probability_minus_plot <- siRNA_plots$minus_phasedz
-    siRNA_dual_strand_dicer_overhang_probability_plot <- siRNA_plots$dicer_plot
+    siRNA_dicer_overhang_probability_plot <- siRNA_plots$overhang_probability_plot
+    siRNA_phasing_probability_plot <- siRNA_plots$phasedz
     siRNA_proper_overhangs_by_size_plot <- siRNA_plots$heat_plot
     siRNA_gtf_plot <- siRNA_plots$gtf_plot
   }
@@ -574,6 +561,9 @@
   # Work will be done to considate these plots soon, but for now,
   # we'll test out making a plot that is 2 columns wide and up to
   # 9 columns long
+  
+  # miRNA_dicer_overhang_plot
+  # miRNA_overlap_probability_plot
   
   # Check if each plot is null, if not place in all_plots list
   all_plots <- list()
@@ -588,23 +578,14 @@
     i <- i + 1
   }
   
-  if (!is.null(miRNA_dicer_overhang_plus_plot)) {
-    all_plots[[i]] <- miRNA_dicer_overhang_plus_plot
+  if (!is.null(miRNA_dicer_overhang_plot)) {
+    all_plots[[i]] <- miRNA_dicer_overhang_plot
     i <- i + 1
   }
-  if (!is.null(miRNA_overlap_probability_plus_plot)) {
-    all_plots[[i]] <- miRNA_overlap_probability_plus_plot
+  if (!is.null(miRNA_overlap_probability_plot)) {
+    all_plots[[i]] <- miRNA_overlap_probability_plot
     i <- i + 1
   }
-  if (!is.null(miRNA_dicer_overhang_minus_plot)) {
-    all_plots[[i]] <- miRNA_dicer_overhang_minus_plot
-    i <- i + 1
-  }
-  if (!is.null(miRNA_overlap_probability_minus_plot)) {
-    all_plots[[i]] <- miRNA_overlap_probability_minus_plot
-    i <- i + 1
-  }
-  
   if (!is.null(piRNA_overlap_probability_plot)) {
     all_plots[[i]] <- piRNA_overlap_probability_plot
     i <- i + 1
@@ -613,37 +594,20 @@
     all_plots[[i]] <- piRNA_proper_overlaps_by_size_plot
     i <- i + 1
   }
-  if (!is.null(piRNA_phasing_probability_plus_plot)) {
-    all_plots[[i]] <- piRNA_phasing_probability_plus_plot
+  if (!is.null(piRNA_phasing_probability_plot)) {
+    all_plots[[i]] <- piRNA_phasing_probability_plot
     i <- i + 1
   }
-  if (!is.null(piRNA_phasing_probability_minus_plot)) {
-    all_plots[[i]] <- piRNA_phasing_probability_minus_plot
-    i <- i + 1
-  }
-  
   if (!is.null(siRNA_arc_plot)) {
     all_plots[[i]] <- siRNA_arc_plot
     i <- i + 1
   }
-  if (!is.null(siRNA_dicer_overhang_probability_plus_plot)) {
-    all_plots[[i]] <- siRNA_dicer_overhang_probability_plus_plot
+  if (!is.null(siRNA_dicer_overhang_probability_plot)) {
+    all_plots[[i]] <- siRNA_dicer_overhang_probability_plot
     i <- i + 1
   }
-  if (!is.null(siRNA_dicer_overhang_probability_minus_plot)) {
-    all_plots[[i]] <- siRNA_dicer_overhang_probability_minus_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_phasing_probability_plus_plot)) {
-    all_plots[[i]] <- siRNA_phasing_probability_plus_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_phasing_probability_minus_plot)) {
-    all_plots[[i]] <- siRNA_phasing_probability_minus_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_dual_strand_dicer_overhang_probability_plot)) {
-    all_plots[[i]] <- siRNA_dual_strand_dicer_overhang_probability_plot
+  if (!is.null(siRNA_phasing_probability_plot)) {
+    all_plots[[i]] <- siRNA_phasing_probability_plot
     i <- i + 1
   }
   if (!is.null(siRNA_proper_overhangs_by_size_plot)) {
@@ -666,10 +630,16 @@
   
   for (i in seq(1, length(all_plots), 2)) {
     left_plot <- all_plots[[i]]
-    if (length(all_plots) %% 2 == 0) { # TODO only trigger this if we're on the last row
-      right_plot <- all_plots[[i + 1]]
+    
+    # Last Row
+    if ((length(all_plots) - i) < 2) {
+      if (length(all_plots) %% 2 == 0) {
+        right_plot <- all_plots[[i + 1]]
+      } else {
+        right_plot <- NULL
+      }
     } else {
-      right_plot <- NULL
+      right_plot <- all_plots[[i + 1]]
     }
     
     current_row <- cowplot::plot_grid(
@@ -746,54 +716,6 @@
       plot_rows[[4]],
       plot_rows[[5]],
       plot_rows[[6]],
-      ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
-      align = "hv",
-      axis = "lrtb"
-    )
-  } else if (NUM_PLOT_ROWS == 7) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      plot_rows[[3]],
-      plot_rows[[4]],
-      plot_rows[[5]],
-      plot_rows[[6]],
-      plot_rows[[7]],
-      ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
-      align = "hv",
-      axis = "lrtb"
-    )
-  } else if (NUM_PLOT_ROWS == 8) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      plot_rows[[3]],
-      plot_rows[[4]],
-      plot_rows[[5]],
-      plot_rows[[6]],
-      plot_rows[[7]],
-      plot_rows[[8]],
-      ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
-      align = "hv",
-      axis = "lrtb"
-    )
-  } else if (NUM_PLOT_ROWS == 9) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      plot_rows[[3]],
-      plot_rows[[4]],
-      plot_rows[[5]],
-      plot_rows[[6]],
-      plot_rows[[7]],
-      plot_rows[[8]],
-      plot_rows[[9]],
       ncol = 1,
       rel_heights = rep(1, NUM_PLOT_ROWS),
       rel_widths = rep(1, NUM_PLOT_ROWS),

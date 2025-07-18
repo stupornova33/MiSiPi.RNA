@@ -16,11 +16,12 @@
 # @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
 # @param write_fastas TRUE or FALSE. Default is FALSE
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
+# @param dicer_overhangs
 # @return a list of results
 
 .dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                                  genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
-                                 weight_reads, gtf_file, write_fastas, out_type) {
+                                 weight_reads, gtf_file, write_fastas, out_type, dicer_overhangs) {
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 
 
@@ -285,13 +286,14 @@
   # Add additional data and plots to results
   if (plot_output) {
     
-    if(!nrow(sRes$plus$all_overlaps) == 0){
+    if(!nrow(sRes$plus$all_overlaps) == 0) {
       plus_overhangs <- data.frame(shift = sRes$plus$res$dicer_tbl.shift, zscore = sRes$plus$res$dicer_tbl.zscore)
       minus_overhangs <- data.frame(shift = sRes$minus$res$dicer_tbl.shift, zscore = sRes$minus$res$dicer_tbl.zscore)
   
       ## return these as plot objects
-      plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
-      minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
+      #plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
+      #minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
+      overhang_probability_plot <- .plot_siRNA_overhangs_combined(plus_overhangs, minus_overhangs, dicer_overhangs)
     } 
     
     data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
@@ -324,21 +326,24 @@
 
     ## why? No one knows
 
-    plus_phasedz <- .plot_hp_phasedz(sRes$plus$hp_phased_tbl, "+")
-
-    minus_phasedz <- .plot_hp_phasedz(sRes$minus$hp_phased_tbl, "-")
+    phasedz <- .plot_siRNA_hp_phasing_probability_combined(sRes$plus$hp_phased_tbl, sRes$minus$hp_phased_tbl)
+    #plus_phasedz <- .plot_hp_phasedz(sRes$plus$hp_phased_tbl, "+")
+    #minus_phasedz <- .plot_hp_phasedz(sRes$minus$hp_phased_tbl, "-")
 
     if(!nrow(sRes$plus$all_overlaps) == 0){
-      results$plus_overhang_plot = plus_overhang_plot
-      results$minus_overhang_plot = minus_overhang_plot
+      results$overhang_probability_plot <- overhang_probability_plot
+      #results$plus_overhang_plot = plus_overhang_plot
+      #results$minus_overhang_plot = minus_overhang_plot
     } else {
-      results$plus_overhang_plot <- NA
-      results$minus_overhang_plot <- NA
+      results$overhang_probability_plot <- NA
+      #results$plus_overhang_plot <- NA
+      #results$minus_overhang_plot <- NA
     }
-    results$density_plot = density_plot
-    results$arc_plot = arc_plot
-    results$plus_phasedz = plus_phasedz
-    results$minus_phasedz = minus_phasedz
+    results$density_plot <- density_plot
+    results$arc_plot <- arc_plot
+    results$phasedz <- phasedz
+    #results$plus_phasedz = plus_phasedz
+    #results$minus_phasedz = minus_phasedz
 
     # Plot genome annotations (optional)
     if (annotate_region) {

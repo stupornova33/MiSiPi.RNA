@@ -507,7 +507,7 @@
     data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
     stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
 
-    z <- .plot_overlapz(z_df)
+    z <- .plot_piRNA_overlap_probability(z_df)
     dist_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
 
     if ((reg_stop - reg_start) > 7000) {
@@ -517,8 +517,9 @@
     }
     data <- NULL
 
-    plus_phased_plot <- .plot_phasedz(plus_df, "+")
-    minus_phased_plot <- .plot_phasedz(minus_df, "-")
+    #plus_phased_plot <- .plot_phasedz(plus_df, "+")
+    #minus_phased_plot <- .plot_phasedz(minus_df, "-")
+    phased_probability_plot <- .plot_piRNA_phasing_probability_combined(plus_df, minus_df)
 
     options(scipen = 999)
     if (sum(heat_results) > 0) {
@@ -532,11 +533,10 @@
     if (method == "all") {
       plots <- list()
       plots$prefix <- prefix
-      plots$z <- z
       plots$dist_plot <- dist_plot
       plots$density_plot <- density_plot
-      plots$plus_phased_plot <- plus_phased_plot
-      plots$minus_phased_plot <- minus_phased_plot
+      plots$z <- z
+      plots$phased_plot <- phased_probability_plot
       
       # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
       if (!is.null(heat_plot)) {
@@ -545,14 +545,16 @@
       
       plots$heat_plot <- heat_plot
     } else {
+      # Create a null plots object for safe return
+      plots <- NULL
       if (!is.null(heat_plot)) {
         top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot),
                                        ncol = 1, rel_widths = c(0.8, 1, 1),
                                        rel_heights = c(0.8, 0.1, 1), align = "vh", axis = "lrtb"
         )
-        top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot,
-                                        ncol = 1, rel_widths = c(1, 1, 1, 1, 1),
-                                        rel_heights = c(1, 0.1, 1, 0.1, 1), align = "vh", axis = "lrtb"
+        top_right <- cowplot::plot_grid(z, NULL, phased_probability_plot,
+                                        ncol = 1, rel_widths = c(1, 1, 1),
+                                        rel_heights = c(1, 0.1, 1), align = "vh", axis = "lrtb"
         )
         
         top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1, 0.1, 1))
@@ -570,9 +572,9 @@
                                        ncol = 1, rel_widths = c(1),
                                        rel_heights = c(0.8, 0.1, 1), align = "vh", axis = "lrtb"
         )
-        top_right <- cowplot::plot_grid(z, NULL, plus_phased_plot, NULL, minus_phased_plot,
-                                        ncol = 1, rel_widths = c(1, 1, 1, 1, 1),
-                                        rel_heights = c(1, 0.1, 1, 0.1, 1), align = "vh", axis = "lrtb"
+        top_right <- cowplot::plot_grid(z, NULL, phased_probability_plot,
+                                        ncol = 1, rel_widths = c(1, 1, 1),
+                                        rel_heights = c(1, 0.1, 1), align = "vh", axis = "lrtb"
         )
         
         top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1, 0.1, 1))

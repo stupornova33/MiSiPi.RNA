@@ -4,7 +4,6 @@
 # @param chrom_name a string
 # @param reg_start a whole number
 # @param reg_stop a whole number
-# @param chromosome chrom names extracted from bam file
 # @param length length of chromosome of interest
 # @param strand a character passed in, "+" or "-"
 # @param genome_file a fasta file of chrom sequences
@@ -17,17 +16,14 @@
 # @param write_fastas a bool, TRUE or FALSE
 # @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
-# @param method "self" or "all" - Indicates if this function was call directly or by run_all for plot purposes
 # @param i The current iteration number
 # @param i_total The total number of iterations
-# @param pb The progress bar identifying string
 # @return plots
 
-.miRNA <- function(chrom_name, reg_start, reg_stop, chromosome, length, strand,
+.miRNA <- function(chrom_name, reg_start, reg_stop, length, strand,
                    genome_file, bam_file, logfile, wkdir,
                    plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
-                   weight_reads, out_type, method = c("self", "all"),
-                   i = NULL, i_total = NULL, pb = NULL) {
+                   weight_reads, out_type, i = NULL, i_total = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
@@ -39,8 +35,6 @@
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
 
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
-  
-  method <- match.arg(method)
   
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
   if (reg_stop - reg_start > 300) {
@@ -410,9 +404,8 @@
 
   if (plot_output == TRUE) {
     plots <- .plot_miRNA(chrom_name, reg_start, reg_stop, strand,
-                         bam_file, fold_list, overhangs,
-                         stranded_size_dist, z_df, out_type,
-                         prefix, wkdir, method)
+                         bam_file, fold_list, stranded_size_dist,
+                         out_type, prefix, wkdir)
   } else {
     plots <- NULL
   }

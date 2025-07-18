@@ -1,39 +1,28 @@
-.plot_miRNA <- function(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, stranded_size_dist, z_df, out_type, prefix, wkdir, method = c("self", "all")) {
+.plot_miRNA <- function(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, stranded_size_dist, out_type, prefix, wkdir) {
   
-  method = match.arg(method)
+  read_distribution_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
+  density_data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+  read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
   
-  dicer_sig <- .plot_overhangz(overhangs, strand = strand)
+  # These will now be generated in run_all and in miRNA to combine the plus and minus strand information
+  # dicer_sig <- .plot_overhangz(overhangs, strand = strand)
+  # zplot <- .plot_overlapz(z_df)
   
-  # make a table with the same positions but empty cov column for combining with pileups
-  # necessary because the pileups table doesn't have all positions from the first nt to the last because
-  # coverages of zero aren't reported
-  # set these to zero below
-  empty_table <- data.frame(pos = c(seq(fold_list$start, fold_list$stop)), count = c(0))
+  plots <- list()
   
-  density <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+  plots$prefix <- prefix
+  plots$strand <- strand
+  plots$density <- read_density_plot
+  plots$distribution <- read_distribution_plot
   
-  density_plot <- .plot_density(density, reg_start, reg_stop)
-  
-  dist_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
-  zplot <- .plot_overlapz(z_df)
-  
-  # If .miRNA was called by run_all, then don't write the plots yet
-  # Return each individual plot as an object to combine in .run_all
-  if (method == "all") {
-    plots <- list()
-    plots$prefix <- prefix
-    plots$strand <- strand
-    plots$density <- density_plot
-    plots$distribution <- dist_plot
-    plots$dicer_sig <- dicer_sig
-    plots$zplot <- zplot
-    return(plots)
-  }
-  
-  
+  return(plots)
+}
+
+# Write the plots to a file
+.print_miRNA_plots <- function(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, wkdir) {
   left_top <- cowplot::plot_grid(
-    dist_plot,
-    dicer_sig,
+    read_distribution_plot,
+    dicer_overhang_plot,
     ncol = 1,
     rel_widths = c(1, 1),
     rel_heights = c(1, 1),
@@ -43,8 +32,8 @@
   
   right_top <- cowplot::plot_grid(
     NULL,
-    density_plot,
-    zplot,
+    read_density_plot,
+    overlap_probability_plot,
     ncol = 1,
     rel_widths = c(1, 1, 1),
     rel_heights = c(0.4, 1, 1),
@@ -62,9 +51,9 @@
   )
   
   if (out_type == "png") {
-    grDevices::png(file = file.path(wkdir, paste(prefix, strand, "combined.png", sep = "_")), height = 8, width = 11, units = "in", res = 300)
+    grDevices::png(file = file.path(wkdir, paste(prefix, "combined.png", sep = "_")), height = 8, width = 11, units = "in", res = 300)
   } else {
-    grDevices::pdf(file = file.path(wkdir, paste(prefix, strand, "combined.pdf", sep = "_")), height = 8, width = 11)
+    grDevices::pdf(file = file.path(wkdir, paste(prefix, "combined.pdf", sep = "_")), height = 8, width = 11)
   }
   print(all_plot)
   grDevices::dev.off()
@@ -73,16 +62,22 @@
 
 
 
-.plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir) {
+
+
+
+
+
+
+.plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, size_plot, heat_plot, out_type, prefix, wkdir) {
   ### combine siRNA and hpRNA plots
-  
-  method = match.arg(method)
   
   if (is_small_locus) {
     #### Regions Less Than or Equal to 10kb (RLT10K) ####
 
-    plus_hp_overhangs <- dsh$plus_overhang_plot
-    minus_hp_overhangs <- dsh$minus_overhang_plot
+    #plus_hp_overhangs <- dsh$plus_overhang_plot
+    #minus_hp_overhangs <- dsh$minus_overhang_plot
+    overhang_probability_plot <- dsh$overhang_probability_plot
+    
     density_plot <- dsh$density_plot
     arc_plot <- dsh$arc_plot
     # In the case that no arc plot get made in dual_strand_hairpins
@@ -97,8 +92,9 @@
       arc_plot <- NULL
     }
     
-    plus_phasedz <- dsh$plus_phasedz
-    minus_phasedz <- dsh$minus_phasedz
+    phasedz <- dsh$phasedz
+    #plus_phasedz <- dsh$plus_phasedz
+    #minus_phasedz <- dsh$minus_phasedz
     
     #### RLT10K - Annotate True ####
     if (annotate_region) {
@@ -157,11 +153,8 @@
     }
     
     right <- cowplot::plot_grid(
-      plus_hp_overhangs,
-      minus_hp_overhangs,
-      plus_phasedz,
-      minus_phasedz,
-      dicer_plot,
+      overhang_probability_plot,
+      phasedz,
       ncol = 1,
       align = "vh",
       axis = "l",
@@ -189,9 +182,10 @@
     
   } else {
     #### Regions Greater Than 10kb (RGT10k) ####
-    plus_hp_overhangs <- dsh$plus_overhang_plot
-    minus_hp_overhangs <- dsh$minus_overhang_plot
-
+    #plus_hp_overhangs <- dsh$plus_overhang_plot
+    #minus_hp_overhangs <- dsh$minus_overhang_plot
+    overhang_probability_plot <- dsh$overhang_probability_plot
+    
     # None of the hairpin plots were made because the region > 10kb
     density_plot <- dsh$density_plot
     
@@ -202,7 +196,7 @@
       if (results_present) {
         bottom <- cowplot::plot_grid(
           ggplotify::as.grob(heat_plot),
-          dicer_plot,
+          overhang_probability_plot,
           ncol = 2,
           rel_widths = c(1, 1),
           rel_heights = c(1, 1),
@@ -210,7 +204,7 @@
           axis = "lrtb")
       } else { # if no heat plot
         bottom <- cowplot::plot_grid(
-          dicer_plot,
+          overhang_probability_plot,
           rel_widths = c(1),
           rel_heights = c(1),
           align = "vh",
@@ -251,7 +245,7 @@
         left <- cowplot::plot_grid(
           density_plot,
           size_plot,
-          dicer_plot,
+          overhang_probability_plot,
           ncol = 1,
           rel_widths = c(1, 1),
           rel_heights = c(1, 1),
@@ -280,7 +274,7 @@
         
       } else {
         bottom <- cowplot::plot_grid(
-          dicer_plot,
+          overhang_probability_plot,
           size_plot,
           rel_widths = c(1, 1),
           rel_heights = c(1, 1),

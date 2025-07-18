@@ -195,13 +195,11 @@ set_vars <- function(roi, bam_file, genome,
   reg_start <- test_list$V2
   reg_stop <- test_list$V3
   length <- test_list$length
-  chromosome <- unlist(unname(test_list$chromosome))
   var_list <- list(
     chrom_name = chrom_name,
     reg_start = reg_start,
     reg_stop = reg_stop,
     length = length,
-    chromosome = chromosome,
     plot_output = plot_output,
     path_to_RNAfold = path_to_RNAfold,
     path_to_RNAplot = path_to_RNAplot,

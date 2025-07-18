@@ -41,7 +41,6 @@ run_all <- function(vars, output_dir) {
       vars$chrom_name,
       vars$reg_start,
       vars$reg_stop,
-      vars$chromosome,
       vars$length,
       vars$bam_file,
       vars$roi,
