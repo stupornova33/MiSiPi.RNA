@@ -700,11 +700,12 @@
       plot_rows[[1]],
       plot_rows[[2]],
       plot_rows[[3]],
+      NULL,
       plot_rows[[4]],
       plot_rows[[5]],
       ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
+      rel_heights = c(1, 1, 1, 0.2, 1, 1), # 0.2 to add space above the arc, rest are 1
+      rel_widths = rep(1, NUM_PLOT_ROWS + 1),
       align = "hv",
       axis = "lrtb"
     )
@@ -713,12 +714,13 @@
       plot_rows[[1]],
       plot_rows[[2]],
       plot_rows[[3]],
+      NULL,
       plot_rows[[4]],
       plot_rows[[5]],
       plot_rows[[6]],
       ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
+      rel_heights = c(1, 1, 1, 0.2, 1, 1, 1), # 0.2 to add space above the arc, rest are 1
+      rel_widths = rep(1, NUM_PLOT_ROWS + 1),
       align = "hv",
       axis = "lrtb"
     )

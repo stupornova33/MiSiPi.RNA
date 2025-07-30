@@ -23,6 +23,7 @@ Imports:
     glue,
     IRanges,
     KernSmooth,
+    lubridate,
     magrittr,
     pheatmap,
     R4RNA,
