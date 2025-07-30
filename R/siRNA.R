@@ -2,7 +2,7 @@
 # calls the siRNA function, creates siRNA logfile
 # @param vars a list of variables provided by user
 
-siRNA <- function(vars) {
+siRNA <- function(vars, output_dir) {
   total_iterations <- length(vars$chrom_name)
   idx_vec <- 1:total_iterations
   
@@ -13,21 +13,13 @@ siRNA <- function(vars) {
     method = "siRNA"
   )
   
-  si_dir <- "siRNA_outputs"
-  logfile <- file.path(si_dir, "siRNA_logfile.txt")
-  
-  if (dir.exists(si_dir)) {
-    # If running interactively, give the option to delete old files if present,
-    # or move them to a new timestamped directory if not
-    if (!interactive()) {
-      unlink(si_dir, recursive = TRUE)
-    } else {
-      .overwrite_warning(si_dir)
-    }
-  }
+  si_dir <- file.path(output_dir, "siRNA")
+  logfile <- file.path(si_dir, "siRNA_log.txt")
   
   dir.create(si_dir)
   file.create(logfile)
+  
+  calling_method <- "self"
 
   invisible(
     mapply(
@@ -48,6 +40,7 @@ siRNA <- function(vars) {
       vars$gtf_file,
       vars$write_fastas,
       vars$out_type,
+      calling_method,
       idx_vec,
       total_iterations
     )

@@ -1,11 +1,4 @@
-.compare_miRNA_strands <- function(chrom, start, stop, calling_func = c("miRNA", "all")) {
-  
-  calling_func <- match.arg(calling_func)
-  output_dir <- switch(
-    calling_func,
-    "miRNA" = "miRNA_outputs",
-    "all" = file.path("run_all", "miRNA_outputs")
-  )
+.compare_miRNA_strands <- function(chrom, start, stop, output_dir) {
   
   plusFile <- file.path(output_dir, "miRNA_plus_dicerz.txt")
   minusFile <- file.path(output_dir, "miRNA_minus_dicerz.txt")

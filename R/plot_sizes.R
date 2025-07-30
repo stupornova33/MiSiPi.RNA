@@ -16,6 +16,8 @@
     man_pal <- c("green4", "red3", "blue4", "grey", "yellow3")
   }
 
+  dist$first <- sub("T", "U", dist$first)
+  
   width <- count <- first <- NULL
   p <- ggplot2::ggplot(dist, ggplot2::aes(x = width, y = count, fill = first)) +
     ggplot2::geom_bar(stat = "identity") +

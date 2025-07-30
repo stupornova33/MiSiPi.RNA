@@ -16,11 +16,12 @@
 # @param gtf_file A string corresponding to the path of genome annotation in 9-column GTF format.
 # @param write_fastas TRUE or FALSE. Default is FALSE
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
+# @param dicer_overhangs
 # @return a list of results
 
 .dual_strand_hairpin <- function(chrom_name, reg_start, reg_stop, length,
                                  genome_file, bam_file, logfile, wkdir, plot_output, path_to_RNAfold, annotate_region,
-                                 weight_reads, gtf_file, write_fastas, out_type) {
+                                 weight_reads, gtf_file, write_fastas, out_type, dicer_overhangs) {
   end <- dist <- num.y <- num.x <- Zscore <- converted <- NULL
 
 
@@ -29,26 +30,32 @@
   # the dot thing and the mfe
   # R4RNA viennaToHelix is used to create the helix from the dot
   fold_the_rna <- function(geno_seq, chrom_name, reg_start, reg_stop, path_to_RNAfold, wkdir) {
-    dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
-
+    #dna_vec <- as.character(Biostrings::subseq(geno_seq, start = reg_start, end = reg_stop))
+    dna_vec <- as.character(geno_seq)
     converted <- convertU(dna_vec, 1)
     dna_vec <- NULL
 
     fold_list <- mapply(.fold_long_rna, chrom_name, reg_start, reg_stop, converted, path_to_RNAfold, wkdir)
-    fold_list <- t(fold_list)
-    MFE <- unlist(unname(fold_list[, 3]))
-    vienna <- fold_list[, 5]
-    extracted_df <- fold_list[4][[1]]
-
-    writeLines(as.character(vienna), con = file.path(wkdir, "vienna.txt"))
-
-    prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
-
-    helix <- R4RNA::viennaToHelix(unlist(fold_list[, 5]))
-
-    filepath <- file.path(wkdir, "helix.txt")
-    R4RNA::writeHelix(helix, file = filepath)
-    return(list(MFE = MFE, vienna = vienna, extracted_df = extracted_df, helix = helix))
+    
+    if(!is.null(unlist(unname(fold_list[1]))) & !is.na(fold_list[4,])){   #for cases where there are no paired bases or other problems from RNAfold
+      fold_list <- t(fold_list)
+      MFE <- unlist(unname(fold_list[, 3]))
+      vienna <- fold_list[, 5]
+      extracted_df <- fold_list[4][[1]]
+  
+      writeLines(as.character(vienna), con = file.path(wkdir, "vienna.txt"))
+  
+      prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
+  
+      helix <- R4RNA::viennaToHelix(unlist(fold_list[, 5]))
+  
+      filepath <- file.path(wkdir, "helix.txt")
+      R4RNA::writeHelix(helix, file = filepath)
+      return(list(MFE = MFE, vienna = vienna, extracted_df = extracted_df, helix = helix))
+    } else {
+      res <- .null_hp_res()
+      return(res)
+    }
   }
 
 
@@ -71,15 +78,18 @@
   }
 
   # Extract chromosome sequence from genome file
+  # Bedtools start is 0-indexed, stop is half open 1-based 
+  # Need to substract 1 from end to avoid exceeding chromosome length
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
-    ranges = IRanges::IRanges(start = c(1), end = c(length))
+    ranges = IRanges::IRanges(start = c(reg_start), end = c((reg_stop - 1)))
   )
 
 
   geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
-  geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
-
+  #geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+  geno_seq <- as.character(unlist(geno_seq))
+  
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
@@ -155,6 +165,7 @@
       sRes[[strand_name]]$hp_overhangs_counts <- sum(sRes[[strand_name]]$overhangs$proper_count[5])
       sRes[[strand_name]]$hp_overhangz <- mean(sRes[[strand_name]]$overhangs$zscore[5])
       sRes[[strand_name]]$hp_overhang_mlz <- mean(sRes[[strand_name]]$overhangs$ml_zscore[5])
+      sRes[[strand_name]]$all_overlaps <- data.frame()
       
     } else { ## r2_dt has rows
       sRes[[strand_name]]$hp_phased_tbl <- .calc_phasing(r1_dt_summarized, r2_dt_summarized, 50)
@@ -177,11 +188,12 @@
         dplyr::group_by(rname, start, end, width, first) %>%
         dplyr::count()
       
-      sRes[[strand_name]]$all_overlaps <- .dicer_overlaps(sRes[[strand_name]]$dicer_dt, sRes$fold_list$helix, chrom_name, reg_start)
+      if(!is.null(sRes$fold_list$helix)){ # if RNAfold has problem (e.g. no paired bases, then dicer overlaps function cannot run
+        sRes[[strand_name]]$all_overlaps <- .dicer_overlaps(sRes[[strand_name]]$dicer_dt, sRes$fold_list$helix, chrom_name, reg_start)
       
       # .dicer_overlaps() returns zero values if there are no valid overlaps
       # so check to make sure the first values are not zero
-      if (!is.na(sRes[[strand_name]]$all_overlaps[1, 1]) && !(sRes[[strand_name]]$all_overlaps[1, 1] == 0)) {
+      if (!is.na(sRes[[strand_name]]$all_overlaps[1, 1]) && !(nrow(sRes[[strand_name]]$all_overlaps) == 0)) {
         sRes[[strand_name]]$overhangs <- calc_overhangs(
           sRes[[strand_name]]$all_overlaps$r1_start,
           sRes[[strand_name]]$all_overlaps$r1_end,
@@ -204,6 +216,11 @@
         sRes[[strand_name]]$hp_overhangz <- 0
         sRes[[strand_name]]$hp_overhang_mlz <- -33
       }
+      
+      } else {
+        sRes[[strand_name]]$all_overlaps <- data.frame()
+      }  
+        
     }
     
     # results for the ML table
@@ -231,23 +248,24 @@
   }
 
   #### Generate Plots ####
-
-  plus_overhang_out <- data.frame(t(sRes$plus$res$dicer_tbl.zscore))
-  colnames(plus_overhang_out) <- sRes$plus$res$dicer_tbl.shift
-  plus_overhang_out$locus <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-  plus_overhang_out <- plus_overhang_out[, c(10, 1:9)]
-
-  plus_hp_dicerz_file <- file.path(wkdir, "plus_hp_dicerz.txt")
-  .write.quiet(plus_overhang_out, plus_hp_dicerz_file)
-
-  minus_overhang_out <- data.frame(t(sRes$minus$res$dicer_tbl.zscore))
-  colnames(minus_overhang_out) <- sRes$minus$res$dicer_tbl.shift
-  minus_overhang_out$locus <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
-  minus_overhang_out <- minus_overhang_out[, c(10, 1:9)]
-
-  minus_hp_dicerz_file <- file.path(wkdir, "minus_hp_dicerz.txt")
-  .write.quiet(minus_overhang_out, minus_hp_dicerz_file)
-
+  # check and see if dicer results exist for plotting
+  if(!nrow(sRes$plus$all_overlaps) == 0){
+    plus_overhang_out <- data.frame(t(sRes$plus$res$dicer_tbl.zscore))
+    colnames(plus_overhang_out) <- sRes$plus$res$dicer_tbl.shift
+    plus_overhang_out$locus <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+    plus_overhang_out <- plus_overhang_out[, c(10, 1:9)]
+  
+    plus_hp_dicerz_file <- file.path(wkdir, "plus_hp_dicerz.txt")
+    .write.quiet(plus_overhang_out, plus_hp_dicerz_file)
+  
+    minus_overhang_out <- data.frame(t(sRes$minus$res$dicer_tbl.zscore))
+    colnames(minus_overhang_out) <- sRes$minus$res$dicer_tbl.shift
+    minus_overhang_out$locus <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
+    minus_overhang_out <- minus_overhang_out[, c(10, 1:9)]
+  
+    minus_hp_dicerz_file <- file.path(wkdir, "minus_hp_dicerz.txt")
+    .write.quiet(minus_overhang_out, minus_hp_dicerz_file)
+  } 
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   plus_phased_out <- t(c(prefix, t(sRes$plus$res$phased_tbl.phased_z)))
@@ -267,31 +285,39 @@
 
   # Add additional data and plots to results
   if (plot_output) {
-    plus_overhangs <- data.frame(shift = sRes$plus$res$dicer_tbl.shift, zscore = sRes$plus$res$dicer_tbl.zscore)
-    minus_overhangs <- data.frame(shift = sRes$minus$res$dicer_tbl.shift, zscore = sRes$minus$res$dicer_tbl.zscore)
-
-    ## return these as plot objects
-    plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
-    minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
-
+    
+    if(!nrow(sRes$plus$all_overlaps) == 0) {
+      plus_overhangs <- data.frame(shift = sRes$plus$res$dicer_tbl.shift, zscore = sRes$plus$res$dicer_tbl.zscore)
+      minus_overhangs <- data.frame(shift = sRes$minus$res$dicer_tbl.shift, zscore = sRes$minus$res$dicer_tbl.zscore)
+  
+      ## return these as plot objects
+      #plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
+      #minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
+      overhang_probability_plot <- .plot_siRNA_overhangs_combined(plus_overhangs, minus_overhangs, dicer_overhangs)
+    } 
+    
     data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- .plot_density(data, reg_start, reg_stop)
 
     # Check to see if helix.txt has actual data
     helix_file <- file.path(wkdir, "helix.txt")
-    # First line in helix.txt is just a comment, like # 22, so skip this line
-    invisible(nrows_helix_file <- nrow(readr::read_tsv(helix_file, skip = 1, show_col_types = FALSE)))
     
-    if (nrows_helix_file != 0) {
-      if (!Sys.info()["sysname"] == "Windows") {
-        arc_plot <- .plot_helix(helix_file)
-        grDevices::dev.control("enable")
-        R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-        arc_plot <- grDevices::recordPlot() # don't touch this...the boss gets mad
-      } else {
-        R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-        arc_plot <- grDevices::recordPlot()
+        
+    if (file.exists(helix_file)) {
+      # First line in helix.txt is just a comment, like # 22, so skip this line
+      invisible(nrows_helix_file <- nrow(readr::read_tsv(helix_file, skip = 1, show_col_types = FALSE)))
+
+      if(nrows_helix_file > 0){
+        if (!Sys.info()["sysname"] == "Windows") {
+          arc_plot <- .plot_helix(helix_file)
+          grDevices::dev.control("enable")
+          R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+          arc_plot <- grDevices::recordPlot() # don't touch this...the boss gets mad
+        } else {
+          R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
+          arc_plot <- grDevices::recordPlot()
+        }
       }
     } else {
       arc_plot <- NA
@@ -300,22 +326,30 @@
 
     ## why? No one knows
 
-    plus_phasedz <- .plot_hp_phasedz(sRes$plus$hp_phased_tbl, "+")
+    phasedz <- .plot_siRNA_hp_phasing_probability_combined(sRes$plus$hp_phased_tbl, sRes$minus$hp_phased_tbl)
+    #plus_phasedz <- .plot_hp_phasedz(sRes$plus$hp_phased_tbl, "+")
+    #minus_phasedz <- .plot_hp_phasedz(sRes$minus$hp_phased_tbl, "-")
 
-    minus_phasedz <- .plot_hp_phasedz(sRes$minus$hp_phased_tbl, "-")
+    if(!nrow(sRes$plus$all_overlaps) == 0){
+      results$overhang_probability_plot <- overhang_probability_plot
+      #results$plus_overhang_plot = plus_overhang_plot
+      #results$minus_overhang_plot = minus_overhang_plot
+    } else {
+      results$overhang_probability_plot <- NA
+      #results$plus_overhang_plot <- NA
+      #results$minus_overhang_plot <- NA
+    }
+    results$density_plot <- density_plot
+    results$arc_plot <- arc_plot
+    results$phasedz <- phasedz
+    #results$plus_phasedz = plus_phasedz
+    #results$minus_phasedz = minus_phasedz
 
-    results$plus_overhang_plot = plus_overhang_plot
-    results$minus_overhang_plot = minus_overhang_plot
-    results$density_plot = density_plot
-    results$arc_plot = arc_plot
-    results$plus_phasedz = plus_phasedz
-    results$minus_phasedz = minus_phasedz
-    
     # Plot genome annotations (optional)
     if (annotate_region) {
       gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
       results$gtf_plot = gtf_plot
     }
-  }
   return(results)
+  }
 }

@@ -3,7 +3,6 @@
 # @param chrom_name a string
 # @param reg_stop an integer
 # @param reg_start an integer
-# @param chromosome an integer representing the chromosome number
 # @param length an integer
 # @param bam_file a string
 # @param roi a string
@@ -18,21 +17,24 @@
 # @param gtf_file a string
 # @param write_fastas a bool, TRUE or FALSE. Default is FALSE
 # @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
+# @param output_dir The current output directory
 # @param i
 # @param i_total
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
-                     chromosome, length, bam_file,
+                     length, bam_file,
                      roi, genome_file,
                      si_pal, pi_pal, plot_output,
                      path_to_RNAfold, path_to_RNAplot,
                      annotate_region, weight_reads,
                      gtf_file, write_fastas, out_type,
-                     i, i_total) {
+                     output_dir, i, i_total) {
   width <- pos <- start <- end <- NULL
 
   .inform_iteration(i, i_total, chrom_name)
+  
+  calling_method <- "all"
 
   # create empty data table for results
   local_ml <- data.table::data.table(
@@ -71,15 +73,13 @@
 
   ####################################################################### process bam input files #############################################################################
 
-  all_dir <- "run_all"
-  logfile <- file.path(all_dir, "run_all_logfile.txt")
+  logfile <- file.path(output_dir, "run_all_log.txt")
 
   bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[["targets"]])
   chr_length <- unname(bam_header[["targets"]])
   bam_header <- NULL
-  chromosome <- which(chr_name == chrom_name)
 
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
@@ -104,12 +104,10 @@
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
 
-  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>%
-    dplyr::summarize(count = sum(count))
-
-  .output_readsize_dist(size_dist, prefix, all_dir, strand = NULL, type = "all")
-
+  stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  
+  .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
+  
   chromP <- NULL
   chromM <- NULL
   size_dist <- NULL
@@ -267,8 +265,8 @@
 
   cat(file = logfile, "Beginning siRNA function\n", append = TRUE)
 
-  si_dir <- file.path(all_dir, "siRNA_outputs")
-  si_log <- file.path(si_dir, "siRNA_logfile.txt")
+  si_dir <- file.path(output_dir, "siRNA")
+  si_log <- file.path(si_dir, "siRNA_log.txt")
 
   si_res <- .siRNA(
     chrom_name, reg_start, reg_stop,
@@ -276,8 +274,11 @@
     bam_file, si_log, si_dir,
     si_pal, plot_output, path_to_RNAfold,
     annotate_region, weight_reads, gtf_file,
-    write_fastas, out_type
+    write_fastas, out_type, calling_method
   )
+  
+  # If plots object is not in si_res, it will return NULL
+  siRNA_plots <- si_res$plots
 
   max_si_heat <- .get_max_si_heat(si_res)
   local_ml$highest_si_col <- max_si_heat$highest_si_col
@@ -319,12 +320,12 @@
 
   cat(file = logfile, "Beginning miRNA function\n", append = TRUE)
 
-  mi_dir <- file.path(all_dir, "miRNA_outputs")
-  mi_log <- file.path(mi_dir, "miRNA_logfile.txt")
+  mi_dir <- file.path(output_dir, "miRNA")
+  mi_log <- file.path(mi_dir, "miRNA_log.txt")
 
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
-    chromosome, length, "+",
+    length, "+",
     genome_file, bam_file,
     mi_log, mi_dir,
     plot_output,
@@ -332,8 +333,12 @@
     path_to_RNAplot,
     weight_reads,
     write_fastas,
-    out_type
+    out_type,
   )
+
+  miRNA_plus_plots <- mi_res$plots
+  miRNA_plus_overhangs <- mi_res$overhangs
+  miRNA_plus_overlaps <- mi_res$overlaps
 
   # Look at first result
   # mi_res <- mi_res[[1]]
@@ -347,7 +352,7 @@
 
   mi_res <- .miRNA(
     chrom_name, reg_start, reg_stop,
-    chromosome, length, "-",
+    length, "-",
     genome_file, bam_file,
     mi_log, mi_dir,
     plot_output,
@@ -355,8 +360,15 @@
     path_to_RNAplot,
     weight_reads,
     write_fastas,
-    out_type
+    out_type,
   )
+  
+  miRNA_minus_plots <- mi_res$plots
+  miRNA_minus_overhangs <- mi_res$overhangs
+  miRNA_minus_overlaps <- mi_res$overlaps
+  
+  miRNA_dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(miRNA_plus_overhangs, miRNA_minus_overhangs)
+  miRNA_overlap_probability_plot <- .plot_miRNA_overlap_probability(miRNA_plus_overlaps, miRNA_minus_overlaps)
 
   # mi_res <- mi_res[[1]]
   mirnaMFE_minus <- mi_res$mfe
@@ -399,8 +411,8 @@
 
   cat(file = logfile, "Begin piRNA function\n", append = TRUE)
 
-  pi_dir <- file.path(all_dir, "piRNA_outputs")
-  pi_log <- file.path(pi_dir, "piRNA_logfile.txt")
+  pi_dir <- file.path(output_dir, "piRNA")
+  pi_log <- file.path(pi_dir, "piRNA_log.txt")
 
   pi_res <- .piRNA(chrom_name, reg_start, reg_stop,
     length, bam_file, genome_file,
@@ -408,8 +420,11 @@
     plot_output = plot_output,
     weight_reads,
     write_fastas,
-    out_type
+    out_type,
+    calling_method
   )
+  
+  piRNA_plots <- pi_res$plots
 
   if (sum(pi_res$heat_results) != 0) {
     max_pi_heat <- .get_max_pi_heat(pi_res)
@@ -465,10 +480,260 @@
   input_pref <- tmp[length(tmp)]
   input_pref <- strsplit(input_pref, "[.]")[[1]][1]
 
-  ml_file <- file.path(all_dir, paste0(tbl_pref, "_", input_pref, "_ml.txt"))
+  ml_file <- file.path(output_dir, paste0(tbl_pref, "_", input_pref, "_ml.txt"))
 
   local_ml <- as.matrix(local_ml)
 
   cat(file = logfile, "Writing machine learning results to table\n", append = TRUE)
   .write.quiet(local_ml, ml_file)
+ 
+  
+  #### Make combined plot for current locus #### 
+  # Set all possible plots to NULL initially
+  density_plot <- NULL
+  distribution_plot <- NULL
+  # miRNA specific plots
+  # Generated above
+  
+  # piRNA specific plots
+  piRNA_overlap_probability_plot <- NULL # piRNA_plots$z
+  piRNA_proper_overlaps_by_size_plot <- NULL # piRNA_plots$heat_plot
+  piRNA_phasing_probability_plot <- NULL # piRNA_plots$phased_plot
+  # siRNA specific plots
+  siRNA_arc_plot <- NULL # siRNA_plots$arc_plot
+  siRNA_dicer_overhang_probability_plot <- NULL # siRNA_plots$overhang_probability_plot
+  siRNA_phasing_probability_plot <- NULL # siRNA_plots$phasedz
+  siRNA_proper_overhangs_by_size_plot <- NULL # siRNA_plots$heat_plot
+  siRNA_gtf_plot <- NULL # siRNA_plots$gtf_plot
+  
+  # miRNA Plus Strand
+  if (!is.null(miRNA_plus_plots)) {
+    # Redundant plots
+    density_plot <- miRNA_plus_plots$density
+    distribution_plot <- miRNA_plus_plots$distribution
+  }
+  
+  # miRNA Minus Strand
+  if (!is.null(miRNA_minus_plots)) {
+    # Redundant Plots
+    if (is.null(density_plot)) {
+      density_plot <- miRNA_minus_plots$density
+    }
+    if (is.null(distribution_plot)) {
+      distribution_plot <- miRNA_minus_plots$distribution
+    }
+  }
+  
+  # piRNA
+  if (!is.null(piRNA_plots)) {
+    # Redundant Plots
+    if (is.null(density_plot)) {
+      density_plot <- piRNA_plots$density_plot
+    }
+    if (is.null(distribution_plot)) {
+      distribution_plot <- piRNA_plots$dist_plot
+    }
+    # piRNA specific plots
+    piRNA_overlap_probability_plot <- piRNA_plots$z
+    piRNA_proper_overlaps_by_size_plot <-piRNA_plots$heat_plot
+    piRNA_phasing_probability_plot <- piRNA_plots$phased_plot
+  }
+  
+  # siRNA
+  if (!is.null(siRNA_plots)) {
+    # Redundant Plots
+    if (is.null(density_plot)) {
+      density_plot <- siRNA_plots$density_plot
+    }
+    if (is.null(distribution_plot)) {
+      distribution_plot <- siRNA_plots$size_plot
+    }
+    # siRNA specific plots
+    siRNA_arc_plot <- siRNA_plots$arc_plot
+    siRNA_dicer_overhang_probability_plot <- siRNA_plots$overhang_probability_plot
+    siRNA_phasing_probability_plot <- siRNA_plots$phasedz
+    siRNA_proper_overhangs_by_size_plot <- siRNA_plots$heat_plot
+    siRNA_gtf_plot <- siRNA_plots$gtf_plot
+  }
+  
+  # Generate plot object
+  # There are currently a total of 18 possible plots
+  # Work will be done to considate these plots soon, but for now,
+  # we'll test out making a plot that is 2 columns wide and up to
+  # 9 columns long
+  
+  # miRNA_dicer_overhang_plot
+  # miRNA_overlap_probability_plot
+  
+  # Check if each plot is null, if not place in all_plots list
+  all_plots <- list()
+  i <- 1
+  
+  if (!is.null(distribution_plot)) {
+    all_plots[[i]] <- distribution_plot
+    i <- i + 1
+  }
+  if (!is.null(density_plot)) {
+    all_plots[[i]] <- density_plot
+    i <- i + 1
+  }
+  
+  if (!is.null(miRNA_dicer_overhang_plot)) {
+    all_plots[[i]] <- miRNA_dicer_overhang_plot
+    i <- i + 1
+  }
+  if (!is.null(miRNA_overlap_probability_plot)) {
+    all_plots[[i]] <- miRNA_overlap_probability_plot
+    i <- i + 1
+  }
+  if (!is.null(piRNA_overlap_probability_plot)) {
+    all_plots[[i]] <- piRNA_overlap_probability_plot
+    i <- i + 1
+  }
+  if (!is.null(piRNA_proper_overlaps_by_size_plot)) {
+    all_plots[[i]] <- piRNA_proper_overlaps_by_size_plot
+    i <- i + 1
+  }
+  if (!is.null(piRNA_phasing_probability_plot)) {
+    all_plots[[i]] <- piRNA_phasing_probability_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_arc_plot)) {
+    all_plots[[i]] <- siRNA_arc_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_dicer_overhang_probability_plot)) {
+    all_plots[[i]] <- siRNA_dicer_overhang_probability_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_phasing_probability_plot)) {
+    all_plots[[i]] <- siRNA_phasing_probability_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_proper_overhangs_by_size_plot)) {
+    all_plots[[i]] <- siRNA_proper_overhangs_by_size_plot
+    i <- i + 1
+  }
+  if (!is.null(siRNA_gtf_plot)) {
+    all_plots[[i]] <- siRNA_gtf_plot
+    i <- i + 1
+  }
+  
+  # Undo the last increment
+  i <- i - 1
+  
+  # Create plot row
+  # Since there will be 2 plots per row, we'll just round up
+  NUM_PLOT_ROWS <- ceiling(i / 2)
+  
+  plot_rows <- list() 
+  
+  for (i in seq(1, length(all_plots), 2)) {
+    left_plot <- all_plots[[i]]
+    
+    # Last Row
+    if ((length(all_plots) - i) < 2) {
+      if (length(all_plots) %% 2 == 0) {
+        right_plot <- all_plots[[i + 1]]
+      } else {
+        right_plot <- NULL
+      }
+    } else {
+      right_plot <- all_plots[[i + 1]]
+    }
+    
+    current_row <- cowplot::plot_grid(
+      left_plot,
+      NULL,
+      right_plot,
+      ncol = 3,
+      rel_widths = c(1, 0.3, 1),
+      rel_heights = c(1, 1, 1),
+      align = "hv", # Align both vertically and horizontally
+      axis = "lrtb"
+    )
+    
+    current_row_number <- length(plot_rows) + 1
+    plot_rows[[current_row_number]] <- current_row
+  }
+  
+  print(paste0("NUM_PLOT_ROWS: ", NUM_PLOT_ROWS))
+  # I hate that we currently have to do this series of if checks
+  # TODO: revisit this later
+  if (NUM_PLOT_ROWS == 1) {
+    all_plot <- plot_rows[[1]]
+  } else if (NUM_PLOT_ROWS == 2) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 3) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 4) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      plot_rows[[4]],
+      ncol = 1,
+      rel_heights = rep(1, NUM_PLOT_ROWS),
+      rel_widths = rep(1, NUM_PLOT_ROWS),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 5) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      NULL,
+      plot_rows[[4]],
+      plot_rows[[5]],
+      ncol = 1,
+      rel_heights = c(1, 1, 1, 0.2, 1, 1), # 0.2 to add space above the arc, rest are 1
+      rel_widths = rep(1, NUM_PLOT_ROWS + 1),
+      align = "hv",
+      axis = "lrtb"
+    )
+  } else if (NUM_PLOT_ROWS == 6) {
+    all_plot <- cowplot::plot_grid(
+      plot_rows[[1]],
+      plot_rows[[2]],
+      plot_rows[[3]],
+      NULL,
+      plot_rows[[4]],
+      plot_rows[[5]],
+      plot_rows[[6]],
+      ncol = 1,
+      rel_heights = c(1, 1, 1, 0.2, 1, 1, 1), # 0.2 to add space above the arc, rest are 1
+      rel_widths = rep(1, NUM_PLOT_ROWS + 1),
+      align = "hv",
+      axis = "lrtb"
+    )
+  }
+  
+  height <- 4 * NUM_PLOT_ROWS
+  
+  if (out_type == "png") {
+    grDevices::png(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.png", sep = "_")), height = height, width = 11, units = "in", res = 300)
+  } else {
+    grDevices::pdf(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.pdf", sep = "_")), height = height, width = 11)
+  }
+  print(all_plot)
+  grDevices::dev.off()
+  
 }

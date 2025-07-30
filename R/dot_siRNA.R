@@ -21,7 +21,8 @@
 .siRNA <- function(chrom_name, reg_start, reg_stop, length,
                    genome_file, bam_file, logfile, wkdir, pal, plot_output,
                    path_to_RNAfold, annotate_region, weight_reads, gtf_file,
-                   write_fastas, out_type, i = NULL, i_total = NULL) {
+                   write_fastas, out_type, method = c("self", "all"),
+                   i = NULL, i_total = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
@@ -64,12 +65,16 @@
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>%
-    dplyr::summarise(count = sum(count))
+  #size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+  #  dplyr::group_by(width) %>%
+  #  dplyr::summarise(count = sum(count))
 
-  .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
+  #.output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
 
+  
+  #stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  #.plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
+  
   chromP <- NULL
   chromM <- NULL
   size_dist <- NULL
@@ -170,10 +175,16 @@
   .write.quiet(overhang_output, dicerz_file)
   .write.quiet(heat_output, heatmap_file)
   
+  
+  # 7/17/25 - passing dicer_overhangs to dual_strand_hairpin in order to make a combined
+  #           plot with the individual strands
+  #dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
+  
   # run the hairpin function on each strand separately
   dsh <- .dual_strand_hairpin(
-    chrom_name, reg_start, reg_stop, length, genome_file, bam_file, logfile, wkdir, plot_output,
-    path_to_RNAfold, annotate_region, weight_reads, gtf_file, write_fastas, out_type
+    chrom_name, reg_start, reg_stop, length, genome_file, bam_file, logfile,
+    wkdir, plot_output, path_to_RNAfold, annotate_region, weight_reads,
+    gtf_file, write_fastas, out_type, dicer_overhangs
   )
 
   
@@ -183,17 +194,44 @@
     is_small_locus <- (reg_stop - reg_start + 1) <= 10000
     
     if (results_present) {
-      heat_plot <- .plot_si_heat(results, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
+      heat_plot <- .plot_heat(results, chrom_name, reg_start, reg_stop, wkdir, "siRNA", pal = pal)
     } else {
       heat_plot <- NULL
     }
     
-    dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
-    size_plot <- .plot_sizes(dist)
-    dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
+    #dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
+    #size_plot <- .plot_sizes(dist)
+    stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+    size_plot <- .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
     
-    .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, dicer_plot, size_plot, heat_plot, out_type, prefix, wkdir)
+    if (method == "all") {
+      plots <- list()
+      plots$prefix <- prefix
+      plots$size_plot <- size_plot
+      #plots$dicer_plot <- dicer_plot
+      plots$overhang_probability_plot <- dsh$overhang_probability_plot
+      
+      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
+      if (!is.null(heat_plot)) {
+        heat_plot <- ggplotify::as.grob(heat_plot)
+      }
+      
+      plots$heat_plot <- heat_plot
+      plots$density_plot <- dsh$density_plot
+      #plots$plus_overhang_plot <- dsh$plus_overhang_plot
+      #plots$minus_overhang_plot <- dsh$minus_overhang_plot
+      plots$arc_plot <- dsh$arc_plot
+      plots$phasedz <- dsh$phasedz
+      #plots$plus_phasedz <- dsh$plus_phasedz
+      #plots$minus_phasedz <- dsh$minus_phasedz
+      plots$gtf_plot <- dsh$gtf_plot
+    } else {
+      plots <- NULL
+      .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, size_plot, heat_plot, out_type, prefix, wkdir)
+    }
+  } else {
+    plots <- NULL
   }
 
-  return(list(heat = results, si_dicer = dicer_overhangs, dsh = dsh))
+  return(list(heat = results, si_dicer = dicer_overhangs, dsh = dsh, plots = plots))
 }

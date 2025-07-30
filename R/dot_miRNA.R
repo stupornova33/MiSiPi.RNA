@@ -4,7 +4,6 @@
 # @param chrom_name a string
 # @param reg_start a whole number
 # @param reg_stop a whole number
-# @param chromosome chrom names extracted from bam file
 # @param length length of chromosome of interest
 # @param strand a character passed in, "+" or "-"
 # @param genome_file a fasta file of chrom sequences
@@ -19,21 +18,17 @@
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 # @param i The current iteration number
 # @param i_total The total number of iterations
-# @param pb The progress bar identifying string
 # @return plots
 
-.miRNA <- function(chrom_name, reg_start, reg_stop, chromosome, length, strand,
+.miRNA <- function(chrom_name, reg_start, reg_stop, length, strand,
                    genome_file, bam_file, logfile, wkdir,
                    plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
-                   weight_reads, out_type, i = NULL, i_total = NULL, pb = NULL) {
+                   weight_reads, out_type, i = NULL, i_total = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
     .inform_iteration(i, i_total, chrom_name, strand)
   }
-  
-  #cli::cli_progress_update(id = pb, force = TRUE)
-  #flush.console()
   
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   
@@ -55,7 +50,10 @@
   bam_header <- NULL
 
   # for the read size distribution plot
-  read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  #read_dist <- .get_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  
+  stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  #.plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
   
   chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand)
 
@@ -63,11 +61,20 @@
 
   # Processing one strand, so make copy of df to transform
   # 1/9/24 added seq back in for writing miRNA pairs (arms)
-
+  # 7/15/25 Rsamtools::scanBam is returning all reads on the specified strand that overlap the given ScanBamParam region
+  # -- This is causing some reads start or end position to be well outside the locus region
+  # -- Experimenting with filtering the reads to allow them to be a limited distance beyond the locus region
+  
+  # Limit reads to 5nt beyond current region of interest
+  READ_OVERFLOW_LIMIT <- 5
+  
   r2_dt <- .make_si_BamDF(chrom) %>%
     subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%
+    dplyr::filter(
+      start >= reg_start - READ_OVERFLOW_LIMIT &
+      end <= reg_stop + READ_OVERFLOW_LIMIT) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
@@ -106,11 +113,21 @@
 
   dt_table[is.na(dt_table)] <- 0
 
+  #r1_summarized <- r1_dt %>%
+  #  dplyr::group_by_all() %>%
+  #  dplyr::count()
+  
   r1_summarized <- r1_dt %>%
+    dplyr::select(-c(first, seq)) %>%
     dplyr::group_by_all() %>%
     dplyr::count()
-
+  
+  #r2_summarized <- r2_dt %>%
+  #  dplyr::group_by_all() %>%
+  #  dplyr::count()
+  
   r2_summarized <- r2_dt %>%
+    dplyr::select(-c(first, seq)) %>%
     dplyr::group_by_all() %>%
     dplyr::count()
 
@@ -152,7 +169,6 @@
       width_r2 = (r2_end - r2_start) + 1
     )
 
-
   read_pileups <- read_pileups %>%
     dplyr::mutate(
       "lstart" = r1_end + 1,
@@ -167,22 +183,22 @@
 
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
-    ranges = IRanges::IRanges(start = c(1), end = c(length))
+    ranges = IRanges::IRanges(start = reg_start - READ_OVERFLOW_LIMIT, end = reg_stop + READ_OVERFLOW_LIMIT)
   )
 
-  geno_seq <- Rsamtools::scanFa(genome_file, mygranges)
-  geno_seq <- as.character(unlist(Biostrings::subseq(geno_seq, start = 1, end = length)))
+  bed_seq <- toString(Rsamtools::scanFa(genome_file, mygranges))
+  
+  # This offset will help give us the relative start and stop positions in the shortened extracted sequence
+  RELATIVE_SEQ_POS_OFFSET <- reg_start - READ_OVERFLOW_LIMIT - 1
 
-
-  loop_seqs <- getFastas(geno_seq, read_pileups$lstart, read_pileups$lstop, nrow(read_pileups)) %>%
+  loop_seqs <- getFastas(bed_seq, read_pileups$lstart - RELATIVE_SEQ_POS_OFFSET, read_pileups$lstop - RELATIVE_SEQ_POS_OFFSET, nrow(read_pileups)) %>%
     dplyr::rename("lstart" = "start", "lstop" = "stop")
 
-  r1_seqs <- getFastas(geno_seq, read_pileups$r1_start, read_pileups$r1_end, nrow(read_pileups)) %>%
+  r1_seqs <- getFastas(bed_seq, read_pileups$r1_start - RELATIVE_SEQ_POS_OFFSET, read_pileups$r1_end - RELATIVE_SEQ_POS_OFFSET, nrow(read_pileups)) %>%
     dplyr::rename("r1_start" = "start", "r1_end" = "stop")
-  r2_seqs <- getFastas(geno_seq, read_pileups$r2_start, read_pileups$r2_end, nrow(read_pileups)) %>%
+  r2_seqs <- getFastas(bed_seq, read_pileups$r2_start - RELATIVE_SEQ_POS_OFFSET, read_pileups$r2_end - RELATIVE_SEQ_POS_OFFSET, nrow(read_pileups)) %>%
     dplyr::rename("r2_start" = "start", "r2_end" = "stop")
 
-  geno_seq <- NULL
 
   read_pileups <- read_pileups %>%
     dplyr::mutate(
@@ -213,13 +229,12 @@
 
   grouped <- grouped %>%
     dplyr::mutate(Chrom = chrom_name, Reg_start = reg_start, Reg_stop = reg_stop) %>%
-    dplyr::select(c(Chrom, Reg_start, Reg_stop, r1_alt_start, r1_alt_end, r1_count_avg, r2_alt_start, r2_alt_end))
-
+    dplyr::select(c(Chrom, Reg_start, Reg_stop, r1_alt_start, r1_alt_end, r1_count_avg, r2_alt_start, r2_alt_end, r2_count_avg))
 
   if (nrow(grouped > 1)) {
     alt_file <- file.path(wkdir, "alt_miRNAs_coord.bed")
     .write.quiet(grouped, alt_file)
-    cat(file = logfile, "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.", append = TRUE)
+    cat(file = logfile, "Writing potential alternative miRNA start and stop coordinates to alt_miRNAs_coord.bed.\n", append = TRUE)
   }
   grouped <- NULL
 
@@ -229,22 +244,34 @@
   # Will write this to a file in order to keep track of which strand of each region had the most expression
 
   # index first value in the even there is more than one most abundant read
-  most_abundant_avg_count <- mean(most_abundant$r1_count_avg[1], most_abundant$r2_count_avg[1])
-
+  most_abundant_avg_count <- mean(c(most_abundant$r1_count_avg[1], most_abundant$r2_count_avg[1]))
 
   read_pileups <- NULL
   
   final <- most_abundant[1, ]
   final_seq <- final$whole_seq
 
+  
+  roi_seq <- substring(bed_seq, READ_OVERFLOW_LIMIT + 1, nchar(bed_seq) - READ_OVERFLOW_LIMIT)
   # RNAfold wants U's not T's, so convert to U
-  converted <- list(convertU(final_seq, 1))
+  expanded_converted <- list(convertU(bed_seq, 1))
+  converted <- list(convertU(roi_seq, 1))
 
+  region_string <- paste0(">", chrom_name, "-", reg_start - 1, "_", reg_stop - 1)
+  expanded_converted <- data.frame("V1" = unname(unlist(expanded_converted)))
   converted <- data.frame("V1" = unname(unlist(converted)))
+  
+  # Use bed file coords in column name unless alternate coordinates used
+  colnames(expanded_converted) <- region_string
+  colnames(converted) <- region_string
+  
+  # Positions relative to the expanded roi (could use roi bound seq, but the positions would need to be (x - reg_start + 1))
+  ma_relative_r1_start <- final$r1_start - RELATIVE_SEQ_POS_OFFSET
+  ma_relative_r2_end <- final$r2_end - RELATIVE_SEQ_POS_OFFSET
+  most_abundant_seq <- stringr::str_sub(expanded_converted[region_string], ma_relative_r1_start, ma_relative_r2_end)
+  final$converted <- most_abundant_seq
 
-  colnames(converted) <- paste0(">", chrom_name, "-", final$r1_start - 1, "_", final$r2_end - 1)
-  final$converted <- converted$V1
-
+  # Use the roi bound converted data frame for converted.fasta for later folding
   write.table(converted, file = file.path(wkdir, "converted.fasta"), sep = "\n", append = FALSE, row.names = FALSE, quote = FALSE)
 
   mx_idx <- which(c(final$r1_count_avg, final$r2_count_avg) == max(final$r1_count_avg, final$r2_count_avg))
@@ -273,17 +300,17 @@
 
   # Get the relative start and stop positions of the reads in the context of final_seq for plotting purposes
   pos_df <- data.frame(
-    r1_start = stringr::str_locate(final_seq, final$r1_seq)[1],
-    r1_end = stringr::str_locate(final_seq, final$r1_seq)[2],
-    r2_start = stringr::str_locate(final_seq, final$r2_seq)[1],
-    r2_end = stringr::str_locate(final_seq, final$r2_seq)[2]
+    r1_start = stringr::str_locate(roi_seq, final$r1_seq)[1],
+    r1_end = stringr::str_locate(roi_seq, final$r1_seq)[2],
+    r2_start = stringr::str_locate(roi_seq, final$r2_seq)[1],
+    r2_end = stringr::str_locate(roi_seq, final$r2_seq)[2]
   )
 
   .rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
 
   ################################################################################################################
   # .fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
-  fold_list <- .fold_short_rna(final$w_start, final$w_stop, converted, path_to_RNAfold, chrom_name, wkdir)[[1]]
+  fold_list <- .fold_short_rna(reg_start, reg_stop, converted, path_to_RNAfold, chrom_name, wkdir)
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   # make the plots for all the sequences in the "fold_list"
@@ -376,10 +403,14 @@
   .write.quiet(overhang_output, dice_file)
 
   if (plot_output == TRUE) {
-    .plot_miRNA(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, overhangs, read_dist, z_df, out_type, prefix, wkdir)
+    plots <- .plot_miRNA(chrom_name, reg_start, reg_stop, strand,
+                         bam_file, fold_list, stranded_size_dist,
+                         out_type, prefix, wkdir)
+  } else {
+    plots <- NULL
   }
 
-  results <- list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = overhangs, "overlaps" = z_df)
+  results <- list("mfe" = mfe, "perc_paired" = perc_paired, "overhangs" = overhangs, "overlaps" = z_df, "plots" = plots)
 
   return(results)
 }
