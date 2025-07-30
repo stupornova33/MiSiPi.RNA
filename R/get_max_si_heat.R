@@ -8,6 +8,14 @@
 
 .get_max_si_heat <- function(si_res) {
   if (sum(si_res[[1]]) > 0) {
+
+    # This offset will be used to make the matrix indicies human readable
+    # Matrix of size 15 with indicies of 1-15 when offset would indicate
+    # Read widths of 18-32
+    # Minimum read width is 18, so 18 - 1 is the offset
+    MINIMUM_READ_WIDTH <- 18
+    MATRIX_INDEX_OFFSET <- MINIMUM_READ_WIDTH - 1
+
     max_results <- as.matrix(unlist(unname(which(si_res[[1]] == max(si_res[[1]]), arr.ind = TRUE))))
     si_table <- as.matrix(si_res[[1]])
     if (nrow(max_results) == 0) {
@@ -21,12 +29,11 @@
     } else {
       counts <- si_table[max_results]
       highest_si_count <- mean(counts)
-      # max_results <- max_results + 15
       highest_si_row <- mean(max_results[, 1])
       highest_si_col <- mean(max_results[, 2])
     }
-    highest_si_row <- highest_si_row + 15
-    highest_si_col <- highest_si_col + 15
+    highest_si_row <- highest_si_row + MATRIX_INDEX_OFFSET
+    highest_si_col <- highest_si_col + MATRIX_INDEX_OFFSET
   } else {
     highest_si_row <- NA
     highest_si_col <- NA

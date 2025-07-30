@@ -45,8 +45,10 @@
   # all_dat <- rbind(plus_dist, minus_dist)
 
   widths <- c(
-    rep(18, times = 4), rep(19, times = 4), rep(20, times = 4), rep(21, times = 4), rep(22, times = 4), rep(23, times = 4), rep(24, times = 4), rep(25, times = 4),
-    rep(26, times = 4), rep(27, times = 4), rep(28, times = 4), rep(29, times = 4), rep(30, times = 4), rep(31, times = 4), rep(32, times = 4)
+    rep(18, times = 4), rep(19, times = 4), rep(20, times = 4), rep(21, times = 4),
+    rep(22, times = 4), rep(23, times = 4), rep(24, times = 4), rep(25, times = 4),
+    rep(26, times = 4), rep(27, times = 4), rep(28, times = 4), rep(29, times = 4),
+    rep(30, times = 4), rep(31, times = 4), rep(32, times = 4)
   )
   first <- c("A", "G", "C", "T")
   empty_dt <- data.frame(width = widths, first = rep(first, times = 15), count = 0)

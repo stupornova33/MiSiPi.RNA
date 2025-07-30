@@ -23,7 +23,8 @@
 .miRNA <- function(chrom_name, reg_start, reg_stop, length, strand,
                    genome_file, bam_file, logfile, wkdir,
                    plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
-                   weight_reads, out_type, i = NULL, i_total = NULL) {
+                   weight_reads, out_type,
+                   method = c("self", "all"), i = NULL, i_total = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {

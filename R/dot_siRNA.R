@@ -65,12 +65,13 @@
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  #size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-  #  dplyr::group_by(width) %>%
-  #  dplyr::summarise(count = sum(count))
-
-  #.output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
-
+  if (method == "self") {
+    size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+      dplyr::group_by(width) %>%
+      dplyr::summarise(count = sum(count))
+    .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
+    size_dist <- NULL
+  }
   
   #stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
   #.plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
@@ -155,8 +156,8 @@
         forward_dt$start, forward_dt$end, forward_dt$width
       )
       
-      row.names(results) <- c("15", "", "17", "", "19", "", "21", "", "23", "", "25", "", "27", "", "29", "", "31", "")
-      colnames(results) <- c("15", "", "17", "", "19", "", "21", "", "23", "", "25", "", "27", "", "29", "", "31", "")
+      row.names(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")
+      colnames(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")
     }
   }
   

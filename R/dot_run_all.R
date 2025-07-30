@@ -88,7 +88,7 @@
   chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
 
   forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 16) %>%
+    subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
@@ -97,13 +97,19 @@
     na.omit()
 
   reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 16) %>%
+    subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
 
+  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+    dplyr::group_by(width) %>%
+    dplyr::summarize(count = sum(count))
+  # Append read size distribution table to output file
+  .output_readsize_dist(size_dist, prefix, output_dir, strand = NULL, type = "all")
+  
   stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
   
   .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
@@ -220,27 +226,13 @@
     
     cat(file = logfile, "Creating size plots\n", append = TRUE)
     
-    if (plot_output == TRUE) {
-      size_dir <- file.path(getwd(), "run_all", "size_plots")
-      
-      if (!dir.exists(size_dir)) {
-        dir.create(size_dir)
-      }
-      
-      plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
-      
-      size_plot <- .plot_sizes(read_dist)
-      plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
-      plot_file <- file.path(size_dir, plot_filename)
-      ggplot2::ggsave(
-        plot = size_plot,
-        filename = plot_file,
-        device = out_type,
-        height = 8,
-        width = 11,
-        units = "in"
-      )
-    }
+    # TODO
+    # Move this down into the plot section
+    # We are currently using the read size distribution plots returned from sub modules
+    # However, there is a slight chances that all 3 sub modules could return null results
+    # So we should perhaps generate the size dist plot here for some output to be displayed
+    # In each region's combined plot
+    #size_plot <- .plot_sizes(read_dist)
     
     local_ml$perc_first_nucT <- .first_nuc_T(forward_dt, reverse_dt)
     
@@ -657,7 +649,6 @@
     plot_rows[[current_row_number]] <- current_row
   }
   
-  print(paste0("NUM_PLOT_ROWS: ", NUM_PLOT_ROWS))
   # I hate that we currently have to do this series of if checks
   # TODO: revisit this later
   if (NUM_PLOT_ROWS == 1) {

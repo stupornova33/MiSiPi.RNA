@@ -41,7 +41,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE) {
   }
 
   heatmap <- pheatmap::pheatmap(size_dist_mat, main = "Read size distribution", cluster_cols = FALSE, show_rownames = F, show_colnames = T, 
-                                scale = "row", labels_col =  c("16", "", "18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32"))
+                                scale = "row", labels_col =  c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32"))
 
   ggplot2::ggsave(heatmap, file = paste0(input_dir, "size_dist_heatmap.png"))
 

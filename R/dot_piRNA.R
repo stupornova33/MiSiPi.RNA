@@ -42,12 +42,12 @@
 
   # Make forward and reverse dataframes filtered for width
   forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 16) %>%
+    subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1)
 
   reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 16) %>%
+    subset(width <= 32 & width >= 18) %>%
     dplyr::rename(start = pos) %>%
     dplyr::mutate(end = start + width - 1)
 
@@ -73,13 +73,16 @@
   chromP <- NULL
   chromM <- NULL
 
-  # for piRNA output tables
-  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>%
-    dplyr::summarize(count = sum(count))
-
-  .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, type = "piRNA")
-  size_dist <- NULL
+  if (method == "self") {
+    # for piRNA output tables
+    size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+      dplyr::group_by(width) %>%
+      dplyr::summarize(count = sum(count))
+    
+    .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, type = "piRNA")
+    size_dist <- NULL
+  }
+  
 
   # Expand the data frames back to full size and weight reads in some cases
   # include "T" argument to return read sequences
@@ -108,9 +111,9 @@
   if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0) {
     z_res <- data.frame(overlap = 4:30, count = 0)
     z_df <- data.frame(Overlap = c(seq(4, 30)), zscore = 0, ml_zscore = -33)
-    heat_results <- matrix(data = 0, nrow = 17, ncol = 17)
-    row.names(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
-    colnames(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    heat_results <- matrix(data = 0, nrow = 15, ncol = 15)
+    row.names(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    colnames(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
     
     # Setup overlap counts and overlap zscore data for appending to files
     overlap_out <- data.frame(t(z_res))
@@ -242,9 +245,9 @@
 
     # forward_dt <- NULL
     # reverse_dt <- NULL
-    row.names(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    row.names(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
 
-    colnames(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    colnames(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
 
     output <- t(c(prefix, as.vector(heat_results)))
 
