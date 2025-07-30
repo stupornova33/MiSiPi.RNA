@@ -16,9 +16,11 @@
       seqnames = chrom_name,
       IRanges::IRanges(reg_start, reg_stop)
     )
+    
+    # Consider finding an alternative to FilterRules
+    # FilterRules loads all reads into memory before filtering
     filters <- S4Vectors::FilterRules(list(MinWidth = function(x) {
-      (BiocGenerics::width(x$seq) >= size1 &
-        BiocGenerics::width(x$seq) <= size2)
+      (x$qwidth >= size1 & x$qwidth <= size2)
     }))
 
     if (strand == "+") {
@@ -31,7 +33,7 @@
         filter = filters,
         param = Rsamtools::ScanBamParam(
           flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
-          what = c("rname", "pos", "qwidth", "seq"),
+          what = c("pos", "qwidth"),
           which = which
         )
       )
@@ -45,7 +47,7 @@
         filter = filters,
         param = Rsamtools::ScanBamParam(
           flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
-          what = c("rname", "pos", "qwidth", "seq"),
+          what = c("pos", "qwidth"),
           which = which
         )
       )
@@ -63,13 +65,11 @@
   filtered_pos_20_22_bam <- filter_bamfile(input_file, 20, 22, "+")
   filtered_pos_23_25_bam <- filter_bamfile(input_file, 23, 25, "+")
   filtered_pos_26_32_bam <- filter_bamfile(input_file, 26, 32, "+")
-  # filtered_pos_all_bam <- filter_bamfile(input_file, 18, 32, "+")
 
   filtered_neg_18_19_bam <- filter_bamfile(input_file, 18, 19, "-")
   filtered_neg_20_22_bam <- filter_bamfile(input_file, 20, 22, "-")
   filtered_neg_23_25_bam <- filter_bamfile(input_file, 23, 25, "-")
   filtered_neg_26_32_bam <- filter_bamfile(input_file, 26, 32, "-")
-  # filtered_neg_all_bam <- filter_bamfile(input_file, 18, 32, "-")
 
 
   make_bam_pileup <- function(bam, strand) {
