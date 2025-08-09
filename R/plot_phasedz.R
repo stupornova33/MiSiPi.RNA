@@ -65,37 +65,30 @@
   plus_df <- data.frame(
     phased_dist = plus_phased_table$phased_dist,
     value = plus_phased_table$phased_z,
-    Type = "All Sizes",
-    Strand = "Plus"
+    Type = "(+) All Sizes"
   )
   plus_df2 <- data.frame(
     phased_dist = plus_phased_table$phased_dist,
     value = plus_phased_table$phased26_z,
-    Type = ">= 26nt",
-    Strand = "Plus"
+    Type = "(+) >= 26nt"
   )
   minus_df <- data.frame(
     phased_dist = minus_phased_table$phased_dist,
     value = minus_phased_table$phased_z,
-    Type = "All Sizes",
-    Strand = "Minus"
+    Type = "(-) All Sizes"
   )
   minus_df2 <- data.frame(
     phased_dist = minus_phased_table$phased_dist,
     value = minus_phased_table$phased26_z,
-    Type = ">= 26nt",
-    Strand = "Minus"
+    Type = "(-) >= 26nt"
   )
   
   # Combine all into one data frame
   plot_df <- rbind(plus_df, plus_df2, minus_df, minus_df2)
-  
 
-  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = phased_dist, y = value, color = Strand, linetype = Type)) +
-    ggplot2::geom_line(linewidth = 1.25, alpha = 0.6) +
-    ggplot2::scale_color_manual(values = c("Plus" = "red", "Minus" = "blue")) +
-    ggplot2::scale_linetype_manual(values = c("All Sizes" = "solid", ">= 26nt" = "dotdash")) +
-    #ggplot2::scale_linewidth_manual(values = c("All Sizes" = 0.5, ">= 26nt" = 0.2)) +
+  p <- ggplot2::ggplot(plot_df, ggplot2::aes(x = phased_dist, y = value, color = Type)) +
+    ggplot2::geom_line(linewidth = 1, alpha = 0.7) +
+    ggplot2::scale_color_manual(values = c("(+) All Sizes" = "red", "(+) >= 26nt" = "red4", "(-) All Sizes" = "blue", "(-) >= 26nt" = "blue4")) +
     ggplot2::scale_y_continuous("Z-score") +
     ggplot2::scale_x_continuous("3' to 5' Distance", labels = seq(1, 65, by = 5), breaks = seq(1, 65, by = 5)) +
     ggplot2::ggtitle("piRNA Phasing Probability") +
@@ -106,20 +99,6 @@
       plot.title = ggplot2::element_text(size = 14, hjust = 0.5),
       text = ggplot2::element_text(size = 12)
     )
-
-  
-  #p <- ggplot2::ggplot(plus_phased_table, ggplot2::aes(x = phased_dist)) +
-  #  ggplot2::geom_line(ggplot2::aes(y = phased_z), linewidth = 1.25, color = plus_color, alpha = 0.6) +
-  #  ggplot2::geom_line(ggplot2::aes(y = phased26_z), linewidth = 1.25, color = plus_color, linetype = "dotted", alpha = 0.6) +
-  #  ggplot2::geom_line(data = minus_phased_table, ggplot2::aes(x = phased_dist, y = phased_z), linewidth = 1.25, color = minus_color, alpha = 0.6) +
-  #  ggplot2::geom_line(data = minus_phased_table, ggplot2::aes(x = phased_dist, y = phased26_z), linewidth = 1.25, color = minus_color, linetype = "dotted", alpha = 0.6) +
-  #  ggplot2::scale_y_continuous("Z-score") +
-  #  ggplot2::scale_x_continuous("3' to 5' Distance", labels = seq(1, 65, by = 5), breaks = seq(1, 65, by = 5)) +
-  #  ggplot2::ggtitle(plot_title) +
-  #  ggplot2::theme_classic() +
-  #  ggplot2::theme(axis.text = ggplot2::element_text(size = 12), plot.title = ggplot2::element_text(size = 14, hjust = 0.5)) +
-  #  ggplot2::theme(axis.text.x = ggplot2::element_text(size = 12, angle = 45)) +
-  #  ggplot2::theme(text = ggplot2::element_text(size = 12))
 
   return(p)
 }
