@@ -501,56 +501,47 @@
 
   #################################################################################################
   ### make plots
-  #  if(!sum(heat_results) == 0 && plot_output == TRUE){
 
   if (plot_output == TRUE) {
     cat(file = logfile, paste0("Generating plots.", "\n"), append = TRUE)
     ### ping pong plots
-    ## calculate read density by size
-    data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
-    stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-
-    z <- .plot_piRNA_overlap_probability(z_df)
-    dist_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
-
-    if ((reg_stop - reg_start) > 7000) {
-      density_plot <- .plot_large_density(data, reg_start, reg_stop)
-    } else {
-      density_plot <- .plot_density(data, reg_start, reg_stop)
+    ## These 2 plots will be made by .run_all and don't need to be remade unless method is "self"
+    if (method == "self") {
+      data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+      if ((reg_stop - reg_start) > 7000) {
+        density_plot <- .plot_large_density(data, reg_start, reg_stop)
+      } else {
+        density_plot <- .plot_density(data, reg_start, reg_stop)
+      }
+      data <- NULL
+      
+      stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+      dist_plot <- .plot_sizes_by_strand(stranded_size_dist, chrom_name, reg_start, reg_stop)
     }
-    data <- NULL
+    
+    z <- .plot_piRNA_overlap_probability(z_df)
 
-    #plus_phased_plot <- .plot_phasedz(plus_df, "+")
-    #minus_phased_plot <- .plot_phasedz(minus_df, "-")
     phased_probability_plot <- .plot_piRNA_phasing_probability_combined(plus_df, minus_df)
 
     options(scipen = 999)
     if (sum(heat_results) > 0) {
-      heat_plot <- .plot_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, "piRNA", pal = pal)
+      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
+      heat_plot <- ggplotify::as.grob(.plot_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, "piRNA", pal = pal))
     } else {
-      heat_plot <- NULL
+      heat_plot <- NA
     }
     
     # If called from run_all, then return plots as objects instead of writing them to files
     # They will be processed in run_all
     if (method == "all") {
       plots <- list()
-      plots$prefix <- prefix
-      plots$dist_plot <- dist_plot
-      plots$density_plot <- density_plot
       plots$z <- z
       plots$phased_plot <- phased_probability_plot
-      
-      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
-      if (!is.null(heat_plot)) {
-        heat_plot <- ggplotify::as.grob(heat_plot)
-      }
-      
       plots$heat_plot <- heat_plot
     } else {
       # Create a null plots object for safe return
       plots <- NULL
-      if (!is.null(heat_plot)) {
+      if (!is.na(heat_plot)) {
         top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot),
                                        ncol = 1, rel_widths = c(0.8, 1, 1),
                                        rel_heights = c(0.8, 0.1, 1), align = "vh", axis = "lrtb"

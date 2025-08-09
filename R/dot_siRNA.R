@@ -74,7 +74,7 @@
   }
   
   #stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-  #.plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
+  #.plot_sizes_by_strand(stranded_read_dist, chrom_name, reg_start, reg_stop)
   
   chromP <- NULL
   chromM <- NULL
@@ -195,40 +195,37 @@
     is_small_locus <- (reg_stop - reg_start + 1) <= 10000
     
     if (results_present) {
-      heat_plot <- .plot_heat(results, chrom_name, reg_start, reg_stop, wkdir, "siRNA", pal = pal)
+      # Wrap heat_plot in ggplotify::as.grob since pheatmaps can't be coerced to grob by default
+      heat_plot <- ggplotify::as.grob(.plot_heat(results, chrom_name, reg_start, reg_stop, wkdir, "siRNA", pal = pal))
     } else {
-      heat_plot <- NULL
+      heat_plot <- NA
     }
-    
-    #dist <- .get_weighted_read_dist(forward_dt, reverse_dt)
-    #size_plot <- .plot_sizes(dist)
-    stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-    size_plot <- .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
     
     if (method == "all") {
       plots <- list()
       plots$prefix <- prefix
-      plots$size_plot <- size_plot
-      #plots$dicer_plot <- dicer_plot
       plots$overhang_probability_plot <- dsh$overhang_probability_plot
-      
-      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
-      if (!is.null(heat_plot)) {
-        heat_plot <- ggplotify::as.grob(heat_plot)
-      }
-      
       plots$heat_plot <- heat_plot
-      plots$density_plot <- dsh$density_plot
-      #plots$plus_overhang_plot <- dsh$plus_overhang_plot
-      #plots$minus_overhang_plot <- dsh$minus_overhang_plot
       plots$arc_plot <- dsh$arc_plot
       plots$phasedz <- dsh$phasedz
-      #plots$plus_phasedz <- dsh$plus_phasedz
-      #plots$minus_phasedz <- dsh$minus_phasedz
       plots$gtf_plot <- dsh$gtf_plot
     } else {
       plots <- NULL
-      .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, size_plot, heat_plot, out_type, prefix, wkdir)
+      
+      stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+      read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist, chrom_name, reg_start, reg_stop)
+      
+      data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+      
+      if ((reg_stop - reg_start + 1) > 10000) {
+        # Large Loci
+        density_plot <- .plot_large_density(data, reg_start, reg_stop)
+      } else {
+        # Smaller Loci
+        density_plot <- .plot_density(data, reg_start, reg_stop)
+      }
+      
+      .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, density_plot, read_distribution_plot, heat_plot, out_type, prefix, wkdir)
     }
   } else {
     plots <- NULL
