@@ -1,17 +1,15 @@
 # .plot_sizes_by_strand
 # plots the size distribution of reads separately by strand
+# @param stranded_size_dist
 # @param chrom_name a string
 # @param reg_start a numerical value
 # @param reg_stop a numerical value
-# @param bam_file a string
-# @param libsize a numeric value
 # @return A plot
 
-.plot_sizes_by_strand <- function(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop) {
+.plot_sizes_by_strand <- function(stranded_size_dist, chrom_name, reg_start, reg_stop) {
   options(scipen = 999)
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
-  
   p_size_dist <- stranded_size_dist %>% dplyr::filter(strand == "plus")
   m_size_dist <- stranded_size_dist %>% dplyr::filter(strand == "minus")
 
@@ -47,13 +45,11 @@
     ggplot2::geom_bar(stat = "identity", position = "stack") +
     ggplot2::scale_y_continuous(labels = abs) +
     ggplot2::scale_fill_manual(values = c( "darkgreen", "red","blue", "yellow", "darkgrey")) +
-    ggplot2::labs(x = "Read size", y = "Read count") +
-    ggplot2::theme(axis.text=ggplot2::element_text(size=14))+
-    ggplot2::theme_minimal()
-
-  #grDevices::png(file = file.path(wkdir, paste0(prefix, "_sizes_by_strand.png")), height = 10, width = 10, units = "in", res = 300)
-  #print(p)
-  #grDevices::dev.off()
+    ggplot2::labs(x = "Read size", y = "Read count", title = "Read Distribution") +
+    ggplot2::theme_minimal() +
+    ggplot2::theme(axis.text=ggplot2::element_text(size=14),
+                   plot.title = ggplot2::element_text(size = 14, hjust = 0.5))
+    
 
   return(p)
 }
