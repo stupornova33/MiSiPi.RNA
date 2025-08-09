@@ -79,36 +79,32 @@ miRNA <- function(vars, output_dir) {
     
     .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, output_dir)
     
-    # Generate plots
-    plus_plots <- plus_results$plots
-    plus_overhangs <- plus_results$overhangs
-    plus_overlaps <- plus_results$overlaps
-    
-    minus_plots <- minus_results$plots
-    minus_overhangs <- minus_results$overhangs
-    minus_overlaps <- minus_results$overlaps
-    
-    dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(plus_overhangs, minus_overhangs)
-    overlap_probability_plot <- .plot_miRNA_overlap_probability(plus_overlaps, minus_overlaps)
-    
-    
-    if (!is.null(plus_plots$distribution)) {
-      read_distribution_plot <- plus_plots$distribution
-    } else {
-      read_distribution_plot <- minus_plots$distribution
+    if (plot_output == TRUE) {
+      # Generate plots
+      plus_overhangs <- plus_results$overhangs
+      plus_overlaps <- plus_results$overlaps
+      
+      minus_overhangs <- minus_results$overhangs
+      minus_overlaps <- minus_results$overlaps
+      
+      dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(plus_overhangs, minus_overhangs)
+      overlap_probability_plot <- .plot_miRNA_overlap_probability(plus_overlaps, minus_overlaps)
+      
+      # Moved the density and distribution plots here so they wouldn't be called twice if both strands get processed
+      # If miRNA is called from run_all, then density and distribution will be generated in that function
+      bam_obj <- .open_bam(bam, logfile)
+      stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom, reg_start, reg_stop)
+      read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist, chrom, reg_start, reg_stop)
+      .close_bam(bam_obj)
+      
+      density_data <- .read_densityBySize(chrom, reg_start, reg_stop, bam, mi_dir)
+      read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
+      
+      prefix <- .get_region_string(chrom, reg_start, reg_stop)
+      
+      # Print the plots to a file
+      .print_miRNA_plots(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, mi_dir)
     }
-    
-    if (!is.null(plus_plots$density)) {
-      read_density_plot <- plus_plots$density
-    } else {
-      read_density_plot <- minus_plots$density
-    }
-    
-    prefix <- .get_region_string(chrom, reg_start, reg_stop)
-    
-    # Print the plots to a file
-    .print_miRNA_plots(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, mi_dir)
-
   }
   
   .inform_complete(mi_dir)

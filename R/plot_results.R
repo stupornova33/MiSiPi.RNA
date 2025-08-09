@@ -1,23 +1,3 @@
-.plot_miRNA <- function(chrom_name, reg_start, reg_stop, strand, bam_file, fold_list, stranded_size_dist, out_type, prefix, wkdir) {
-  
-  read_distribution_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
-  density_data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
-  read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
-  
-  # These will now be generated in run_all and in miRNA to combine the plus and minus strand information
-  # dicer_sig <- .plot_overhangz(overhangs, strand = strand)
-  # zplot <- .plot_overlapz(z_df)
-  
-  plots <- list()
-  
-  plots$prefix <- prefix
-  plots$strand <- strand
-  plots$density <- read_density_plot
-  plots$distribution <- read_distribution_plot
-  
-  return(plots)
-}
-
 # Write the plots to a file
 .print_miRNA_plots <- function(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, wkdir) {
   left_top <- cowplot::plot_grid(
