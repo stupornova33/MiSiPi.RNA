@@ -40,25 +40,13 @@
   return(NULL)
 }
 
-
-
-
-
-
-
-
-
-.plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, size_plot, heat_plot, out_type, prefix, wkdir) {
+.plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, density_plot, size_plot, heat_plot, out_type, prefix, wkdir) {
   ### combine siRNA and hpRNA plots
   
   if (is_small_locus) {
     #### Regions Less Than or Equal to 10kb (RLT10K) ####
-
-    #plus_hp_overhangs <- dsh$plus_overhang_plot
-    #minus_hp_overhangs <- dsh$minus_overhang_plot
     overhang_probability_plot <- dsh$overhang_probability_plot
     
-    density_plot <- dsh$density_plot
     arc_plot <- dsh$arc_plot
     # In the case that no arc plot get made in dual_strand_hairpins
     # In order to keep track of that fact, we set the arc_plot to NA
@@ -73,8 +61,6 @@
     }
     
     phasedz <- dsh$phasedz
-    #plus_phasedz <- dsh$plus_phasedz
-    #minus_phasedz <- dsh$minus_phasedz
     
     #### RLT10K - Annotate True ####
     if (annotate_region) {
@@ -162,12 +148,9 @@
     
   } else {
     #### Regions Greater Than 10kb (RGT10k) ####
-    #plus_hp_overhangs <- dsh$plus_overhang_plot
-    #minus_hp_overhangs <- dsh$minus_overhang_plot
     overhang_probability_plot <- dsh$overhang_probability_plot
     
     # None of the hairpin plots were made because the region > 10kb
-    density_plot <- dsh$density_plot
     
     #### RGT10k - Annotate True ####
     if (annotate_region) {

@@ -70,9 +70,7 @@
     res$density_plot <- .plot_large_density(data, reg_start, reg_stop)
     
     # Add gtf plot to null result
-    if (annotate_region) {
-      res$gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
-    }
+    res$gtf_plot <- ifelse(annotate_region, .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop, NA))
     
     return(res)
   }
@@ -296,7 +294,7 @@
       overhang_probability_plot <- .plot_siRNA_overhangs_combined(plus_overhangs, minus_overhangs, dicer_overhangs)
     } 
     
-    data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+    data <- .readDensityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
 
     density_plot <- .plot_density(data, reg_start, reg_stop)
 
@@ -315,8 +313,22 @@
           R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
           arc_plot <- grDevices::recordPlot() # don't touch this...the boss gets mad
         } else {
-          R4RNA::plotHelix(helix = R4RNA::readHelix(helix_file), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
-          arc_plot <- grDevices::recordPlot()
+          # Read helix data
+          helix_data <- R4RNA::readHelix(helix_file)
+          
+          plot_arc2 <- function() {
+            R4RNA::plotHelix(
+              helix = helix_data,
+              line = TRUE,
+              arrow = FALSE,
+              lwd = 2.25,
+              scale = FALSE
+            )
+            title(main = "RNAfold Arc", line = -3, font.main = 1)
+          }
+          
+          arc_plot <- gridGraphics::echoGrob(plot_arc2)
+          
         }
       }
     } else {
@@ -342,14 +354,10 @@
     results$density_plot <- density_plot
     results$arc_plot <- arc_plot
     results$phasedz <- phasedz
-    #results$plus_phasedz = plus_phasedz
-    #results$minus_phasedz = minus_phasedz
 
     # Plot genome annotations (optional)
-    if (annotate_region) {
-      gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
-      results$gtf_plot = gtf_plot
-    }
+    results$gtf_plot <- ifelse(annotate_region, .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop), NA)
+
   return(results)
   }
 }
