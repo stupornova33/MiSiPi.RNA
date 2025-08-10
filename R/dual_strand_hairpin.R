@@ -64,14 +64,6 @@
   # RNAfold can't fold things longer than 10kb
   if ((reg_stop - reg_start + 1) > 10000) {
     res <- .null_hp_res()
-    
-    # Add density plot to null result
-    data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
-    res$density_plot <- .plot_large_density(data, reg_start, reg_stop)
-    
-    # Add gtf plot to null result
-    res$gtf_plot <- ifelse(annotate_region, .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop, NA))
-    
     return(res)
   }
 
@@ -247,7 +239,7 @@
 
   #### Generate Plots ####
   # check and see if dicer results exist for plotting
-  if(!nrow(sRes$plus$all_overlaps) == 0){
+  if(!nrow(sRes$plus$all_overlaps) == 0) {
     plus_overhang_out <- data.frame(t(sRes$plus$res$dicer_tbl.zscore))
     colnames(plus_overhang_out) <- sRes$plus$res$dicer_tbl.shift
     plus_overhang_out$locus <- paste0(chrom_name, "_", reg_start, "_", reg_stop)
@@ -284,24 +276,18 @@
   # Add additional data and plots to results
   if (plot_output) {
     
-    if(!nrow(sRes$plus$all_overlaps) == 0) {
+    if (nrow(sRes$plus$all_overlaps) == 0) {
+      overhang_probability_plot <- null_plot("siRNA Dicer Overhang Probability", "No overlaps were present")
+    } else {
       plus_overhangs <- data.frame(shift = sRes$plus$res$dicer_tbl.shift, zscore = sRes$plus$res$dicer_tbl.zscore)
       minus_overhangs <- data.frame(shift = sRes$minus$res$dicer_tbl.shift, zscore = sRes$minus$res$dicer_tbl.zscore)
-  
-      ## return these as plot objects
-      #plus_overhang_plot <- .plot_overhangz(plus_overhangs, "+")
-      #minus_overhang_plot <- .plot_overhangz(minus_overhangs, "-")
+      
       overhang_probability_plot <- .plot_siRNA_overhangs_combined(plus_overhangs, minus_overhangs, dicer_overhangs)
-    } 
-    
-    data <- .readDensityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
-
-    density_plot <- .plot_density(data, reg_start, reg_stop)
+    }
 
     # Check to see if helix.txt has actual data
     helix_file <- file.path(wkdir, "helix.txt")
     
-        
     if (file.exists(helix_file)) {
       # First line in helix.txt is just a comment, like # 22, so skip this line
       invisible(nrows_helix_file <- nrow(readr::read_tsv(helix_file, skip = 1, show_col_types = FALSE)))
@@ -332,31 +318,14 @@
         }
       }
     } else {
-      arc_plot <- NA
+      arc_plot <- null_plot("RNAfold Arc Plot", "Not generated due to RNA not being folded.")
     }
     
-
-    ## why? No one knows
-
     phasedz <- .plot_siRNA_hp_phasing_probability_combined(sRes$plus$hp_phased_tbl, sRes$minus$hp_phased_tbl)
-    #plus_phasedz <- .plot_hp_phasedz(sRes$plus$hp_phased_tbl, "+")
-    #minus_phasedz <- .plot_hp_phasedz(sRes$minus$hp_phased_tbl, "-")
 
-    if(!nrow(sRes$plus$all_overlaps) == 0){
-      results$overhang_probability_plot <- overhang_probability_plot
-      #results$plus_overhang_plot = plus_overhang_plot
-      #results$minus_overhang_plot = minus_overhang_plot
-    } else {
-      results$overhang_probability_plot <- NA
-      #results$plus_overhang_plot <- NA
-      #results$minus_overhang_plot <- NA
-    }
-    results$density_plot <- density_plot
+    results$overhang_probability_plot <- overhang_probability_plot
     results$arc_plot <- arc_plot
     results$phasedz <- phasedz
-
-    # Plot genome annotations (optional)
-    results$gtf_plot <- ifelse(annotate_region, .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop), NA)
 
   return(results)
   }

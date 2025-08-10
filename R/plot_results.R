@@ -1,33 +1,38 @@
 # Write the plots to a file
-.print_miRNA_plots <- function(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, wkdir) {
-  left_top <- cowplot::plot_grid(
-    read_distribution_plot,
-    dicer_overhang_plot,
-    ncol = 1,
-    rel_widths = c(1, 1),
-    rel_heights = c(1, 1),
-    align = "vh",
-    axis = "lrtb"
-  )
+.print_miRNA_plots <- function(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, wkdir, plot_details) {
   
-  right_top <- cowplot::plot_grid(
-    NULL,
-    read_density_plot,
-    overlap_probability_plot,
-    ncol = 1,
-    rel_widths = c(1, 1, 1),
-    rel_heights = c(0.4, 1, 1),
-    align = "vh",
+  plot_title <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$title,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(7, 0, 0, 0))
+  
+  plot_caption <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$caption,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 5, 0))
+  
+  plot_body <- cowplot::plot_grid(
+    read_distribution_plot, read_density_plot,
+    dicer_overhang_plot, overlap_probability_plot,
+    ncol = 2,
+    align = "hv",
     axis = "lrtb"
   )
   
   all_plot <- cowplot::plot_grid(
-    left_top,
-    right_top,
-    rel_heights = c(1, 1),
-    rel_widths = c(1, 1),
-    align = "vh",
-    axis = "lrtb"
+    plot_title,
+    plot_body,
+    plot_caption,
+    ncol = 1,
+    rel_heights = c(0.07, 1, 0.07)
   )
   
   if (out_type == "png") {
@@ -40,239 +45,148 @@
   return(NULL)
 }
 
-.plot_siRNA <- function(dsh, is_small_locus, annotate_region, results_present, density_plot, size_plot, heat_plot, out_type, prefix, wkdir) {
-  ### combine siRNA and hpRNA plots
+.plot_siRNA <- function(read_distribution_plot, density_plot, phasedz_plot, overhang_probability_plot, arc_plot, gtf_plot, heat_plot, out_type, prefix, wkdir, plot_details) {
+  plot_title <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$title,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(7, 0, 0, 0))
   
-  if (is_small_locus) {
-    #### Regions Less Than or Equal to 10kb (RLT10K) ####
-    overhang_probability_plot <- dsh$overhang_probability_plot
-    
-    arc_plot <- dsh$arc_plot
-    # In the case that no arc plot get made in dual_strand_hairpins
-    # In order to keep track of that fact, we set the arc_plot to NA
-    # Setting it to NULL at the time wouldn't have allowed us to store that
-    # In a list with the other results. But we do need it to be NULL to keep
-    # cowplot from complaining, so check for NA here and set to NULL
-    # if it is not NA, then we can't really check it for NA, since the length
-    # of the object will be greater than 1, so check for length should be
-    # sufficient
-    if (length(arc_plot) == 1) {
-      arc_plot <- NULL
-    }
-    
-    phasedz <- dsh$phasedz
-    
-    #### RLT10K - Annotate True ####
-    if (annotate_region) {
-      gtf_plot <- dsh$gtf_plot
-      
-      # if there are results for the heatmap, plot, otherwise omit
-      if (results_present) {
-        left <- cowplot::plot_grid(
-          arc_plot,
-          gtf_plot,
-          density_plot,
-          size_plot,
-          ggplotify::as.grob(heat_plot),
-          rel_widths = c(0.6, 1.1, 0.9, 0.9, 0.4),
-          rel_heights = c(0.7, 0.7, 0.7, 0.7, 1.4),
-          ncol = 1,
-          align = "vh",
-          axis = "lrtb")
-      } else {
-        left <- cowplot::plot_grid(
-          arc_plot,
-          gtf_plot,
-          density_plot,
-          size_plot,
-          rel_widths = c(0.6, 1.1, 0.9, 0.9),
-          rel_heights = c(0.7, 0.7, 0.7, 0.7, 1.4),
-          ncol = 1,
-          align = "vh",
-          axis = "lrtb")
-      }
-      
-      #### RLT10K - Annotate False ####
-    } else {
-      if (results_present) {
-        left <- cowplot::plot_grid(
-          arc_plot,
-          density_plot,
-          size_plot,
-          ggplotify::as.grob(heat_plot),
-          ncol = 1,
-          rel_widths = c(0.6, 0.9, 0.9, 0.4),
-          rel_heights = c(0.7, 0.7, 0.7, 1.4),
-          align = "vh",
-          axis = "lrtb")
-      } else {
-        left <- cowplot::plot_grid(
-          arc_plot,
-          density_plot,
-          size_plot,
-          rel_widths = c(0.6, 0.9, 0.9),
-          rel_heights = c(0.7, 0.7, 0.7, 1.4),
-          ncol = 1,
-          align = "vh",
-          axis = "lrtb")
-      }
-    }
-    
-    right <- cowplot::plot_grid(
-      overhang_probability_plot,
-      phasedz,
-      ncol = 1,
-      align = "vh",
-      axis = "l",
-      rel_widths = c(1, 1, 1, 1, 1),
-      rel_heights = c(1, 1, 1, 1, 1))
-    
-    all_plot <- cowplot::plot_grid(
-      left,
-      NULL,
-      right,
-      ncol = 3,
-      rel_widths = c(0.9, 0.01, 0.7),
-      align = "vh",
-      axis = "lrtb")
-    
-    if (out_type == "png") {
-      grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 16, width = 14, units = "in", res = 300)
-    } else {
-      grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 16, width = 14)
-    }
-    
-    print(all_plot)
-    grDevices::dev.off()
-    
-    
+  plot_caption <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$caption,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 5, 0))
+  
+  plot_body <- cowplot::plot_grid(
+    read_distribution_plot, arc_plot,
+    overhang_probability_plot, density_plot,
+    phasedz_plot, gtf_plot,
+    heat_plot,
+    ncol = 2,
+    align = "hv",
+    axis = "lrtb"
+  )
+  
+  all_plot <- cowplot::plot_grid(
+    plot_title,
+    plot_body,
+    plot_caption,
+    ncol = 1,
+    rel_heights = c(0.07, 1, 0.07)
+  )
+  
+  # TODO: Change dimensions to better suit new layout
+  if (out_type == "png") {
+    grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 20, width = 14, units = "in", res = 300)
   } else {
-    #### Regions Greater Than 10kb (RGT10k) ####
-    overhang_probability_plot <- dsh$overhang_probability_plot
-    
-    # None of the hairpin plots were made because the region > 10kb
-    
-    #### RGT10k - Annotate True ####
-    if (annotate_region) {
-      gtf_plot <- dsh$gtf_plot
-      
-      if (results_present) {
-        bottom <- cowplot::plot_grid(
-          ggplotify::as.grob(heat_plot),
-          overhang_probability_plot,
-          ncol = 2,
-          rel_widths = c(1, 1),
-          rel_heights = c(1, 1),
-          align = "vh",
-          axis = "lrtb")
-      } else { # if no heat plot
-        bottom <- cowplot::plot_grid(
-          overhang_probability_plot,
-          rel_widths = c(1),
-          rel_heights = c(1),
-          align = "vh",
-          axis = "lrtb")
-      }
-      
-      top <- cowplot::plot_grid(
-        density_plot,
-        size_plot,
-        ncol = 2,
-        rel_widths = c(1, 1),
-        rel_heights = c(1, 1),
-        align = "vh",
-        axis = "lrtb")
-      
-      all_plot <- cowplot::plot_grid(
-        top,
-        NULL,
-        bottom,
-        ncol = 1,
-        rel_widths = c(1, 1, 1),
-        rel_heights = c(1, 0.1, 1),
-        align = "vh",
-        axis = "lrtb")
-      
-      if (out_type == "png") {
-        grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 9, width = 14, units = "in", res = 300)
-      } else {
-        grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 9, width = 14)
-      }
-      
-      print(all_plot)
-      grDevices::dev.off()
-      
-      #### RGT10k - Annotate False ####
-    } else {
-      if (results_present) {
-        left <- cowplot::plot_grid(
-          density_plot,
-          size_plot,
-          overhang_probability_plot,
-          ncol = 1,
-          rel_widths = c(1, 1),
-          rel_heights = c(1, 1),
-          align = "vh",
-          axis = "lrtb")
-        
-        right <- cowplot::plot_grid(
-          NULL,
-          ggplotify::as.grob(heat_plot),
-          NULL,
-          ncol = 1,
-          align = "vh",
-          axis = "l",
-          rel_widths = c(0.4, 1, 0.4),
-          rel_heights = c(1, 1))
-        
-        all_plot <- cowplot::plot_grid(
-          left,
-          NULL,
-          right,
-          ncol = 3,
-          rel_widths = c(1, 0.1, 0.8),
-          rel_heights = c(1, 1, 1),
-          align = "vh",
-          axis = "lrtb")
-        
-      } else {
-        bottom <- cowplot::plot_grid(
-          overhang_probability_plot,
-          size_plot,
-          rel_widths = c(1, 1),
-          rel_heights = c(1, 1),
-          ncol = 2,
-          align = "vh",
-          axis = "lrtb")
-        
-        top <- cowplot::plot_grid(
-          density_plot,
-          ncol = 1,
-          align = "vh",
-          axis = "l",
-          rel_widths = c(1),
-          rel_heights = c(1))
-        
-        all_plot <- cowplot::plot_grid(
-          top,
-          NULL,
-          bottom,
-          ncol = 1,
-          rel_widths = c(1, 1),
-          rel_heights = c(1, 0.1, 1),
-          align = "vh",
-          axis = "lrtb")
-      }
-    }
-    
-    if (out_type == "png") {
-      grDevices::png(file = file.path(wkdir, paste0(prefix, "_si_plot.png")), height = 13, width = 13, units = "in", res = 300)
-    } else {
-      grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 13, width = 13)
-    }
-    
-    print(all_plot)
-    grDevices::dev.off()
-    
+    grDevices::pdf(file = file.path(wkdir, paste0(prefix, "_si_plot.pdf")), height = 20, width = 14)
   }
+  
+  print(all_plot)
+  grDevices::dev.off()
+  return(NULL)
 }
+
+plot_piRNA <- function(read_distribution_plot, density_plot, overlap_probability_plot, phased_probability_plot, heat_plot, out_type, prefix, wkdir, plot_details) {
+  # Modify density_plot to display better in this layout
+  density_plot <- density_plot +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(size = 12, angle = 60, hjust = 1),
+                   axis.text.y = ggplot2::element_text(size = 12),
+                   axis.title.x = ggplot2::element_text(size = 12),
+                   axis.title.y = ggplot2::element_text(size = 12))
+  
+  
+  
+  plot_title <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$title,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(7, 0, 0, 0))
+  
+  plot_caption <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$caption,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 5, 0))
+  
+  plot_body_top <- cowplot::plot_grid(
+    read_distribution_plot, heat_plot,
+    overlap_probability_plot, phased_probability_plot,
+    ncol = 2,
+    align = "hv",
+    axis = "lrtb"
+  )
+  
+  plot_body_bottom <- cowplot::plot_grid(
+    NULL, density_plot, NULL,
+    ncol = 3,
+    rel_widths = c(0.1, 1, 0.1),
+    align = "hv",
+    axis = "lrtb"
+  )
+  
+  all_plot <- cowplot::plot_grid(
+    plot_title,
+    plot_body_top,
+    plot_body_bottom,
+    plot_caption,
+    ncol = 1,
+    rel_heights = c(0.25, 2, 0.8, 0.15)
+  )
+  
+  if (out_type == "png" || out_type == "PNG") {
+    grDevices::png(file = file.path(wkdir, paste0(prefix, "_pi-zscore.png")), height = 17, width = 14, units = "in", res = 300)
+  } else {
+    grDevices::cairo_pdf(file = file.path(wkdir, paste0(prefix, "_pi-zscore.pdf")), height = 18, width = 14)
+  }
+  
+  print(all_plot)
+  grDevices::dev.off()
+}
+
+
+
+
+
+plot_title <- function(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, i) {
+  locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
+  now <- format(lubridate::now(), "%Y-%m-%d %H:%M:%S")
+  
+  misipi_version <- packageVersion("MiSiPi.RNA")
+  
+  iteration_str <- paste0(i, ")")
+  
+  p_title <- paste("MiSiPi Results for locus:", locus, "(Bed file line:", iteration_str)
+  p_subtitle <- paste("Bam:", bam_file, "| Bed:", bed_file, "| Genome:", genome_file)
+  p_caption <- paste("Run at:", now, "with MiSiPi.RNA Version:", misipi_version)
+  
+  plot_details <- list()
+  plot_details$title <- paste0(p_title, "\n", p_subtitle)
+  #plot_details$subtitle <- p_subtitle
+  plot_details$caption <- p_caption
+  return(plot_details)
+}
+
+null_plot <- function(type, reason) {
+  p <- ggplot2::ggplot() +
+    ggplot2::annotate("text", x = 0.5, y = 0.5, label = reason, size = 5) +
+    ggplot2::ggtitle(type) +
+    ggplot2::theme_void() +
+    ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
+  
+  return(p)
+}
+

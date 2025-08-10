@@ -30,6 +30,7 @@ siRNA <- function(vars, output_dir) {
       vars$length,
       vars$genome,
       vars$bam_file,
+      vars$roi,
       logfile,
       si_dir,
       vars$si_pal,

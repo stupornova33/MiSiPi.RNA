@@ -7,6 +7,7 @@
 # @param length an integer
 # @param bam_file a string
 # @param genome_file a string
+# @param bed_file a string
 # @param logfile a string
 # @param wkdir a string
 # @param pal a string
@@ -17,7 +18,7 @@
 # @return plots, heat results, and zdf
 
 .piRNA <- function(chrom_name, reg_start, reg_stop, length, bam_file,
-                   genome_file, logfile, wkdir, pal, plot_output,
+                   genome_file, bed_file, logfile, wkdir, pal, plot_output,
                    weight_reads, write_fastas, out_type,
                    method = c("self", "all"), i = NULL, i_total = NULL) {
   
@@ -25,6 +26,8 @@
   if (!is.null(i)) {
     .inform_iteration(i, i_total, chrom_name)
   }
+  
+  current_iteration <- i
   
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
@@ -504,9 +507,32 @@
 
   if (plot_output == TRUE) {
     cat(file = logfile, paste0("Generating plots.", "\n"), append = TRUE)
+    options(scipen = 999)
+    
     ### ping pong plots
-    ## These 2 plots will be made by .run_all and don't need to be remade unless method is "self"
-    if (method == "self") {
+    overlap_probability_plot <- .plot_piRNA_overlap_probability(z_df)
+
+    phased_probability_plot <- .plot_piRNA_phasing_probability_combined(plus_df, minus_df)
+
+    if (sum(heat_results) > 0) {
+      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
+      heat_plot <- ggplotify::as.grob(.plot_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, "piRNA", pal = pal))
+    } else {
+      heat_plot <- null_plot("piRNA Proper Overlaps By Size", "No overlaps present")
+    }
+    
+    # If called from run_all, then return plots as objects instead of writing them to files
+    # They will be processed in run_all
+    if (method == "all") {
+      plots <- list()
+      plots$overlap_probability_plot <- overlap_probability_plot
+      plots$phased_probability_plot <- phased_probability_plot
+      plots$heat_plot <- heat_plot
+    } else {
+      # Create a null plots object for safe return
+      plots <- NULL
+      
+      ## These 2 plots will be made by .run_all and don't need to be remade unless method is "self"
       data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
       if ((reg_stop - reg_start) > 7000) {
         density_plot <- .plot_large_density(data, reg_start, reg_stop)
@@ -516,87 +542,15 @@
       data <- NULL
       
       stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-      dist_plot <- .plot_sizes_by_strand(stranded_size_dist, chrom_name, reg_start, reg_stop)
-    }
-    
-    z <- .plot_piRNA_overlap_probability(z_df)
-
-    phased_probability_plot <- .plot_piRNA_phasing_probability_combined(plus_df, minus_df)
-
-    options(scipen = 999)
-    if (sum(heat_results) > 0) {
-      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
-      heat_plot <- ggplotify::as.grob(.plot_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, "piRNA", pal = pal))
-    } else {
-      heat_plot <- NA
-    }
-    
-    # If called from run_all, then return plots as objects instead of writing them to files
-    # They will be processed in run_all
-    if (method == "all") {
-      plots <- list()
-      plots$z <- z
-      plots$phased_plot <- phased_probability_plot
-      plots$heat_plot <- heat_plot
-    } else {
-      # Create a null plots object for safe return
-      plots <- NULL
-      if (!is.na(heat_plot)) {
-        top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot),
-                                       ncol = 1, rel_widths = c(0.8, 1, 1),
-                                       rel_heights = c(0.8, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        top_right <- cowplot::plot_grid(z, NULL, phased_probability_plot,
-                                        ncol = 1, rel_widths = c(1, 1, 1),
-                                        rel_heights = c(1, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        
-        top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1, 0.1, 1))
-        
-        bottom <- cowplot::plot_grid(density_plot)
-        ## phased plots
-        # left null right null bottom
-        all_plot <- cowplot::plot_grid(top, NULL, bottom,
-                                       nrow = 3, ncol = 1, rel_widths = c(0.9, 0.9, 0.9),
-                                       rel_heights = c(1, 0.1, 0.8), align = "vh", axis = "lrtb"
-        )
-        # grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
-      } else {
-        top_left <- cowplot::plot_grid(dist_plot,
-                                       ncol = 1, rel_widths = c(1),
-                                       rel_heights = c(0.8, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        top_right <- cowplot::plot_grid(z, NULL, phased_probability_plot,
-                                        ncol = 1, rel_widths = c(1, 1, 1),
-                                        rel_heights = c(1, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        
-        top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1, 0.1, 1))
-        
-        bottom <- cowplot::plot_grid(density_plot)
-        ## phased plots
-        # left null right null bottom
-        all_plot <- cowplot::plot_grid(top, NULL, bottom,
-                                       nrow = 3, ncol = 1, rel_widths = c(0.9, 0.9, 0.9),
-                                       rel_heights = c(1, 0.1, 0.8), align = "vh", axis = "lrtb"
-        )
-        # grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
-      }
+      read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist, chrom_name, reg_start, reg_stop)
       
-      if (out_type == "png" || out_type == "PNG") {
-        grDevices::png(file = file.path(wkdir, paste0(prefix, "_pi-zscore.png")), width = 10, height = 11, bg = "white", units = "in", res = 300)
-        print(all_plot)
-        grDevices::dev.off()
-      } else {
-        grDevices::cairo_pdf(file = file.path(wkdir, paste0(prefix, "_pi-zscore.pdf")), width = 10, height = 11)
-        print(all_plot)
-        grDevices::dev.off()
-      }
+      plot_details <- plot_title(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, current_iteration)
+      
+      plot_piRNA(read_distribution_plot, density_plot, overlap_probability_plot, phased_probability_plot, heat_plot, out_type, prefix, wkdir, plot_details)
     }
   } else { # plot_output == FALSE
     plots <- NULL
   }
-
 
   # get average zscore for first 4 distances (1-4nt)
   ave_plus_z <- mean(phased_plus_counts$phased_ml_z[1:4])

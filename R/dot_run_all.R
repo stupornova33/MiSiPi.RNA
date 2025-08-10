@@ -259,7 +259,7 @@
   si_res <- .siRNA(
     chrom_name, reg_start, reg_stop,
     length, genome_file,
-    bam_file, si_log, si_dir,
+    bam_file, roi, si_log, si_dir,
     si_pal, plot_output, path_to_RNAfold,
     annotate_region, weight_reads, gtf_file,
     write_fastas, out_type, calling_method
@@ -386,7 +386,7 @@
   pi_log <- file.path(pi_dir, "piRNA_log.txt")
 
   pi_res <- .piRNA(chrom_name, reg_start, reg_stop,
-    length, bam_file, genome_file,
+    length, bam_file, genome_file, roi,
     pi_log, pi_dir, pi_pal,
     plot_output = plot_output,
     weight_reads,
@@ -529,18 +529,10 @@
     siRNA_gtf_plot <- NULL
   } else {
     # Arc Plot
-    if (length(siRNA_plots$arc_plot) == 1) {
-      siRNA_arc_plot <- null_plot("RNAfold Arc Plot", "Not generated due to RNA not being folded.")
-    } else {
-      siRNA_arc_plot <- siRNA_plots$arc_plot
-    }
+    siRNA_arc_plot <- siRNA_plots$arc_plot
     
     # Dicer Overhang Probability
-    if (length(siRNA_plots$overhang_probability_plot) == 1) {
-      siRNA_dicer_overhang_probability_plot <- NULL
-    } else {
-      siRNA_dicer_overhang_probability_plot <- siRNA_plots$overhang_probability_plot
-    }
+    siRNA_dicer_overhang_probability_plot <- siRNA_plots$overhang_probability_plot
     
     # Phasing Probability
     if (length(siRNA_plots$phasedz) == 1) {
@@ -550,18 +542,11 @@
     }
     
     # Proper Overhangs by Size
-    if (length(siRNA_plots$heat_plot) == 1) {
-      siRNA_proper_overhangs_by_size_plot <- null_plot("siRNA Proper Overhangs by Size", "No proper overlaps were present")
-    } else {
-      siRNA_proper_overhangs_by_size_plot <- siRNA_plots$heat_plot
-    }
+    # NULL plot is now handled closer to plot generation
+    siRNA_proper_overhangs_by_size_plot <- siRNA_plots$heat_plot
     
-    # GTF
-    if (length(siRNA_plots$gtf_plot) == 1) {
-      siRNA_gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters")
-    } else {
-      siRNA_gtf_plot <- siRNA_plots$gtf_plot
-    }
+    # GTF Annotation
+    siRNA_gtf_plot <- siRNA_plots$gtf_plot
   }
   
   si_res <- NULL
@@ -577,27 +562,13 @@
     piRNA_phasing_probability_plot <- NULL
   } else {
     # Overlap Probability
-    if (length(piRNA_plots$z) == 1) {
-      piRNA_overlap_probability_plot <- NULL
-    } else {
-      piRNA_overlap_probability_plot <- piRNA_plots$z
-    }
+    piRNA_overlap_probability_plot <- piRNA_plots$overlap_probability_plot
     
     # Proper Overlaps by Size
-    if (length(piRNA_plots$heat_plot) == 1) {
-      piRNA_proper_overlaps_by_size_plot <- null_plot("piRNA Proper Overlaps by Size", "No proper overlaps were present")
-    } else {
-      piRNA_proper_overlaps_by_size_plot <- piRNA_plots$heat_plot
-    }
+    piRNA_proper_overlaps_by_size_plot <- piRNA_plots$heat_plot
     
     # Phasing Probability
-    if (length(piRNA_plots$phased_plot) == 1) {
-      piRNA_phasing_probability_plot <- NULL
-    } else {
-      piRNA_phasing_probability_plot <- piRNA_plots$phased_plot
-    }
-    
-    
+    piRNA_phasing_probability_plot <- piRNA_plots$phased_probability_plot
   }
 
   pi_res <- NULL

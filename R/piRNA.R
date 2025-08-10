@@ -30,6 +30,7 @@ piRNA <- function(vars, output_dir) {
       vars$length,
       vars$bam_file,
       vars$genome,
+      vars$roi,
       logfile,
       pi_dir,
       vars$pi_pal,

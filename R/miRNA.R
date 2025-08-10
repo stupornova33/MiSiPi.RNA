@@ -7,10 +7,20 @@ miRNA <- function(vars, output_dir) {
   total_iterations <- length(vars$chrom_name)
   idx_vec <- 1:total_iterations
 
+  genome <- vars$genome
+  bam <- vars$bam_file
+  bed <- vars$roi
+  plot_output <- vars$plot_output
+  RNAfold_path <- vars$path_to_RNAfold
+  RNAplot_path <- vars$path_to_RNAplot
+  write_fastas <- vars$write_fastas
+  weight_reads <- vars$weight_reads
+  out_type <- vars$out_type
+  
   .print_intro(
-    roi = vars$roi,
-    bam = vars$bam_file,
-    genome = vars$genome,
+    roi = bed,
+    bam = bam,
+    genome = genome,
     method = "miRNA"
   )
 
@@ -19,15 +29,6 @@ miRNA <- function(vars, output_dir) {
   
   dir.create(mi_dir)
   file.create(logfile)
-  
-  genome <- vars$genome
-  bam <- vars$bam_file
-  plot_output <- vars$plot_output
-  RNAfold_path <- vars$path_to_RNAfold
-  RNAplot_path <- vars$path_to_RNAplot
-  write_fastas <- vars$write_fastas
-  weight_reads <- vars$weight_reads
-  out_type <- vars$out_type
   
   for (i in idx_vec) {
     chrom <- vars$chrom_name[i]
@@ -102,8 +103,10 @@ miRNA <- function(vars, output_dir) {
       
       prefix <- .get_region_string(chrom, reg_start, reg_stop)
       
+      plot_details <- plot_title(bam, bed, genome, chrom, reg_start, reg_stop, i)
+      
       # Print the plots to a file
-      .print_miRNA_plots(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, mi_dir)
+      .print_miRNA_plots(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, mi_dir, plot_details)
     }
   }
   

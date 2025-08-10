@@ -6,6 +6,7 @@
 # @param length an integer
 # @param genome_file a string
 # @param bam_file a string
+# @param bed_file a string
 # @param logfile a string
 # @param wkdir a string
 # @param pal a string
@@ -19,7 +20,7 @@
 # @return results
 
 .siRNA <- function(chrom_name, reg_start, reg_stop, length,
-                   genome_file, bam_file, logfile, wkdir, pal, plot_output,
+                   genome_file, bam_file, bed_file, logfile, wkdir, pal, plot_output,
                    path_to_RNAfold, annotate_region, weight_reads, gtf_file,
                    write_fastas, out_type, method = c("self", "all"),
                    i = NULL, i_total = NULL) {
@@ -28,6 +29,9 @@
   if (!is.null(i)) {
     .inform_iteration(i, i_total, chrom_name)
   }
+  
+  # Just in case i gets used in the future further down
+  current_iteration <- i
   
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
@@ -198,8 +202,15 @@
       # Wrap heat_plot in ggplotify::as.grob since pheatmaps can't be coerced to grob by default
       heat_plot <- ggplotify::as.grob(.plot_heat(results, chrom_name, reg_start, reg_stop, wkdir, "siRNA", pal = pal))
     } else {
-      heat_plot <- NA
+      heat_plot <- null_plot("siRNA Proper Overhangs by Size", "No proper overlaps were present")
     }
+    
+    if (annotate_region) {
+      gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+    } else {
+      gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters")
+    }
+    
     
     if (method == "all") {
       plots <- list()
@@ -208,7 +219,7 @@
       plots$heat_plot <- heat_plot
       plots$arc_plot <- dsh$arc_plot
       plots$phasedz <- dsh$phasedz
-      plots$gtf_plot <- dsh$gtf_plot
+      plots$gtf_plot <- gtf_plot
     } else {
       plots <- NULL
       
@@ -217,15 +228,21 @@
       
       data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
       
-      if ((reg_stop - reg_start + 1) > 10000) {
-        # Large Loci
-        density_plot <- .plot_large_density(data, reg_start, reg_stop)
-      } else {
+      if (is_small_locus) {
         # Smaller Loci
         density_plot <- .plot_density(data, reg_start, reg_stop)
+      } else {
+        # Large Loci
+        density_plot <- .plot_large_density(data, reg_start, reg_stop)
       }
       
-      .plot_siRNA(dsh, is_small_locus, annotate_region, results_present, density_plot, read_distribution_plot, heat_plot, out_type, prefix, wkdir)
+      phasedz_plot <- dsh$phasedz
+      overhang_probability_plot <- dsh$overhang_probability_plot
+      arc_plot <- dsh$arc_plot
+      
+      plot_details <- plot_title(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, current_iteration)
+      
+      .plot_siRNA(read_distribution_plot, density_plot, phasedz_plot, overhang_probability_plot, arc_plot, gtf_plot, heat_plot, out_type, prefix, wkdir, plot_details)
     }
   } else {
     plots <- NULL
