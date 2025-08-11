@@ -10,7 +10,7 @@ For more details about the package or to cite, please visit https://www.biorxiv.
 Characterization of small RNA pathways
 
 ### Installation and Basic Usage
-You can find the full documentation and examples [here](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html).
+You can find the full documentation and examples [here](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.md).
 
 In order to install MiSiPi.RNA, you must first install devtools and BiocManager:
 
