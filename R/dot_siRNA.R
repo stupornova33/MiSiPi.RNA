@@ -85,7 +85,7 @@
   size_dist <- NULL
 
   # If the data frames are empty there are no reads, can't do siRNA calculations
-  if (nrow(forward_dt) == 0 & nrow(reverse_dt) == 0) {
+  if (nrow(forward_dt) == 0 | nrow(reverse_dt) == 0) {
     cat(file = logfile, "No reads detected on one strand. \n", append = TRUE)
     
     # Setting the ml_zscore to -33 for use in later machine learning calculations
@@ -105,64 +105,49 @@
     forward_dt <- .weight_reads(forward_dt, weight_reads, locus_length, sum(forward_dt$count))
     reverse_dt <- .weight_reads(reverse_dt, weight_reads, locus_length, sum(reverse_dt$count))
     
-    # Verify weighted data frames contain reads before proceeding
-    if (nrow(forward_dt) == 0 & nrow(reverse_dt) == 0) {
-      # Even though empty, results are being kept in case the "all" method is being used
-      # In that case, they will be written to a table at the end of the that function
-      
-      cat(file = logfile, "No reads detected on one strand. \n", append = TRUE)
-      
-      # the data.frame should be modified if using calc_expand_overhangs
-      dicer_overhangs <- data.frame(shift = seq(-4, 4),
-                                    proper_count = c(rep(0, times = 9)),
-                                    zscore = c(rep(0, times = 9)),
-                                    ml_zscore = c(rep(-33, times = 9)))
-      results <- rep(0, times = 324)
-    } else {
-      # Now that the DTs have been weighted and re-expanded,
-      # Let's summarize them again and keep track of the duplicates with the column "n"
-      # This will be crucial in keeping memory and cpu usage down during .find_overlaps()
-      f_summarized <- forward_dt %>%
-        dplyr::group_by_all() %>%
-        dplyr::count()
-      
-      r_summarized <- reverse_dt %>%
-        dplyr::group_by_all() %>%
-        dplyr::count()
-      
-      # get overlapping reads
-      overlaps <- .find_overlaps(f_summarized, r_summarized) %>%
-        dplyr::mutate(
-          p5_overhang = r1_start - r2_start,
-          p3_overhang = r1_end - r2_end
-        )
-      
-      # TODO This function runs very slowly on large loci
-      # See if it can be run on the summarized dts
-      if (write_fastas == TRUE) .write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
-      
-      # calculate the number of dicer pairs for the zscore
-      dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end,
-                                        overlaps$r2_start, overlaps$r2_width,
-                                        dupes_present = TRUE,
-                                        overlaps$r1_dupes, overlaps$r2_dupes
+    # Now that the DTs have been weighted and re-expanded,
+    # Let's summarize them again and keep track of the duplicates with the column "n"
+    # This will be crucial in keeping memory and cpu usage down during .find_overlaps()
+    f_summarized <- forward_dt %>%
+      dplyr::group_by_all() %>%
+      dplyr::count()
+    
+    r_summarized <- reverse_dt %>%
+      dplyr::group_by_all() %>%
+      dplyr::count()
+    
+    # get overlapping reads
+    overlaps <- .find_overlaps(f_summarized, r_summarized) %>%
+      dplyr::mutate(
+        p5_overhang = r1_start - r2_start,
+        p3_overhang = r1_end - r2_end
       )
-      
-      dicer_overhangs$zscore <- .calc_zscore(dicer_overhangs$proper_count)
-      dicer_overhangs$ml_zscore <- .calc_ml_zscore(dicer_overhangs$proper_count)
-      
-      cat(file = logfile, "get_si_overlaps\n", append = TRUE)
-      
-      # calculate the siRNA pairs for the heatmap
-      # TODO See if this can be run on the summarized dts for cpu time improvement
-      results <- new_get_si_overlaps(
-        reverse_dt$start, reverse_dt$end, reverse_dt$width,
-        forward_dt$start, forward_dt$end, forward_dt$width
-      )
-      
-      row.names(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")
-      colnames(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")
-    }
+    
+    # TODO This function runs very slowly on large loci
+    # See if it can be run on the summarized dts
+    if (write_fastas == TRUE) .write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
+    
+    # calculate the number of dicer pairs for the zscore
+    dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end,
+                                      overlaps$r2_start, overlaps$r2_width,
+                                      dupes_present = TRUE,
+                                      overlaps$r1_dupes, overlaps$r2_dupes
+    )
+    
+    dicer_overhangs$zscore <- .calc_zscore(dicer_overhangs$proper_count)
+    dicer_overhangs$ml_zscore <- .calc_ml_zscore(dicer_overhangs$proper_count)
+    
+    cat(file = logfile, "get_si_overlaps\n", append = TRUE)
+    
+    # calculate the siRNA pairs for the heatmap
+    # TODO See if this can be run on the summarized dts for cpu time improvement
+    results <- new_get_si_overlaps(
+      reverse_dt$start, reverse_dt$end, reverse_dt$width,
+      forward_dt$start, forward_dt$end, forward_dt$width
+    )
+    
+    row.names(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")
+    colnames(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")
   }
   
   # transform the data frame for writing to table by row
