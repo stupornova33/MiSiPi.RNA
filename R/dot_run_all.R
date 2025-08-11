@@ -499,7 +499,7 @@
   #### Make combined plot for current locus ####
   # Generate General Read Plots
   
-  density_data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+  density_data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, output_dir)
   read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
   
   stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
