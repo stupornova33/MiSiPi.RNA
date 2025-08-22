@@ -1,6 +1,7 @@
 <figure>
-<img src="documentation/logo.png" width="300" height="250"
-alt="R logo" />
+<img
+src="https://raw.githubusercontent.com/stupornova33/MiSiPi.RNA/main/documentation/logo.png"
+width="300" height="250" alt="R logo" />
 <figcaption aria-hidden="true">R logo</figcaption>
 </figure>
 
@@ -105,10 +106,11 @@ there will be a file ending with “+\_combined” or “-\_combined” for each
 locus (assuming adequate read coverage). This behavior may be changed in
 the future.
 
-<img src="documentation/example_miRNA_plot.png" width="500" height="900"
-alt="miRNA plot" />
-<img src="documentation/example_miRNA_struct.png" width="400"
-height="400" alt="miRNA struct" />
+<img
+src="https://raw.githubusercontent.com/stupornova33/MiSiPi.RNA/main/documentation/example_miRNA_plot.png"
+width="500" height="900" alt="miRNA plot" /> <img
+src="https://raw.githubusercontent.com/stupornova33/MiSiPi.RNA/main/documentation/example_miRNA_struct.png"
+width="300" height="400" alt="miRNA struct" />
 
 The miRNA module plots the read size distribution at the locus,
 including the nucleotide composition for each read size (top left), the
@@ -143,8 +145,9 @@ enzyme (in fruitflies, Dcr-2). The siRNA program first processes reads
 from both strands and performs various calculations, followed by
 hairpin-RNA specific processing (e.g. single-strand processing).
 
-<img src="documentation/example_cisnat_plot.png" width="600"
-height="600" />
+<img
+src="https://raw.githubusercontent.com/stupornova33/MiSiPi.RNA/main/documentation/example_cisnat_plot.png"
+width="500" height="800" />
 
 The hairpin RNA-specific part of the module outputs an “arc plot” from
 RNAfold (top left) which depicts the paired bases at a genomic locus as
@@ -184,8 +187,9 @@ complementarity, targeting, and cleavage, while phased piRNAs are
 processed in a phased manner from a long single-stranded precursor.
 
 <figure>
-<img src="documentation/example_piRNA_plot.png" width="600" height="600"
-alt="piRNA plot" />
+<img
+src="https://raw.githubusercontent.com/stupornova33/MiSiPi.RNA/main/documentation/example_piRNA_plot.png"
+width="500" height="700" alt="piRNA plot" />
 <figcaption aria-hidden="true">piRNA plot</figcaption>
 </figure>
 
@@ -347,8 +351,9 @@ The ml_probability module will create a subdirectory called
 “radar_plots” which will contain a probability plot for each locus.
 
 <figure>
-<img src="documentation/example_radar_plot.png" width="400" height="400"
-alt="Radar plot" />
+<img
+src="https://raw.githubusercontent.com/stupornova33/MiSiPi.RNA/main/documentation/example_radar_plot.png"
+width="300" height="300" alt="Radar plot" />
 <figcaption aria-hidden="true">Radar plot</figcaption>
 </figure>
 
@@ -370,8 +375,9 @@ have used the ml_probability function and is by default set to FALSE
     make_html_summary("full/path/to/run_all/", type = "piRNA", ml_plots = FALSE)
 
 <figure>
-<img src="documentation/misipi_summary_html.png" width="600"
-height="600" alt="MiSiPi summary HTML" />
+<img
+src="https://raw.githubusercontent.com/stupornova33/MiSiPi.RNA/main/documentation/misipi_summary_html.png"
+width="500" height="700" alt="MiSiPi summary HTML" />
 <figcaption aria-hidden="true">MiSiPi summary HTML</figcaption>
 </figure>
 
@@ -415,16 +421,21 @@ in your path:
 <!-- -->
 
     #Identifying small RNA regions of interest
+
+    #Align all valid small RNA sizes
+    awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qseq ; if (length(seq) >= 18 && length(seq) <= 32) {print header, seq, qheader, qseq}}' < trimmed.fq > all.fastq
+
+    bowtie -p 10 -a -m 100 --best --strata --no-unal all.fastq -S | samtools view -@ 10 -q 10 -b |samtools sort -@ 10 -m 6G > all.bam
+
     #miRNAs & siRNAs: get reads of only miRNA and siRNA length
     awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qseq ; if (length(seq) >= 19 && length(seq) <= 23) {print header, seq, qheader, qseq}}' < trimmed.fq > small.fastq
 
-    #piRNAs: get reads of piRNA length
-    awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qseq ; if(length(seq) >= 23 && length(seq) <= 30) {print header, seq, qheader, qseq}}' < trimmed.fq > large.fastq
-
     #Align reads to genome
     bowtie -p 10 -a -m 100 --best --strata --no-unal genome.fna small.fastq -S | samtools view -@ 10 -q 10 -b |samtools sort -@ 10 -m 6G > small.bam
-
     samtools index small.bam
+
+    #piRNAs: get reads of piRNA length
+    awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qseq ; if(length(seq) >= 23 && length(seq) <= 30) {print header, seq, qheader, qseq}}' < trimmed.fq > large.fastq
 
     bowtie -p 20 -a -m 100 --no-unal genome.fna large.fastq -S | samtools view -@ 10 -q 10 -b | samtools sort -@ 10 -m 6G > large.bam
     samtools index large.bam
