@@ -68,6 +68,8 @@ def run_postprocessing_ml_html(args):
     r_script = "library(MiSiPi.RNA);\n"
 
     if args.ml:
+        if not args.run_all:
+            sys.exit(f"Error: Cannot run ML step without --run_all.")
         print("Calculating library size from BAM...")
         library_size = get_bam_alignment_count(args.bam_file)
 
