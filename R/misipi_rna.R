@@ -5,7 +5,7 @@
 
 #' @export
 
-misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
+misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA"), outdir_name) {
   method <- match.arg(method)
   
   # Create base output directory if it doesn't already exist
@@ -18,7 +18,7 @@ misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
   # Create current run's output directory inside the base output directory
   now <- format(lubridate::now(), "%m-%d-%Y_%H%M%S")
   
-  output_dir <- file.path(OUTPUT_BASE_DIR, now)
+  output_dir <- file.path(OUTPUT_BASE_DIR, outdir_name)
   if (!dir.exists(output_dir)) {
     dir.create(output_dir)
   }
