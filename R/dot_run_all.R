@@ -224,7 +224,7 @@
       size_dir <- file.path(getwd(), "run_all", "size_plots")
       
       if (!dir.exists(size_dir)) {
-        dir.create(size_dir)
+        dir.create(size_dir, recursive = TRUE)
       }
       
       plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
