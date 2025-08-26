@@ -33,25 +33,26 @@
 
 .plot_siRNA_overhangs_combined <- function(plus_overhangs, minus_overhangs, dual_strand_overhangs) {
   shift <- c(-4, -3, -2, -1, 0, 1, 2, 3, 4)
+   
+   plus_color <- "red"
+   minus_color <- "blue" 
+   dual_color <- "black"
+   plot_title <- "siRNA Dicer Overhang Probability"
+  
 
-  plus_color <- "red"
-  minus_color <- "blue"
-  dual_color <- "black"
-  plot_title <- "siRNA Dicer Overhang Probability"
-  
-  
-  p <- ggplot2::ggplot(plus_overhangs, ggplot2::aes(x = shift, y = zscore)) +
-    ggplot2::geom_line(color = plus_color, linewidth = 2) +
-    ggplot2::geom_line(data = minus_overhangs, ggplot2::aes(x = shift, y = zscore), color = minus_color, linewidth = 2) +
-    ggplot2::geom_line(data = dual_strand_overhangs, ggplot2::aes(x = shift, y = zscore), color = dual_color, linewidth = 2) +
-    ggplot2::ggtitle(plot_title) +
-    ggplot2::scale_x_continuous("Shift") +
-    ggplot2::scale_y_continuous("Z-score") +
-    ggplot2::theme_classic() +
-    ggplot2::theme(text = ggplot2::element_text(size = 15), plot.title = ggplot2::element_text(hjust = 0.5, size = 14)) +
-    ggplot2::theme(plot.margin = ggplot2::unit(c(2, 0, 0, 0), "cm"))
-  
-  return(p)
+   
+   p <- ggplot2::ggplot(plus_overhangs, ggplot2::aes(x = shift, y = zscore)) +
+     ggplot2::geom_line(color = plus_color, linewidth = 2) +
+     ggplot2::geom_line(data = minus_overhangs, ggplot2::aes(x = shift, y = zscore), color = minus_color, linewidth = 2) +
+     ggplot2::geom_line(data = dual_strand_overhangs, ggplot2::aes(x = shift, y = zscore), color = dual_color, linewidth = 2) +
+     ggplot2::ggtitle(plot_title) +
+     ggplot2::scale_x_continuous("Shift") +
+     ggplot2::scale_y_continuous("Z-score") +
+     ggplot2::theme_classic() +
+     ggplot2::theme(text = ggplot2::element_text(size = 15), plot.title = ggplot2::element_text(hjust = 0.5, size = 14)) +
+     ggplot2::theme(plot.margin = ggplot2::unit(c(2, 0, 0, 0), "cm"))
+  return(p) 
+
 }
 
 .plot_miRNA_dicer_overhang_probability <- function(plus_overhangs, minus_overhangs) {

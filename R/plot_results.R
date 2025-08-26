@@ -70,8 +70,10 @@
     phasedz_plot, gtf_plot,
     heat_plot,
     ncol = 2,
-    align = "hv",
-    axis = "lrtb"
+    #align = "hv",
+    axis = "lrtb",
+    rel_widths = c(1, 1,0.8,1,0.8,1,0.8)
+    
   )
   
   all_plot <- cowplot::plot_grid(

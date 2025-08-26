@@ -53,7 +53,7 @@ set_vars <- function(roi, bam_file, genome,
   if (annotate_region == TRUE) {
     stopifnot("Parameter `gtf_file` must be provided when `annotate_region` is TRUE." = !missing(gtf_file))
     stopifnot("Parameter `gtf_file` must be a valid filepath to a 9 column gtf file." = file.exists(gtf_file))
-    gtf_columns_vector <- utils::count.fields(gtf_file, sep = "\t")
+    gtf_columns_vector <- utils::count.fields(gtf_file, sep = "\t", quote = "")
     stopifnot("gtf_file must have the same number of columns in each line." = length(unique(gtf_columns_vector)) == 1)
     # waiting to include the number of column check
     # number_of_gtf_columns <- gtf_columns_vector[1]

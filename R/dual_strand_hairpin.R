@@ -95,7 +95,7 @@
   for (strand in strands) {
     null_results <- FALSE
     strand_name <- switch(strand, "+" = "plus", "-" = "minus")
-    
+  
     chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = strand)
     
     r2_dt <- data.table::setDT(.make_si_BamDF(chrom)) %>%

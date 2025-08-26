@@ -94,7 +94,7 @@
                                   proper_count = c(rep(0, times = 9)),
                                   zscore = c(rep(0, times = 9)),
                                   ml_zscore = c(rep(-33, times = 9)))
-    results <- rep(0, times = 324)
+    results <- rep(0, times = 225)
     
   } else {
     cat(file = logfile, "Calculating overhangs\n", append = TRUE)
@@ -191,9 +191,13 @@
     }
     
     if (annotate_region) {
-      gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop)
+      gtf_plot <- .plot_gtf_region_new(gtf_file, chrom_name, reg_start, reg_stop, logfile)
+      if(is.null(gtf_plot)){
+        gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters or lack of features in region.")
+      }
+      
     } else {
-      gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters")
+      gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters or lack of features in region.")
     }
     
     
