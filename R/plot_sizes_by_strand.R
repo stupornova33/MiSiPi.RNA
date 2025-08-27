@@ -1,14 +1,10 @@
 # .plot_sizes_by_strand
 # plots the size distribution of reads separately by strand
 # @param stranded_size_dist
-# @param chrom_name a string
-# @param reg_start a numerical value
-# @param reg_stop a numerical value
 # @return A plot
 
-.plot_sizes_by_strand <- function(stranded_size_dist, chrom_name, reg_start, reg_stop) {
+.plot_sizes_by_strand <- function(stranded_size_dist) {
   options(scipen = 999)
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   p_size_dist <- stranded_size_dist %>% dplyr::filter(strand == "plus")
   m_size_dist <- stranded_size_dist %>% dplyr::filter(strand == "minus")

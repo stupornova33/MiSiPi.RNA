@@ -3,7 +3,7 @@
 # @param chrom_name a string
 # @param reg_start a whole number
 # @param reg_stop a whole number
-# @param length an integer
+# @param prefix either the bed file name or a roi string in the format chr-start_stop
 # @param genome_file a string
 # @param bam_file a string
 # @param bed_file a string
@@ -13,17 +13,22 @@
 # @param plot_output a bool, TRUE or FALSE. Default is TRUE
 # @param path_to_RNAfold a string
 # @param annotate_region a bool, TRUE or FALSE
-# @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none. See MiSiPi documentation for descriptions of the weighting methods.
+# @param weight_reads Determines whether read counts will be weighted and with which method.
+#   Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none.
+#   See MiSiPi documentation for descriptions of the weighting methods.
 # @param gtf_file a string
-# @param write_fastas a bool, Determines whether siRNA pairs will be written to a fasta file. TRUE or FALSE expected. Default: FALSE
-# @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
+# @param write_fastas a bool, Determines whether siRNA pairs will be written to a fasta file.
+#   TRUE or FALSE expected. Default: FALSE
+# @param out_type The type of file to write the plots to. Options are "png" or "pdf".
+#   Default is PDF.
 # @return results
 
-.siRNA <- function(chrom_name, reg_start, reg_stop, length,
+.siRNA <- function(chrom_name, reg_start, reg_stop, prefix,
                    genome_file, bam_file, bed_file, logfile, wkdir, pal, plot_output,
                    path_to_RNAfold, annotate_region, weight_reads, gtf_file,
                    write_fastas, out_type, method = c("self", "all"),
                    i = NULL, i_total = NULL) {
+  width <- pos <- phased_num <- NULL
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
@@ -33,9 +38,6 @@
   # Just in case i gets used in the future further down
   current_iteration <- i
   
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
-  width <- pos <- phased_dist <- phased_num <- phased_z <- phased_dist2 <- plus_num2 <- phased_dist1 <- phased_num1 <- NULL
-
   # use Rsamtools to process the bam file
   bam_obj <- .open_bam(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
@@ -167,7 +169,7 @@
     
     if (results_present) {
       # Wrap heat_plot in ggplotify::as.grob since pheatmaps can't be coerced to grob by default
-      heat_plot <- ggplotify::as.grob(.plot_heat(results, chrom_name, reg_start, reg_stop, wkdir, "siRNA", pal = pal))
+      heat_plot <- ggplotify::as.grob(.plot_heat(results, "siRNA", pal = pal))
     } else {
       heat_plot <- null_plot("siRNA Proper Overhangs by Size", "No proper overlaps were present")
     }
@@ -195,7 +197,7 @@
       plots <- NULL
       
       stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-      read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist, chrom_name, reg_start, reg_stop)
+      read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
       
       data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
       

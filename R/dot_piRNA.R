@@ -4,7 +4,7 @@
 # @param chrom_name a string
 # @param reg_start a whole number
 # @param reg_stop a whole number
-# @param length an integer
+# @param prefix either the bed file name or a roi string in the format chr-start_stop
 # @param bam_file a string
 # @param genome_file a string
 # @param bed_file a string
@@ -17,28 +17,25 @@
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 # @return plots, heat results, and zdf
 
-.piRNA <- function(chrom_name, reg_start, reg_stop, length, bam_file,
+.piRNA <- function(chrom_name, reg_start, reg_stop, prefix, bam_file,
                    genome_file, bed_file, logfile, wkdir, pal, plot_output,
                    weight_reads, write_fastas, out_type,
                    method = c("self", "all"), i = NULL, i_total = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
-    .inform_iteration(i, i_total, chrom_name)
+    .inform_iteration(i, i_total, prefix)
   }
   
   current_iteration <- i
   
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
   
-
   ################################################################# ping pong piRNA ##############################################################
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, paste0(prefix, "\n"), append = TRUE)
   cat(file = logfile, paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
   # Get the reads from the BAM using Rsamtools
-  
   bam_obj <- .open_bam(bam_file, logfile)
   
   # Make forward and reverse dataframes filtered for width
@@ -209,7 +206,6 @@
       check_pi = TRUE
     )
 
-    # new_heat_plot <- .plot_si_heat(new_heat, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     # calculate overlaps of all reads for output table
     overlaps <- overlaps %>%
       dplyr::mutate(
@@ -269,8 +265,6 @@
   overlaps <- NULL
 
   ################################################################### phased piRNAs #########################################################################
-  # prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
-
   ################## compute plus strand
 
   cat(file = logfile, paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
@@ -504,7 +498,7 @@
 
     if (sum(heat_results) > 0) {
       # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
-      heat_plot <- ggplotify::as.grob(.plot_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, "piRNA", pal = pal))
+      heat_plot <- ggplotify::as.grob(.plot_heat(heat_results, "piRNA", pal = pal))
     } else {
       heat_plot <- null_plot("piRNA Proper Overlaps By Size", "No overlaps present")
     }
@@ -529,7 +523,7 @@
       }
       data <- NULL
       
-      plot_details <- plot_title(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, current_iteration)
+      plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, current_iteration)
       
       plot_piRNA(read_distribution_plot, density_plot, overlap_probability_plot, phased_probability_plot, heat_plot, out_type, prefix, wkdir, plot_details)
     }

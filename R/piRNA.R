@@ -27,7 +27,7 @@ piRNA <- function(vars, output_dir) {
       vars$chrom_name,
       vars$reg_start,
       vars$reg_stop,
-      vars$length,
+      vars$prefix,
       vars$bam_file,
       vars$genome,
       vars$roi,

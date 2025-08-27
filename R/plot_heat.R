@@ -2,15 +2,11 @@
 # takes a matrix as input and a specified color palette
 # outputs plots
 # @param results a data table
-# @param chrom_name a string
-# @param reg_start a whole number
-# @param reg_stop a whole number
-# @param wkdir a string
 # @param method "piRNA" or "siRNA"
 # @param pal a string
 # @return plots
 
-.plot_heat <- function(results, chrom_name, reg_start, reg_stop, wkdir, method = c("piRNA", "siRNA"), pal = c("RdYlBl", "yelOrRed", "MagYel", "Greens", "BlYel")) {
+.plot_heat <- function(results, method = c("piRNA", "siRNA"), pal = c("RdYlBl", "yelOrRed", "MagYel", "Greens", "BlYel")) {
   method <- match.arg(method)
   m_pal <- match.arg(pal)
   m_pal <- switch(m_pal,

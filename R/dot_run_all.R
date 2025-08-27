@@ -3,7 +3,7 @@
 # @param chrom_name a string
 # @param reg_stop an integer
 # @param reg_start an integer
-# @param length an integer
+# @param prefix either the bed file name or a roi string in the format chr-start_stop
 # @param bam_file a string
 # @param roi a string
 # @param genome_file a string
@@ -18,18 +18,20 @@
 # @param write_fastas a bool, TRUE or FALSE. Default is FALSE
 # @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
 # @param output_dir The current output directory
+# @param use_bed_names A boolean indicating if the names from the bed file are being used or if a region string is being used
 # @param i
 # @param i_total
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
-                     length, bam_file,
+                     prefix, bam_file,
                      roi, genome_file,
                      si_pal, pi_pal, plot_output,
                      path_to_RNAfold, path_to_RNAplot,
                      annotate_region, weight_reads,
                      gtf_file, write_fastas, out_type,
-                     output_dir, i, i_total) {
+                     output_dir, use_bed_names,
+                     i, i_total) {
   width <- pos <- start <- end <- NULL
 
   .inform_iteration(i, i_total, chrom_name)
@@ -249,10 +251,10 @@
   si_log <- file.path(si_dir, "siRNA_log.txt")
 
   si_res <- .siRNA(
-    chrom_name, reg_start, reg_stop,
-    length, genome_file,
-    bam_file, roi, si_log, si_dir,
-    si_pal, plot_output, path_to_RNAfold,
+    chrom_name, reg_start, reg_stop, prefix,
+    genome_file, bam_file, roi,
+    si_log, si_dir, si_pal,
+    plot_output, path_to_RNAfold,
     annotate_region, weight_reads, gtf_file,
     write_fastas, out_type, calling_method
   )
@@ -300,19 +302,23 @@
   mi_log <- file.path(mi_dir, "miRNA_log.txt")
 
   mi_res_plus <- .miRNA(
-    chrom_name, reg_start, reg_stop,
-    length, "+",
-    genome_file, bam_file,
-    mi_log, mi_dir,
-    plot_output,
-    path_to_RNAfold,
-    path_to_RNAplot,
-    weight_reads,
-    write_fastas,
-    out_type,
+    chrom_name = chrom_name,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    prefix = prefix,
+    strand = "+",
+    genome_file = genome_file,
+    bam_file = bam_file,
+    log_file = mi_log,
+    wkdir = mi_dir,
+    plot_output = plot_output,
+    path_to_RNAfold = path_to_RNAfold,
+    path_to_RNAplot = path_to_RNAplot,
+    write_fastas = write_fastas,
+    weight_reads = weight_reads,
+    out_type = out_type,
+    use_bed_names = use_bed_names
   )
-
-  
 
   mirnaMFE_plus <- mi_res_plus$mfe
 
@@ -323,17 +329,24 @@
   plus_overlapz <- mean(mi_res_plus$overlaps$ml_zscore[17:19])
 
   mi_res_minus <- .miRNA(
-    chrom_name, reg_start, reg_stop,
-    length, "-",
-    genome_file, bam_file,
-    mi_log, mi_dir,
-    plot_output,
-    path_to_RNAfold,
-    path_to_RNAplot,
-    weight_reads,
-    write_fastas,
-    out_type,
+    chrom_name = chrom_name,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    prefix = prefix,
+    strand = "-",
+    genome_file = genome_file,
+    bam_file = bam_file,
+    log_file = mi_log,
+    wkdir = mi_dir,
+    plot_output = plot_output,
+    path_to_RNAfold = path_to_RNAfold,
+    path_to_RNAplot = path_to_RNAplot,
+    write_fastas = write_fastas,
+    weight_reads = weight_reads,
+    out_type = out_type,
+    use_bed_names = use_bed_names
   )
+  
   .compare_miRNA_strands(output_dir)
 
   mirnaMFE_minus <- mi_res_minus$mfe
@@ -379,7 +392,7 @@
   pi_log <- file.path(pi_dir, "piRNA_log.txt")
 
   pi_res <- .piRNA(chrom_name, reg_start, reg_stop,
-    length, bam_file, genome_file, roi,
+    prefix, bam_file, genome_file, roi,
     pi_log, pi_dir, pi_pal,
     plot_output = plot_output,
     weight_reads,
@@ -496,7 +509,7 @@
   read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
   
   stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-  read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist, chrom_name, reg_start, reg_stop)
+  read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
   
   # Generate miRNA Plots
   miRNA_plus_overhangs <- mi_res_plus$overhangs

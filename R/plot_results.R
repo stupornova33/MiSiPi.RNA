@@ -163,15 +163,14 @@ plot_piRNA <- function(read_distribution_plot, density_plot, overlap_probability
 
 
 
-plot_title <- function(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, i) {
-  locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
+plot_title <- function(bam_file, bed_file, genome_file, prefix, i) {
   now <- format(lubridate::now(), "%Y-%m-%d %H:%M:%S")
   
   misipi_version <- packageVersion("MiSiPi.RNA")
   
   iteration_str <- paste0(i, ")")
   
-  p_title <- paste("MiSiPi Results for locus:", locus, "(Bed file line:", iteration_str)
+  p_title <- paste("MiSiPi Results for locus:", prefix, "(Bed file line:", iteration_str)
   p_subtitle <- paste("Bam:", bam_file, "| Bed:", bed_file, "| Genome:", genome_file)
   p_caption <- paste("Run at:", now, "with MiSiPi.RNA Version:", misipi_version)
   

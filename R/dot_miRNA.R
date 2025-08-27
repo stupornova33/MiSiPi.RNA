@@ -4,7 +4,7 @@
 # @param chrom_name a string
 # @param reg_start a whole number
 # @param reg_stop a whole number
-# @param length length of chromosome of interest
+# @param prefix either the bed file name or a roi string in the format chr-start_stop
 # @param strand a character passed in, "+" or "-"
 # @param genome_file a fasta file of chrom sequences
 # @param bam_file a BAM file
@@ -16,26 +16,25 @@
 # @param write_fastas a bool, TRUE or FALSE
 # @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
+# @param use_bed_names A boolean indicating if the names from the bed file are being used or if a region string is being used
 # @param i The current iteration number
 # @param i_total The total number of iterations
 # @return plots
 
-.miRNA <- function(chrom_name, reg_start, reg_stop, length, strand,
+.miRNA <- function(chrom_name, reg_start, reg_stop, prefix, strand,
                    genome_file, bam_file, logfile, wkdir,
                    plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
-                   weight_reads, out_type,
+                   weight_reads, out_type, use_bed_names,
                    method = c("self", "all"), i = NULL, i_total = NULL) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(i)) {
-    .inform_iteration(i, i_total, chrom_name, strand)
+    .inform_iteration(i, i_total, prefix, strand)
   }
   
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, paste0(prefix, "\n"), append = TRUE)
   
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
-
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
   if (reg_stop - reg_start > 300) {
@@ -67,7 +66,6 @@
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
   
-
   if (nrow(r2_dt) == 0) {
     return(.null_mi_res(prefix, strand, wkdir))
   } else {
@@ -245,18 +243,19 @@
   expanded_converted <- list(convertU(bed_seq, 1))
   converted <- list(convertU(roi_seq, 1))
 
-  region_string <- paste0(">", chrom_name, "-", reg_start - 1, "_", reg_stop - 1)
+  #fasta_header <- paste0(">", chrom_name, "-", reg_start - 1, "_", reg_stop - 1)
+  fasta_header <- paste0(">", prefix)
   expanded_converted <- data.frame("V1" = unname(unlist(expanded_converted)))
   converted <- data.frame("V1" = unname(unlist(converted)))
   
   # Use bed file coords in column name unless alternate coordinates used
-  colnames(expanded_converted) <- region_string
-  colnames(converted) <- region_string
+  colnames(expanded_converted) <- fasta_header
+  colnames(converted) <- fasta_header
   
   # Positions relative to the expanded roi (could use roi bound seq, but the positions would need to be (x - reg_start + 1))
   ma_relative_r1_start <- final$r1_start - RELATIVE_SEQ_POS_OFFSET
   ma_relative_r2_end <- final$r2_end - RELATIVE_SEQ_POS_OFFSET
-  most_abundant_seq <- stringr::str_sub(expanded_converted[region_string], ma_relative_r1_start, ma_relative_r2_end)
+  most_abundant_seq <- stringr::str_sub(expanded_converted[fasta_header], ma_relative_r1_start, ma_relative_r2_end)
   final$converted <- most_abundant_seq
 
   # Use the roi bound converted data frame for converted.fasta for later folding
@@ -294,11 +293,11 @@
     r2_end = stringr::str_locate(roi_seq, final$r2_seq)[2]
   )
 
-  .rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, chrom_name, reg_start, reg_stop, final$r1_start, final$r2_end, strand)
+  .rna_plot(path_to_RNAfold, path_to_RNAplot, wkdir, pos_df, colors, prefix, strand)
 
   ################################################################################################################
   # .fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
-  fold_list <- .fold_short_rna(reg_start, reg_stop, converted, path_to_RNAfold, chrom_name, wkdir)
+  fold_list <- .fold_short_rna(reg_start, reg_stop, converted, path_to_RNAfold, prefix, wkdir)
   fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   # make the plots for all the sequences in the "fold_list"
@@ -309,7 +308,7 @@
   # makes a table of reads which are overlapping
   #dicer_dt, helix_df, chrom_name, reg_start
 
-  dicer_overlaps <- .dicer_overlaps(r2_summarized, fold_list$helix, chrom_name, fold_list$start)
+  dicer_overlaps <- .dicer_overlaps(r2_summarized, fold_list$helix, fold_list$start)
   
   # summarize the counts by the # overlapping nucleotides
   z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)

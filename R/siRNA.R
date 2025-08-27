@@ -27,7 +27,7 @@ siRNA <- function(vars, output_dir) {
       vars$chrom_name,
       vars$reg_start,
       vars$reg_stop,
-      vars$length,
+      vars$prefix,
       vars$genome,
       vars$bam_file,
       vars$roi,

@@ -5,11 +5,11 @@
 # @param stop an integer
 # @param converted a vector containing a sequence
 # @param path_to_RNAfold a string
-# @param chrom_name a string
+# @param prefix either the bed file name or a roi string in the format chr-start_stop
 # @param wkdir a string
 # @return list
 
-.fold_short_rna <- function(start, stop, converted, path_to_RNAfold, chrom_name, wkdir) {
+.fold_short_rna <- function(start, stop, converted, path_to_RNAfold, prefix, wkdir) {
   write.table(converted,
     file = file.path(wkdir, "converted.fasta"),
     sep = "\n",
@@ -39,7 +39,7 @@
   }
 
   # Delete unwanted .ps file
-  ps_filename_to_remove <- paste0(chrom_name, "-", start - 1, "_", stop - 1, "_ss.ps")
+  ps_filename_to_remove <- paste0(prefix, "_ss.ps")
   file.remove(ps_filename_to_remove)
 
   

@@ -41,7 +41,7 @@ run_all <- function(vars, output_dir) {
       vars$chrom_name,
       vars$reg_start,
       vars$reg_stop,
-      vars$length,
+      vars$prefix,
       vars$bam_file,
       vars$roi,
       vars$genome,
@@ -56,13 +56,15 @@ run_all <- function(vars, output_dir) {
       vars$write_fastas,
       vars$out_type,
       output_dir,
+      vars$use_bed_names,
       idx_vec,
       total_iterations
     )
   )
   
   # Compare dicer zscores in miRNA_zscore files and write final miRNA_zscore.txt
-  .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, output_dir)
+  # This is now being done iteratively in .run_all()
+  #.compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, output_dir)
   
   .inform_complete(output_dir)
 }

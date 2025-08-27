@@ -7,20 +7,21 @@ miRNA <- function(vars, output_dir) {
   total_iterations <- length(vars$chrom_name)
   idx_vec <- 1:total_iterations
 
-  genome <- vars$genome
-  bam <- vars$bam_file
-  bed <- vars$roi
+  genome_file <- vars$genome
+  bam_file <- vars$bam_file
+  bed_file <- vars$roi
   plot_output <- vars$plot_output
   RNAfold_path <- vars$path_to_RNAfold
   RNAplot_path <- vars$path_to_RNAplot
   write_fastas <- vars$write_fastas
   weight_reads <- vars$weight_reads
   out_type <- vars$out_type
+  use_bed_names <- vars$use_bed_names
   
   .print_intro(
-    roi = bed,
-    bam = bam,
-    genome = genome,
+    roi = bed_file,
+    bam = bam_file,
+    genome = genome_file,
     method = "miRNA"
   )
 
@@ -34,17 +35,17 @@ miRNA <- function(vars, output_dir) {
     chrom <- vars$chrom_name[i]
     reg_start <- vars$reg_start[i]
     reg_stop <- vars$reg_stop[i]
-    chr_length <- vars$length[i]
+    prefix <- vars$prefix[i]
     
     cli::cli_inform("Starting plus strand")
     plus_results <- .miRNA(
       chrom_name = chrom,
       reg_start = reg_start,
       reg_stop = reg_stop,
-      length = chr_length,
+      prefix = prefix,
       strand = "+",
-      genome_file = genome,
-      bam_file = bam,
+      genome_file = genome_file,
+      bam_file = bam_file,
       logfile = logfile,
       wkdir = mi_dir,
       plot_output = plot_output,
@@ -53,6 +54,7 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
+      use_bed_names = use_bed_names,
       i = i,
       i_total = total_iterations
     )
@@ -62,10 +64,10 @@ miRNA <- function(vars, output_dir) {
       chrom_name = chrom,
       reg_start = reg_start,
       reg_stop = reg_stop,
-      length = chr_length,
+      prefix = prefix,
       strand = "-",
-      genome_file = genome,
-      bam_file = bam,
+      genome_file = genome_file,
+      bam_file = bam_file,
       logfile = logfile,
       wkdir = mi_dir,
       plot_output = plot_output,
@@ -74,6 +76,7 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
+      use_bed_names = use_bed_names,
       i = i,
       i_total = total_iterations
     )
@@ -101,12 +104,10 @@ miRNA <- function(vars, output_dir) {
       read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist)
       .close_bam(bam_obj)
       
-      density_data <- .read_densityBySize(chrom, reg_start, reg_stop, bam, mi_dir)
+      density_data <- .read_densityBySize(chrom, reg_start, reg_stop, bam_file, mi_dir)
       read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
       
-      prefix <- .get_region_string(chrom, reg_start, reg_stop)
-      
-      plot_details <- plot_title(bam, bed, genome, chrom, reg_start, reg_stop, i)
+      plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, i)
       
       # Print the plots to a file
       .print_miRNA_plots(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, mi_dir, plot_details)

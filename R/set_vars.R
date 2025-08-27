@@ -4,14 +4,30 @@
 #' @param genome The path to a genome Fasta file
 #' @param path_to_RNAfold The full path to the RNAfold binary executable.
 #' @param path_to_RNAplot The full path to the RNAplot binary executable.
-#' @param plot_output Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.
-#' @param pi_pal The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
-#' @param si_pal The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
-#' @param weight_reads Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.
-#' @param write_fastas TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.
-#' @param annotate_region Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.
-#' @param gtf_file a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.
-#' @param out_type The type of file for plots. Options are "png" or "pdf". Default is PDF.
+#' @param plot_output Determines whether the program will output plots as PDFs.
+#'   Expected input is TRUE or FALSE.
+#' @param pi_pal The color palette to use for the piRNA heatmap plot.
+#'   Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
+#' @param si_pal The color palette to use for the siRNA heatmap plot.
+#'   Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".
+#' @param weight_reads Determines whether read counts will be weighted.
+#'   Valid options are "Top", "locus_norm", or "None".
+#'   See MiSiPi documentation for descriptions of the weighting methods.
+#' @param write_fastas TRUE or FALSE. Optional.
+#'   If TRUE, read pairs from functions will be written to file.
+#' @param annotate_region Determines whether the program will plot genomic
+#'   features of interest found in the GTF annotation file.
+#'   If TRUE, a GTF file must be provided as the "gtf_file" argument.
+#' @param gtf_file a string corresponding to the path of genome
+#'   annotation in 9-column GTF format.
+#'   Default is FALSE unless annotate_regions == TRUE.
+#' @param out_type The type of file for plots.
+#'   Options are "png" or "pdf". Default is PDF.
+#' @param use_bed_names a boolean indicating if the name column in
+#'   the bed file should be used for results.
+#'   If TRUE, bed line names will be used unless column 4 is not present in the bed file.
+#'   In that case, this parameter will toggle to FALSE.
+#'   If FALSE, results will be named using a region string in the format: chr-start_stop
 #' @return a list
 #' @export
 
@@ -21,14 +37,25 @@ set_vars <- function(roi, bam_file, genome,
                      si_pal = c("RdYlBl", "BlYel", "yelOrRed", "MagYel", "Greens"),
                      weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), 
                      write_fastas = FALSE, annotate_region = FALSE, gtf_file = FALSE,
-                     out_type = c("pdf", "png", "PDF", "PNG")) {
+                     out_type = c("pdf", "png", "PDF", "PNG"),
+                     use_bed_names = FALSE) {
   #### Parameter Validation ####
-  # roi
+  # roi - bed file
   stopifnot("Parameter `roi` must be a valid filepath to a BED file." = file.exists(roi))
   bed_columns_vector <- utils::count.fields(roi, sep = "\t")
   stopifnot("Bed file (roi) must have the same number of columns in each line." = length(unique(bed_columns_vector)) == 1)
   number_of_bed_columns <- bed_columns_vector[1]
   stopifnot("Bed file (roi) must have 3 columns and be tab separated." = number_of_bed_columns >= 3)
+  
+  # If there are more than 3 columns, assume the 4th column is region name
+  bed_names_present <- ifelse(number_of_bed_columns > 3, TRUE, FALSE)
+  
+  # If use_bed_names has been set to TRUE, ensure that a 4th column is actually present in the bed file
+  if (use_bed_names & !bed_names_present) {
+    cli::cli_warn("Bed file only has 3 columns, so bed file names will be replaced with [chr-start_stop] in results.")
+    use_bed_names <- FALSE
+  }
+  
   # bam_file
   stopifnot("Parameter `bam_file` must have a .bam extension." = tools::file_ext(bam_file) == "bam")
   stopifnot("Parameter `bam_file` must be a valid filepath to a BAM file." = file.exists(bam_file))
@@ -140,24 +167,23 @@ set_vars <- function(roi, bam_file, genome,
     cli::cli_abort(msg, call = NULL)
   }
   
-  #### Create vars object ####
+  # Scan bam file header for chromosome names
   bam_obj <- .open_bam(bam_file)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
   chr_name <- names(bam_header[["targets"]])
-  chr_length <- unname(bam_header[["targets"]])
   bam_header <- V2 <- V3 <- NULL
-  test_list <- utils::read.csv(roi, sep = "\t", header = FALSE)
+  .close_bam(bam_obj)
+  
+  # Read in bed file
+  bed_lines <- utils::read.csv(roi, sep = "\t", header = FALSE)
 
-  # get the working directory to write the logfile
-  dir <- unlist(strsplit(roi, "\\/\\s*(?=[^\\/]+$)", perl = TRUE))[1]
   # assign indexes to the chromosomes names from the bed file
-  # also checks to make sure the chromosome name from the bed file is actually in the genome
-  # prints to a file
-
+  # also checks to make sure the chromosome name from the bed file is actually in the bam file
   res_list <- vector()
   na_idx <- vector()
-  for (i in 1:nrow(test_list)) {
-    res <- which(chr_name == test_list$V1[i])
+  
+  for (i in 1:nrow(bed_lines)) {
+    res <- which(chr_name == bed_lines$V1[i])
     if (identical(res, integer(0))) {
       na_idx <- append(na_idx, i)
     } else {
@@ -165,41 +191,43 @@ set_vars <- function(roi, bam_file, genome,
     }
   }
 
+  stopifnot("There are no matching chromosomes between bed file and bam file." = length(res_list) > 0)
+  
   if (length(na_idx) > 0) {
     # remove any lines of bed file where chromosome was not in genome and print error to file.
-    test_list <- test_list[-c(na_idx), ]
-    suppressWarnings(
-      if (!file.exists("Error.log")) {
-        write(paste0("Chromosome at lines ", na_idx, " were not found in the genome. Please check.\n"), file = paste0(dir, "Error.log"), append = FALSE)
-      } else {
-        write(paste0("Chromosome at lines ", na_idx, " were not found in the genome. Please check.\n"), file = paste0(dir, "Error.log"), append = TRUE)
-      }
-    )
+    bed_lines <- bed_lines[-c(na_idx), ]
+    
+    warning_message <- paste("Chromosome at lines", na_idx, "were not found in the genome.\n")
+    cli::cli_warn(warning_message)
   }
+  
+  res_list <- na_idx <- NULL
 
   # Convert the bed file coordinates to 1 based for compatibility with other tools
   # This will be converted back using revert_positions() when writing results that reference the coordinates
-  test_list <- test_list %>%
+  bed_lines <- bed_lines %>%
     dplyr::mutate(
       V2 = V2 + 1,
       V3 = V3 + 1
     )
 
-  test_list <- test_list %>%
-    dplyr::mutate(chromosome = res_list) %>%
-    dplyr::mutate(length = chr_length[chromosome])
-
-  length <- test_list$length
-
-  chrom_name <- test_list$V1
-  reg_start <- test_list$V2
-  reg_stop <- test_list$V3
-  length <- test_list$length
+  chrom_name <- bed_lines$V1
+  reg_start <- bed_lines$V2
+  reg_stop <- bed_lines$V3
+  
+  if (use_bed_names) {
+    prefix <- bed_lines$V4
+  } else {
+    prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
+  }
+  
+  bed_lines <- NULL
+  
   var_list <- list(
     chrom_name = chrom_name,
     reg_start = reg_start,
     reg_stop = reg_stop,
-    length = length,
+    prefix = prefix,
     plot_output = plot_output,
     path_to_RNAfold = path_to_RNAfold,
     path_to_RNAplot = path_to_RNAplot,
@@ -212,7 +240,8 @@ set_vars <- function(roi, bam_file, genome,
     weight_reads = weight_reads,
     gtf_file = gtf_file,
     write_fastas = write_fastas,
-    out_type = out_type
+    out_type = out_type,
+    use_bed_names = use_bed_names
   )
 
   return(var_list)
