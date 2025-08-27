@@ -334,6 +334,7 @@
     write_fastas,
     out_type,
   )
+  .compare_miRNA_strands(output_dir)
 
   mirnaMFE_minus <- mi_res_minus$mfe
   
