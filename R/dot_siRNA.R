@@ -168,8 +168,7 @@
     is_small_locus <- (reg_stop - reg_start + 1) <= 10000
     
     if (results_present) {
-      # Wrap heat_plot in ggplotify::as.grob since pheatmaps can't be coerced to grob by default
-      heat_plot <- ggplotify::as.grob(.plot_heat(results, "siRNA", pal = pal))
+      heat_plot <- .plot_heat(results, "siRNA", pal = pal)
     } else {
       heat_plot <- null_plot("siRNA Proper Overhangs by Size", "No proper overlaps were present")
     }

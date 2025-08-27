@@ -497,8 +497,7 @@
     phased_probability_plot <- .plot_piRNA_phasing_probability_combined(plus_df, minus_df)
 
     if (sum(heat_results) > 0) {
-      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
-      heat_plot <- ggplotify::as.grob(.plot_heat(heat_results, "piRNA", pal = pal))
+      heat_plot <- .plot_heat(heat_results, "piRNA", pal = pal)
     } else {
       heat_plot <- null_plot("piRNA Proper Overlaps By Size", "No overlaps present")
     }
