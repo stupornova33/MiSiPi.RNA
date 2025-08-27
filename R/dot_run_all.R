@@ -83,35 +83,27 @@
 
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
+  
+  forward_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus", min_width = 18, max_width = 32, include_seq = TRUE)
+  reverse_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus", min_width = 18, max_width = 32, include_seq = TRUE)
 
-  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
-  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
-
-  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 18) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1) %>%
+  # Summarize the reads for faster processing
+  forward_df <- forward_df %>%
     dplyr::group_by_all() %>%
-    # get the number of times a read occurs
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
-
-  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 18) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1) %>%
+  
+  reverse_df <- reverse_df %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
 
-  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+  size_dist <- dplyr::bind_rows(forward_df, reverse_df) %>%
     dplyr::group_by(width) %>%
     dplyr::summarize(count = sum(count))
   # Append read size distribution table to output file
   .output_readsize_dist(size_dist, prefix, output_dir, strand = NULL, type = "all")
   
-  chromP <- NULL
-  chromM <- NULL
   size_dist <- NULL
 
   ############################################################################ get extra metrics for ML ###################################################################
@@ -125,7 +117,7 @@
   # perc_first_nucT
   # perc_A10
 
-  sizes <- data.frame(width = c(forward_dt$width, reverse_dt$width))
+  sizes <- data.frame(width = c(forward_df$width, reverse_df$width))
 
   set.seed(1234)
   sample <- sizes[sample(1:nrow(sizes)), ]
@@ -138,27 +130,27 @@
     local_ml$log_shap_p <- 2
   }
 
-  total_read_count <- sum(forward_dt$count) + sum(reverse_dt$count)
+  total_read_count <- sum(forward_df$count) + sum(reverse_df$count)
 
-  unique_read_count <- nrow(forward_dt) + nrow(reverse_dt)
+  unique_read_count <- nrow(forward_df) + nrow(reverse_df)
 
   local_ml$unique_read_bias <- unique_read_count / total_read_count
 
-  if (nrow(forward_dt) > 0) {
-    forward_dt <- .weight_reads(forward_dt, weight_reads = "none", 0L, 0L)
+  if (nrow(forward_df) > 0) {
+    forward_df <- .weight_reads(forward_df, weight_reads = "none", 0L, 0L)
   } else {
-    forward_dt <- forward_dt %>%
+    forward_df <- forward_df %>%
       dplyr::select(-c(count))
   }
 
-  if (nrow(reverse_dt) > 0) {
-    reverse_dt <- .weight_reads(reverse_dt, weight_reads = "none", 0L, 0L)
+  if (nrow(reverse_df) > 0) {
+    reverse_df <- .weight_reads(reverse_df, weight_reads = "none", 0L, 0L)
   } else {
-    reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
+    reverse_df <- reverse_df %>% dplyr::select(-c(count))
   }
 
-  if (nrow(forward_dt) + nrow(reverse_dt) > 1) {
-    all_widths <- c(forward_dt$width, reverse_dt$width)
+  if (nrow(forward_df) + nrow(reverse_df) > 1) {
+    all_widths <- c(forward_df$width, reverse_df$width)
 
     m <- mean(all_widths)
     std <- sd(all_widths)
@@ -192,7 +184,7 @@
   all_widths <- NULL
 
   # If no data present, set machine learning defaults
-  if (nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) {
+  if (nrow(forward_df) == 0 && nrow(reverse_df) == 0) {
     
     local_ml$strand_bias <- -33
     local_ml$perc_GC <- -33
@@ -201,8 +193,8 @@
     local_ml$perc_A10 <- -33
     
   } else {
-    perc_plus <- nrow(forward_dt) / (nrow(forward_dt) + nrow(reverse_dt))
-    perc_minus <- nrow(reverse_dt) / (nrow(reverse_dt) + nrow(forward_dt))
+    perc_plus <- nrow(forward_df) / (nrow(forward_df) + nrow(reverse_df))
+    perc_minus <- nrow(reverse_df) / (nrow(reverse_df) + nrow(forward_df))
     
     # combine perc minus and perc plus into "strand bias"
     if (perc_plus > perc_minus) {
@@ -211,10 +203,10 @@
       local_ml$strand_bias <- perc_minus
     }
     
-    all_seqs <- c(forward_dt$seq, reverse_dt$seq)
+    all_seqs <- c(forward_df$seq, reverse_df$seq)
     local_ml$perc_GC <- .get_GC_content(all_seqs)
     
-    read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
+    read_dist <- .get_read_size_dist(forward_df, reverse_df)
     
     ave_size <- .highest_sizes(read_dist)
     
@@ -230,7 +222,7 @@
     # In each region's combined plot
     #size_plot <- .plot_sizes(read_dist)
     
-    local_ml$perc_first_nucT <- .first_nuc_T(forward_dt, reverse_dt)
+    local_ml$perc_first_nucT <- .first_nuc_T(forward_df, reverse_df)
     
     all_nuc_10 <- all_seqs %>%
       stringr::str_sub(10, 10)

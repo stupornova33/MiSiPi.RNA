@@ -39,53 +39,35 @@
   # use Rsamtools to process the bam file
   bam_obj <- .open_bam(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
-  chr_name <- names(bam_header[["targets"]])
-  chr_length <- unname(bam_header[["targets"]])
-  bam_header <- NULL
 
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
   # extract reads by strand
-  # this creates a list object
-  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
-  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
-
-  # turn the list object into a more useable data frame and filter reads by length,
-  # bam only contains pos and width, need to add an end column
-  cat(file = logfile, "Making Forward DT\n", append = TRUE)
-  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 18) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1) %>%
+  cat(file = logfile, "Extracting Forward and Reverse Reads\n", append = TRUE)
+  
+  forward_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus", min_width = 18, max_width = 32, include_seq = TRUE)
+  reverse_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus", min_width = 18, max_width = 32, include_seq = TRUE)
+  
+  # Summarize reads for faster processing
+  forward_df <- forward_df %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  cat(file = logfile, "Making Reverse DT\n", append = TRUE)
-  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 18) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1) %>%
+  reverse_df <- reverse_df %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
   if (method == "self") {
-    size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+    size_dist <- dplyr::bind_rows(forward_df, reverse_df) %>%
       dplyr::group_by(width) %>%
       dplyr::summarise(count = sum(count))
     .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
     size_dist <- NULL
   }
-  
-  #stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-  #.plot_sizes_by_strand(stranded_read_dist, chrom_name, reg_start, reg_stop)
-  
-  chromP <- NULL
-  chromM <- NULL
-  size_dist <- NULL
 
   # If the data frames are empty there are no reads, can't do siRNA calculations
-  if (nrow(forward_dt) == 0 | nrow(reverse_dt) == 0) {
+  if (nrow(forward_df) == 0 | nrow(reverse_df) == 0) {
     cat(file = logfile, "No reads detected on one strand. \n", append = TRUE)
     
     # Setting the ml_zscore to -33 for use in later machine learning calculations
@@ -102,17 +84,17 @@
     # Get expanded-weighted reads
     locus_length <- reg_stop - reg_start + 1
     
-    forward_dt <- .weight_reads(forward_dt, weight_reads, locus_length, sum(forward_dt$count))
-    reverse_dt <- .weight_reads(reverse_dt, weight_reads, locus_length, sum(reverse_dt$count))
+    forward_df <- .weight_reads(forward_df, weight_reads, locus_length, sum(forward_df$count))
+    reverse_df <- .weight_reads(reverse_df, weight_reads, locus_length, sum(reverse_df$count))
     
     # Now that the DTs have been weighted and re-expanded,
     # Let's summarize them again and keep track of the duplicates with the column "n"
     # This will be crucial in keeping memory and cpu usage down during .find_overlaps()
-    f_summarized <- forward_dt %>%
+    f_summarized <- forward_df %>%
       dplyr::group_by_all() %>%
       dplyr::count()
     
-    r_summarized <- reverse_dt %>%
+    r_summarized <- reverse_df %>%
       dplyr::group_by_all() %>%
       dplyr::count()
     
@@ -125,7 +107,7 @@
     
     # TODO This function runs very slowly on large loci
     # See if it can be run on the summarized dts
-    if (write_fastas == TRUE) .write_proper_overhangs(forward_dt, reverse_dt, wkdir, prefix, overlaps, "")
+    if (write_fastas == TRUE) .write_proper_overhangs(forward_df, reverse_df, wkdir, prefix, overlaps, "")
     
     # calculate the number of dicer pairs for the zscore
     dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end,
@@ -142,8 +124,8 @@
     # calculate the siRNA pairs for the heatmap
     # TODO See if this can be run on the summarized dts for cpu time improvement
     results <- new_get_si_overlaps(
-      reverse_dt$start, reverse_dt$end, reverse_dt$width,
-      forward_dt$start, forward_dt$end, forward_dt$width
+      reverse_df$start, reverse_df$end, reverse_df$width,
+      forward_df$start, forward_df$end, forward_df$width
     )
     
     row.names(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")

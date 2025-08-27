@@ -31,34 +31,29 @@
   
   prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
-  bam_obj <- .open_bam(bam_file, logfile)
-
-  # Get the reads from the BAM using Rsamtools
-  cat(file = logfile, "Making chromP and chromM\n", append = TRUE)
-  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
-  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
+  
 
   ################################################################# ping pong piRNA ##############################################################
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
   cat(file = logfile, paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
-
+  # Get the reads from the BAM using Rsamtools
+  
+  bam_obj <- .open_bam(bam_file, logfile)
+  
   # Make forward and reverse dataframes filtered for width
-  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 18) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1)
-
-  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 18) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1)
-
-
-  # for the read size dist plot
-  cat(file = logfile, paste0("Getting read size distribution.", "\n"), append = TRUE)
-
-  read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
+  forward_dt <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop,
+                                     strand = "+", min_width = 18, max_width = 32,
+                                     include_seq = TRUE)
+  reverse_dt <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop,
+                                     strand = "-", min_width = 18, max_width = 32,
+                                     include_seq = TRUE)
+  
+  # Generating this plot earlier than others due to the need for unsummarized reads
+  if (plot_output & method == "self") {
+    stranded_size_dist <- .get_stranded_read_dist(forward_dt, reverse_dt)
+    read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist)
+  }
 
   # Summarize data frames into unique reads with a column of duplicates
   forward_dt <- forward_dt %>%
@@ -68,13 +63,6 @@
   reverse_dt <- reverse_dt %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
-
-  reverse_dt <- reverse_dt %>%
-    dplyr::group_by_all() %>%
-    dplyr::summarize(count = dplyr::n())
-
-  chromP <- NULL
-  chromM <- NULL
 
   if (method == "self") {
     # for piRNA output tables
@@ -138,7 +126,7 @@
     .write.quiet(overlapz_out, overlapz_file)
     
   } else { 
-    # Summarize the reads for more efficient processing
+    # Re-summarize the weighted reads for more efficient processing
     f_summarized <- forward_dt %>%
       dplyr::group_by_all() %>%
       dplyr::count()
@@ -540,9 +528,6 @@
         density_plot <- .plot_density(data, reg_start, reg_stop)
       }
       data <- NULL
-      
-      stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
-      read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist, chrom_name, reg_start, reg_stop)
       
       plot_details <- plot_title(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, current_iteration)
       

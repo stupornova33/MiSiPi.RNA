@@ -44,13 +44,6 @@
   }
 
   bam_obj <- .open_bam(bam_file, logfile)
-  bam_header <- Rsamtools::scanBamHeader(bam_obj)
-  chr_name <- names(bam_header[["targets"]])
-  chr_length <- unname(bam_header[["targets"]])
-
-  bam_header <- NULL
-  
-  chrom <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand)
 
   ## make the read data tables
 
@@ -63,17 +56,17 @@
   # Limit reads to 5nt beyond current region of interest
   READ_OVERFLOW_LIMIT <- 5
   
-  r2_dt <- .make_si_BamDF(chrom) %>%
-    subset(width <= 32 & width >= 18) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1) %>%
+  r2_dt <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand, 18, 32, TRUE)
+  
+  .close_bam(bam_obj)
+  
+  r2_dt <- r2_dt %>%
     dplyr::filter(
       start >= reg_start - READ_OVERFLOW_LIMIT &
       end <= reg_stop + READ_OVERFLOW_LIMIT) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
-
-  chrom <- NULL
+  
 
   if (nrow(r2_dt) == 0) {
     return(.null_mi_res(prefix, strand, wkdir))
