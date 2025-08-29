@@ -68,11 +68,9 @@
   }
 
   # Extract chromosome sequence from genome file
-  # Bedtools start is 0-indexed, stop is half open 1-based 
-  # Need to substract 1 from end to avoid exceeding chromosome length
   mygranges <- GenomicRanges::GRanges(
     seqnames = c(chrom_name),
-    ranges = IRanges::IRanges(start = c(reg_start), end = c((reg_stop - 1)))
+    ranges = IRanges::IRanges(start = reg_start, end = reg_stop)
   )
 
 

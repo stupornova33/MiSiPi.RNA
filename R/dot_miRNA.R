@@ -243,7 +243,6 @@
   expanded_converted <- list(convertU(bed_seq, 1))
   converted <- list(convertU(roi_seq, 1))
 
-  #fasta_header <- paste0(">", chrom_name, "-", reg_start - 1, "_", reg_stop - 1)
   fasta_header <- paste0(">", prefix)
   expanded_converted <- data.frame("V1" = unname(unlist(expanded_converted)))
   converted <- data.frame("V1" = unname(unlist(converted)))

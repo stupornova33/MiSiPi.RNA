@@ -203,12 +203,14 @@ set_vars <- function(roi, bam_file, genome,
   
   res_list <- na_idx <- NULL
 
-  # Convert the bed file coordinates to 1 based for compatibility with other tools
-  # This will be converted back using revert_positions() when writing results that reference the coordinates
+  # Convert the bed file coordinates to 1 based for compatibility with Rsamtools
+  # Bed files use zero-based half open coordinates, so only the start position needs to be incremented
+  # Coordinates will be reverted back to the original bed file coordinates when writing output
   bed_lines <- bed_lines %>%
     dplyr::mutate(
+      # Increment start position by 1
       V2 = V2 + 1,
-      V3 = V3 + 1
+      V3 = V3
     )
 
   chrom_name <- bed_lines$V1

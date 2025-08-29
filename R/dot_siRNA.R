@@ -42,7 +42,7 @@
   bam_obj <- .open_bam(bam_file, logfile)
   bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
 
   # extract reads by strand
