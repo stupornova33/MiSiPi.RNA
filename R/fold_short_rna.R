@@ -42,6 +42,9 @@
   ps_filename_to_remove <- paste0(prefix, "_ss.ps")
   file.remove(ps_filename_to_remove)
 
+  # Default NA results
+  mfe <- 0
+  vien_struct <- NA
   
   if (length(fold) == 0) {                        # EMPTY RESULTS
     warning("Empty RNAfold results, check input")
@@ -75,19 +78,10 @@
     
   }
   
-  ct <- RRNA::makeCt(vien_struct, vien_seq)
-  
-  # Using capture.output to silence the excessive console output from ct2coord
-  # check to see if no bases are paired first
-  if (sum(ct$bound) > 0) {
-    utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
-    mfe <- gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_mfe)))
-    mfe <- as.numeric(mfe)
-  } else {
-    coord <- NULL
-    mfe <- 0
+  if (!is.na(vien_struct)) {
+    mfe <- as.numeric(gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_mfe))))
   }
-
+  
   start <- start
   stop <- stop
   converted <- converted
@@ -97,7 +91,6 @@
     "stop" = stop,
     "mfe" = mfe,
     "vienna" = vien_struct,
-    "converted" = converted,
-    "extracted_df" = coord
+    "converted" = converted
   ))
 }

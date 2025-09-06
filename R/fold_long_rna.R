@@ -84,7 +84,6 @@
   
   # Default NA results
   mfe <- 0
-  coord <- NA
   vien_struct <- NA
   
   if (length(fold) == 0) {                        # EMPTY RESULTS
@@ -102,7 +101,7 @@
     
   } else if (length(fold) == 3 &&
              length(grep("WARNING", fold)) == 0) { # Normal result
-    output_file <- paste0(region_string, "_ss.ps")
+    output_file <- paste0(prefix, "_ss.ps")
     vien_seq <- fold[2]
     vien_mfe <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][2]
     vien_struct <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][1]
@@ -118,39 +117,32 @@
              length(grep("WARNING", fold)) > 0) { # Warning result/s
     idx <- grep("WARNING", fold)
     fold <- fold[-idx] # remove warnings since the number of warnings is unknown and need consistent indices
-    output_file <- paste0(region_string, "_ss.ps")
+    output_file <- paste0(prefix, "_ss.ps")
     vien_seq <- fold[2]
     vien_mfe <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][2]
     vien_struct <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][1]
     
   } else if(length(fold) > 4 &&
             identical(grep("WARNING", fold), integer(0)) ){
-    output_file <- paste0(region_string, "_ss.ps")
+    output_file <- paste0(prefix, "_ss.ps")
     vien_seq <- paste0(fold[2], fold[3])
     vien_mfe <- stringi::stri_split_fixed(fold[5], pattern = " ", n = 2)[[1]][2]
     struct <- paste0(fold[4], fold[5])
     vien_struct <- stringi::stri_split_fixed(struct, pattern = " ", n = 2)[[1]][1]
   }
-  
-  ct <- RRNA::makeCt(vien_struct, vien_seq)
 
-  
-  
-  if (sum(ct$bound) > 0) {
-    # Using capture.output to silence the excessive console output from ct2coord
-    utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
-    
+  if (!is.na(vien_struct)) {
     # split the string to get mfe
     # Split based on space and remove parentheses
     mfe <- as.numeric(gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_mfe))))
-  
+    
     # RNAfold creates files in the base directory in which MiSiPi was originally called
     # Move to results siRNA directory
     file.rename(from = output_file,
                 to = file.path(wkdir, output_file))
   }
   
-  res <- list(mfe, coord, vien_struct)
+  res <- list(mfe = mfe, vien_struct = vien_struct)
   
   return(res)
 }

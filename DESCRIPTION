@@ -29,7 +29,6 @@ Imports:
     R4RNA,
     Rcpp,
     reshape2,
-    RRNA,
     Rsamtools,
     S4Vectors,
     stringi,
