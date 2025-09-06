@@ -474,46 +474,12 @@
     return()
   }
   
-  
-  null_plot <- function(type, reason) {
-    p <- ggplot2::ggplot() +
-      ggplot2::annotate("text", x = 0.5, y = 0.5, label = reason, size = 5) +
-      ggplot2::ggtitle(type) +
-      ggplot2::theme_void() +
-      ggplot2::theme(plot.title = ggplot2::element_text(hjust = 0.5))
-    
-    return(p)
-  }
-  
-  plot_title <- function(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, i) {
-    locus <- paste0(chrom_name, ":", reg_start, "-", reg_stop)
-    now <- format(lubridate::now(), "%Y-%m-%d %H:%M:%S")
-    
-    misipi_version <- packageVersion("MiSiPi.RNA")
-    
-    iteration_str <- paste0(i, ")")
-    
-    p_title <- paste("MiSiPi Results for locus:", locus, "(Bed file line:", iteration_str)
-    p_subtitle <- paste("Bam:", bam_file, "| Bed:", bed_file, "| Genome:", genome_file)
-    p_caption <- paste("Run at:", now, "with MiSiPi.RNA Version:", misipi_version)
-
-    plot_details <- list()
-    plot_details$title <- paste0(p_title, "\n", p_subtitle)
-    #plot_details$subtitle <- p_subtitle
-    plot_details$caption <- p_caption
-    return(plot_details)
-  }
-
-  
-  
-  
   #### Make combined plot for current locus ####
   # Generate General Read Plots
   
   density_data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, output_dir)
   read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
   
-  stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
   read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
   
   # Generate miRNA Plots
@@ -584,60 +550,29 @@
 
   pi_res <- NULL
   
+  plot_list <- list(
+    read_distribution_plot = read_distribution_plot,
+    siRNA_arc_plot = siRNA_arc_plot,
+    siRNA_dicer_overhang_probability_plot = siRNA_dicer_overhang_probability_plot,
+    piRNA_overlap_probability_plot = piRNA_overlap_probability_plot,
+    miRNA_dicer_overhang_plot = miRNA_dicer_overhang_plot,
+    read_density_plot = read_density_plot,
+    siRNA_phasing_probability_plot = siRNA_phasing_probability_plot,
+    piRNA_phasing_probability_plot = piRNA_phasing_probability_plot,
+    miRNA_overlap_probability_plot = miRNA_overlap_probability_plot,
+    siRNA_gtf_plot = siRNA_gtf_plot,
+    siRNA_proper_overhangs_by_size_plot = siRNA_proper_overhangs_by_size_plot,
+    piRNA_proper_overlaps_by_size_plot = piRNA_proper_overlaps_by_size_plot
+  )
+  
   # Combined plot is 3 rows and 4 columns and will display in the order shown below
   #
   # Read Distribution Plot   -  Arc Plot      -  siRNA Overhangs by Size  -  piRNA Overlaps by Size
   # miRNA Dcr Overhang Prob  -  Read Density  -  siRNA Dcr Overhang Prob  -  piRNA Overlap Prob
   # miRNA Overlap Prob       -  GTF Plot      -  siRNA Phasing Prob       -  piRNA Phasing Prob
   
-  plot_body <- cowplot::plot_grid(
-    read_distribution_plot, siRNA_arc_plot, siRNA_dicer_overhang_probability_plot, piRNA_overlap_probability_plot,
-    miRNA_dicer_overhang_plot, read_density_plot, siRNA_phasing_probability_plot, piRNA_phasing_probability_plot,
-    miRNA_overlap_probability_plot, siRNA_gtf_plot, siRNA_proper_overhangs_by_size_plot, piRNA_proper_overlaps_by_size_plot,
-    
-    # read_distribution_plot, siRNA_arc_plot, siRNA_proper_overhangs_by_size_plot, piRNA_proper_overlaps_by_size_plot,
-    # miRNA_dicer_overhang_plot, read_density_plot, siRNA_dicer_overhang_probability_plot, piRNA_overlap_probability_plot,
-    # miRNA_overlap_probability_plot, siRNA_gtf_plot, siRNA_phasing_probability_plot, piRNA_phasing_probability_plot,
-    ncol = 4,
-    align = "hv",
-    axis = "lrtb"
-  )
+  plot_details <- plot_title(bam_file, roi, genome_file, prefix, current_iteration)
   
-  plot_details <- plot_title(bam_file, roi, genome_file, chrom_name, reg_start, reg_stop, i)
-  
-  plot_title <- cowplot::ggdraw() +
-    cowplot::draw_label(
-      plot_details$title,
-      x = 0.5,
-      hjust = 0.5,
-    ) +
-    ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 7))
-  
-  plot_caption <- cowplot::ggdraw() +
-    cowplot::draw_label(
-      plot_details$caption,
-      x = 0.5,
-      hjust = 0.5
-    ) +
-    ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 7))
-  
-  
-  all_plot <- cowplot::plot_grid(
-    plot_title,
-    plot_body,
-    plot_caption,
-    ncol = 1,
-    rel_heights = c(0.1, 1, 0.1)
-  )
-  
-  
-  
-  if (out_type == "png") {
-    grDevices::png(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.png", sep = "_")), height = 15, width = 26, units = "in", res = 300)
-  } else {
-    grDevices::pdf(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.pdf", sep = "_")), height = 15, width = 26)
-  }
-  print(all_plot)
-  grDevices::dev.off()
-  
+  # Arrange plots and write to a file
+  plot_combined_plots(plot_list, out_type, prefix, output_dir, plot_details)
 }

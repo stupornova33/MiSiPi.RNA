@@ -810,6 +810,56 @@ plot_piRNA <- function(read_distribution_plot, density_plot, overlap_probability
   grDevices::dev.off()
 }
 
+# Arrange the plots from .run_all() and write the combined plot to a file
+plot_combined_plots <- function(p, out_type, prefix, output_dir, plot_details) {
+  
+  plot_title <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$title,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(7, 0, 0, 0))
+  
+  plot_caption <- cowplot::ggdraw() +
+    cowplot::draw_label(
+      plot_details$caption,
+      x = 0.5,
+      hjust = 0.5,
+      size = 12
+    ) +
+    ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 5, 0))
+  
+  plot_body <- cowplot::plot_grid(
+    p$read_distribution_plot, p$siRNA_arc_plot, p$siRNA_dicer_overhang_probability_plot, p$piRNA_overlap_probability_plot,
+    p$miRNA_dicer_overhang_plot, p$read_density_plot, p$siRNA_phasing_probability_plot, p$piRNA_phasing_probability_plot,
+    p$miRNA_overlap_probability_plot, p$siRNA_gtf_plot, p$siRNA_proper_overhangs_by_size_plot, p$piRNA_proper_overlaps_by_size_plot,
+
+    ncol = 4,
+    align = "hv",
+    axis = "lrtb"
+  )
+  
+  all_plot <- cowplot::plot_grid(
+    plot_title,
+    plot_body,
+    plot_caption,
+    ncol = 1,
+    rel_heights = c(0.1, 1, 0.1)
+  )
+  
+  if (out_type == "png") {
+    grDevices::png(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.png", sep = "_")), height = 15, width = 26, units = "in", res = 300)
+  } else {
+    grDevices::pdf(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.pdf", sep = "_")), height = 15, width = 26)
+  }
+  print(all_plot)
+  grDevices::dev.off()
+}
+
+
+
 plot_title <- function(bam_file, bed_file, genome_file, prefix, i) {
   now <- format(lubridate::now(), "%Y-%m-%d %H:%M:%S")
   
