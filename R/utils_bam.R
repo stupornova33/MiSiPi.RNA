@@ -53,15 +53,16 @@
                      "+" = FALSE
   )
   
+  Rsamtools::open.BamFile(bam_obj)
   which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
   bam_scan <- Rsamtools::ScanBamParam(flag = Rsamtools::scanBamFlag(isMinusStrand = is_minus, isUnmappedQuery = FALSE), what = c("rname", "pos", "qwidth", "seq"), which = which)
   result <- Rsamtools::scanBam(bam_obj, param = bam_scan)[[1]]
+  Rsamtools::close.BamFile(bam_obj)
   return(result)
 }
 
 .get_filtered_bam_df <- function(bam_obj, chrom_name, reg_start, reg_stop, strand = c("minus", "plus", "-", "+"), min_width, max_width, include_seq = c(FALSE, TRUE)) {
   strand <- match.arg(strand)
-  include_seq <- match.arg(include_seq)
   
   bam_scan <- .get_bam_scan(bam_obj, chrom_name, reg_start, reg_stop, strand)
   
@@ -88,9 +89,14 @@
 # @return bam_df
 
 .get_bam_df_with_seq <- function(chrom_obj) {
-  bam_df <- .get_bam_df(chrom_obj)
-  bam_df <- bam_df %>%
-    dplyr::mutate(seq = chrom_obj$seq)
+  s1 <- substr(chrom_obj$seq, 1, 1)
+  bam_df <- data.frame(
+    "rname" = as.character(chrom_obj$rname),
+    "pos" = chrom_obj$pos,
+    "width" = chrom_obj$qwidth,
+    "seq" = chrom_obj$seq,
+    "first" = s1
+  )
   
   return(bam_df)
 }
