@@ -21,26 +21,28 @@
 #   TRUE or FALSE expected. Default: FALSE
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf".
 #   Default is PDF.
+# @param method
+# @param current_iteration
+# @param i_total
+# @param iteration_input
 # @return results
 
 .siRNA <- function(chrom_name, reg_start, reg_stop, prefix,
                    genome_file, bam_file, bed_file, logfile, wkdir, pal, plot_output,
                    path_to_RNAfold, annotate_region, weight_reads, gtf_file,
                    write_fastas, out_type, method = c("self", "all"),
-                   i = NULL, i_total = NULL) {
+                   current_iteration = NULL, i_total = NULL, iteration_input = NULL) {
   width <- pos <- phased_num <- NULL
   
-  # i and i_total will be null if called from run_all
-  if (!is.null(i)) {
-    .inform_iteration(i, i_total, chrom_name)
+  # current iteration, i_total, and iteration_input will be null if called from run_all
+  if (!is.null(current_iteration)) {
+    .inform_iteration(current_iteration, i_total, iteration_input)
   }
   
-  # Just in case i gets used in the future further down
-  current_iteration <- i
+  locus_length <- reg_stop - reg_start + 1
   
   # use Rsamtools to process the bam file
   bam_obj <- .open_bam(bam_file, logfile)
-  bam_header <- Rsamtools::scanBamHeader(bam_obj)
 
   cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
@@ -50,6 +52,10 @@
   
   forward_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus", min_width = 18, max_width = 32, include_seq = TRUE)
   reverse_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus", min_width = 18, max_width = 32, include_seq = TRUE)
+  
+  if (plot_output == TRUE | method == "self") {
+    stranded_read_dist <- .get_stranded_read_dist(forward_df, reverse_df)
+  }
   
   # Summarize reads for faster processing
   forward_df <- forward_df %>%
@@ -67,7 +73,22 @@
     .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, "siRNA")
     size_dist <- NULL
   }
-
+  
+  # Get expanded-weighted reads
+  forward_df <- .weight_reads(forward_df, weight_reads, locus_length, sum(forward_df$count))
+  reverse_df <- .weight_reads(reverse_df, weight_reads, locus_length, sum(reverse_df$count))
+  
+  # Now that the DTs have been weighted and re-expanded,
+  # Let's summarize them again and keep track of the duplicates with the column "n"
+  # This will be crucial in keeping memory and cpu usage down during .find_overlaps()
+  f_summarized <- forward_df %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+  
+  r_summarized <- reverse_df %>%
+    dplyr::group_by_all() %>%
+    dplyr::count()
+  
   # If the data frames are empty there are no reads, can't do siRNA calculations
   if (nrow(forward_df) == 0 | nrow(reverse_df) == 0) {
     cat(file = logfile, "No reads detected on one strand. \n", append = TRUE)
@@ -82,23 +103,6 @@
     
   } else {
     cat(file = logfile, "Calculating overhangs\n", append = TRUE)
-    
-    # Get expanded-weighted reads
-    locus_length <- reg_stop - reg_start + 1
-    
-    forward_df <- .weight_reads(forward_df, weight_reads, locus_length, sum(forward_df$count))
-    reverse_df <- .weight_reads(reverse_df, weight_reads, locus_length, sum(reverse_df$count))
-    
-    # Now that the DTs have been weighted and re-expanded,
-    # Let's summarize them again and keep track of the duplicates with the column "n"
-    # This will be crucial in keeping memory and cpu usage down during .find_overlaps()
-    f_summarized <- forward_df %>%
-      dplyr::group_by_all() %>%
-      dplyr::count()
-    
-    r_summarized <- reverse_df %>%
-      dplyr::group_by_all() %>%
-      dplyr::count()
     
     # get overlapping reads
     overlaps <- .find_overlaps(f_summarized, r_summarized) %>%
@@ -134,6 +138,19 @@
     colnames(results) <- c("18", "", "20", "", "22", "", "24", "", "26", "", "28", "", "30", "", "32")
   }
   
+  # Create inputs for dual_strand hairpin and NULL forward and reverse dfs to release memory
+  dicer_df_plus <- forward_df %>%
+    dplyr::group_by(rname, start, end, width, first) %>%
+    dplyr::count()
+  
+  forward_df <- NULL
+  
+  dicer_df_minus <- reverse_df %>%
+    dplyr::group_by(rname, start, end, width, first) %>%
+    dplyr::count()
+  
+  reverse_df <- NULL
+  
   # transform the data frame for writing to table by row
   # output is the locus followed by all ml_zscores
   overhang_output <- data.frame(t(dicer_overhangs$ml_zscore))
@@ -149,23 +166,20 @@
   .write.quiet(overhang_output, dicerz_file)
   .write.quiet(heat_output, heatmap_file)
   
+  # Get hairpin specific results
+  dsh <- dual_strand_hairpin(
+    chrom_name, reg_start, reg_stop, genome_file, prefix, locus_length,
+    dicer_df_plus, dicer_df_minus, f_summarized, r_summarized, path_to_RNAfold, logfile, wkdir)
   
-  # 7/17/25 - passing dicer_overhangs to dual_strand_hairpin in order to make a combined
-  #           plot with the individual strands
-  #dicer_plot <- .plot_overhangz(dicer_overhangs, "none")
-  
-  # run the hairpin function on each strand separately
-  dsh <- .dual_strand_hairpin(
-    chrom_name, reg_start, reg_stop, length, genome_file, bam_file, logfile,
-    wkdir, plot_output, path_to_RNAfold, annotate_region, weight_reads,
-    gtf_file, write_fastas, out_type, dicer_overhangs
-  )
-
+  f_summarized <- NULL
+  r_summarized <- NULL
+  dicer_df_plus <- NULL
+  dicer_df_minus <- NULL
   
   #### Plot Output ####
   if (plot_output) {
     results_present <- sum(results) != 0
-    is_small_locus <- (reg_stop - reg_start + 1) <= 10000
+    is_small_locus <- locus_length <= 10000
     
     if (results_present) {
       heat_plot <- .plot_heat(results, "siRNA", pal = pal)
@@ -183,19 +197,23 @@
       gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters or lack of features in region.")
     }
     
+    hairpin_plots <- plot_dsh(dsh$plus_dsh, dsh$minus_dsh, dicer_overhangs, wkdir)
+    arc_plot <- hairpin_plots$arc_plot
+    phasedz_plot <- hairpin_plots$phasedz
+    overhang_probability_plot <- hairpin_plots$overhang_probability_plot
+    hairpin_plots <- NULL
     
     if (method == "all") {
       plots <- list()
       plots$prefix <- prefix
-      plots$overhang_probability_plot <- dsh$overhang_probability_plot
+      plots$overhang_probability_plot <- overhang_probability_plot
       plots$heat_plot <- heat_plot
-      plots$arc_plot <- dsh$arc_plot
-      plots$phasedz <- dsh$phasedz
+      plots$arc_plot <- arc_plot
+      plots$phasedz <- phasedz_plot
       plots$gtf_plot <- gtf_plot
     } else {
       plots <- NULL
       
-      stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
       read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
       
       data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
@@ -207,12 +225,8 @@
         # Large Loci
         density_plot <- .plot_large_density(data, reg_start, reg_stop)
       }
-      
-      phasedz_plot <- dsh$phasedz
-      overhang_probability_plot <- dsh$overhang_probability_plot
-      arc_plot <- dsh$arc_plot
-      
-      plot_details <- plot_title(bam_file, bed_file, genome_file, chrom_name, reg_start, reg_stop, current_iteration)
+
+      plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, current_iteration)
       
       .plot_siRNA(read_distribution_plot, density_plot, phasedz_plot, overhang_probability_plot, arc_plot, gtf_plot, heat_plot, out_type, prefix, wkdir, plot_details)
     }
