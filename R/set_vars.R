@@ -218,8 +218,9 @@ set_vars <- function(roi, bam_file, genome,
   reg_stop <- bed_lines$V3
   
   if (use_bed_names) {
-    prefix <- bed_lines$V4
+    iteration_output <- prefix <- bed_lines$V4
   } else {
+    iteration_output <- .get_bed_region_string(chrom_name, reg_start, reg_stop)
     prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   }
   
@@ -243,7 +244,8 @@ set_vars <- function(roi, bam_file, genome,
     gtf_file = gtf_file,
     write_fastas = write_fastas,
     out_type = out_type,
-    use_bed_names = use_bed_names
+    use_bed_names = use_bed_names,
+    iteration_output = iteration_output
   )
 
   return(var_list)

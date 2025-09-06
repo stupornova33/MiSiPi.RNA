@@ -15,19 +15,21 @@
 # @param weight_reads a string, Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 # @param write_fastas a bool, Determines whether piRNA pairs will be written to fasta. Expected values are TRUE or FALSE
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
+# @param method
+# @param current_iteration
+# @param i_total
+# @param iteration_input
 # @return plots, heat results, and zdf
 
 .piRNA <- function(chrom_name, reg_start, reg_stop, prefix, bam_file,
                    genome_file, bed_file, logfile, wkdir, pal, plot_output,
-                   weight_reads, write_fastas, out_type,
-                   method = c("self", "all"), i = NULL, i_total = NULL) {
+                   weight_reads, write_fastas, out_type, method = c("self", "all"),
+                   current_iteration = NULL, i_total = NULL, iteration_input = NULL) {
   
   # i and i_total will be null if called from run_all
-  if (!is.null(i)) {
-    .inform_iteration(i, i_total, prefix)
+  if (!is.null(current_iteration)) {
+    .inform_iteration(current_iteration, i_total, iteration_input)
   }
-  
-  current_iteration <- i
   
   width <- pos <- NULL
   

@@ -40,7 +40,8 @@ piRNA <- function(vars, output_dir) {
       vars$out_type,
       calling_method,
       idx_vec,
-      total_iterations
+      total_iterations,
+      vars$iteration_input
     )
   )
   

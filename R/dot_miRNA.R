@@ -17,20 +17,13 @@
 # @param weight_reads Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
 # @param use_bed_names A boolean indicating if the names from the bed file are being used or if a region string is being used
-# @param i The current iteration number
-# @param i_total The total number of iterations
 # @return plots
 
 .miRNA <- function(chrom_name, reg_start, reg_stop, prefix, strand,
                    genome_file, bam_file, logfile, wkdir,
                    plot_output, path_to_RNAfold, path_to_RNAplot, write_fastas,
                    weight_reads, out_type, use_bed_names,
-                   method = c("self", "all"), i = NULL, i_total = NULL) {
-  
-  # i and i_total will be null if called from run_all
-  if (!is.null(i)) {
-    .inform_iteration(i, i_total, prefix, strand)
-  }
+                   method = c("self", "all")) {
   
   cat(file = logfile, paste0(prefix, "\n"), append = TRUE)
   
@@ -297,11 +290,11 @@
   ################################################################################################################
   # .fold_short_rna folds a list of sequences whereas fold_long_rna only folds one
   fold_list <- .fold_short_rna(reg_start, reg_stop, converted, path_to_RNAfold, prefix, wkdir)
-  fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
+    fold_list$helix <- R4RNA::viennaToHelix(fold_list$vienna)
 
   # make the plots for all the sequences in the "fold_list"
   mfe <- fold_list$mfe
-  perc_paired <- (length(fold_list$helix$i) * 2) / (fold_list$stop - fold_list$start)
+  perc_paired <- (length(fold_list$helix$i) * 2) / (fold_list$stop - fold_list$start + 1)
   
   # transforms reads from one arm of hairpin to their paired position
   # makes a table of reads which are overlapping

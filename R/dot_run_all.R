@@ -19,8 +19,9 @@
 # @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
 # @param output_dir The current output directory
 # @param use_bed_names A boolean indicating if the names from the bed file are being used or if a region string is being used
-# @param i
+# @param current_iteration
 # @param i_total
+# @param iteration_input
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
@@ -31,10 +32,10 @@
                      annotate_region, weight_reads,
                      gtf_file, write_fastas, out_type,
                      output_dir, use_bed_names,
-                     i, i_total) {
+                     current_iteration, i_total, iteration_input) {
   width <- pos <- start <- end <- NULL
 
-  .inform_iteration(i, i_total, chrom_name)
+  .inform_iteration(current_iteration, i_total, iteration_input)
   
   calling_method <- "all"
 
@@ -67,11 +68,9 @@
     pi_phased26z = numeric(1)
   )
 
-  local_ml$locus <- .get_region_string(chrom_name, reg_start, reg_stop)
+  local_ml$locus <- prefix
 
   local_ml$locus_length <- reg_stop - reg_start + 1
-
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   ####################################################################### process bam input files #############################################################################
 
@@ -89,6 +88,11 @@
   forward_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus", min_width = 18, max_width = 32, include_seq = TRUE)
   reverse_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus", min_width = 18, max_width = 32, include_seq = TRUE)
 
+  # Get stranded read distribution data before summarizing
+  if (plot_output == TRUE) {
+    stranded_read_dist <- .get_stranded_read_dist(forward_df, reverse_df)
+  }
+  
   # Summarize the reads for faster processing
   forward_df <- forward_df %>%
     dplyr::group_by_all() %>%
@@ -265,26 +269,27 @@
   si_dicerz <- si_res$si_dicer$ml_zscore[5]
   local_ml$si_dicerz <- si_dicerz
 
-  plus_perc_paired <- si_res$dsh$plus_res$perc_paired
-  minus_perc_paired <- si_res$dsh$minus_res$perc_paired
-
   # changed 3/25 to be RPM
   local_ml$num_si_dicer_reads <- (si_res$si_dicer$proper_count[5] * 1000000) / total_read_count
-  local_ml$hp_perc_paired <- max(plus_perc_paired, minus_perc_paired)
+  
 
   ######################################################################### get hairpin-specific results ###############################################################
 
-  plus_phasedz <- si_res$dsh$plus_res$phased_tbl.phased_mlz
+  mfe <- si_res$dsh$MFE
+  perc_paired <- si_res$dsh$perc_paired
+  
+  plus_phasedz <- si_res$dsh$plus_dsh$phased_tbl.phased_mlz
   plus_mean <- mean(plus_phasedz[1:4])
   
-  minus_phasedz <- si_res$dsh$minus_res$phased_tbl.phased_mlz
+  minus_phasedz <- si_res$dsh$minus_dsh$phased_tbl.phased_mlz
   minus_mean <- mean(minus_phasedz[1:4])
 
   local_ml$hp_phasedz <- max(plus_mean, minus_mean)
-  local_ml$hp_mfe <- min(unlist(unname(si_res$dsh$minus_res$MFE)), unlist(unname(si_res$dsh$plus_res$MFE)))
+  local_ml$hp_mfe <- mfe
+  local_ml$hp_perc_paired <- perc_paired
 
-  plus_dicerz <- si_res$dsh$plus_res$hp_overhang_mlz
-  minus_dicerz <- si_res$dsh$minus_res$hp_overhang_mlz
+  plus_dicerz <- si_res$dsh$plus_dsh$hp_overhang_mlz
+  minus_dicerz <- si_res$dsh$minus_dsh$hp_overhang_mlz
 
   local_ml$hp_dicerz <- max(plus_dicerz, minus_dicerz)
 
@@ -309,7 +314,7 @@
     strand = "+",
     genome_file = genome_file,
     bam_file = bam_file,
-    log_file = mi_log,
+    logfile = mi_log,
     wkdir = mi_dir,
     plot_output = plot_output,
     path_to_RNAfold = path_to_RNAfold,
@@ -336,7 +341,7 @@
     strand = "-",
     genome_file = genome_file,
     bam_file = bam_file,
-    log_file = mi_log,
+    logfile = mi_log,
     wkdir = mi_dir,
     plot_output = plot_output,
     path_to_RNAfold = path_to_RNAfold,

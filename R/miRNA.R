@@ -36,8 +36,11 @@ miRNA <- function(vars, output_dir) {
     reg_start <- vars$reg_start[i]
     reg_stop <- vars$reg_stop[i]
     prefix <- vars$prefix[i]
+    iteration_output <- vars$iteration_output[i]
     
-    cli::cli_inform("Starting plus strand")
+    .inform_iteration(i, total_iterations, iteration_output)
+    
+    #cli::cli_inform("Starting plus strand")
     plus_results <- .miRNA(
       chrom_name = chrom,
       reg_start = reg_start,
@@ -54,12 +57,10 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
-      use_bed_names = use_bed_names,
-      i = i,
-      i_total = total_iterations
+      use_bed_names = use_bed_names
     )
     
-    cli::cli_inform(c("", "Starting minus strand"))
+    #cli::cli_inform("Starting minus strand")
     minus_results <- .miRNA(
       chrom_name = chrom,
       reg_start = reg_start,
@@ -76,9 +77,7 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
-      use_bed_names = use_bed_names,
-      i = i,
-      i_total = total_iterations
+      use_bed_names = use_bed_names
     )
     
     .compare_miRNA_strands(output_dir)
@@ -97,8 +96,8 @@ miRNA <- function(vars, output_dir) {
       # Moved the density and distribution plots here so they wouldn't be called twice if both strands get processed
       # If miRNA is called from run_all, then density and distribution will be generated in that function
       bam_obj <- .open_bam(bam_file, logfile)
-      plus_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, "plus", 18, 32, FALSE)
-      minus_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, "plus", 18, 32, FALSE)
+      plus_df <- .get_filtered_bam_df(bam_obj, chrom, reg_start, reg_stop, "plus", 18, 32, FALSE)
+      minus_df <- .get_filtered_bam_df(bam_obj, chrom, reg_start, reg_stop, "plus", 18, 32, FALSE)
 
       stranded_size_dist <- .get_stranded_read_dist(plus_df, minus_df)
       read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist)
