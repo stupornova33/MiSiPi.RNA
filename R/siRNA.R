@@ -44,7 +44,7 @@ siRNA <- function(vars, output_dir) {
       calling_method,
       idx_vec,
       total_iterations,
-      vars$iteration_input
+      vars$iteration_output
     )
   )
   
