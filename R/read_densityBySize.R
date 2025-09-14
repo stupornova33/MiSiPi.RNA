@@ -1,3 +1,18 @@
+# TODO
+# Idea to reduce memory and time (9/14/25)
+# - Try subsetting the bam file by the current region of interest before filtering it by read size
+# - We have been operating under the assumption that using scanBam with scanBamParams bound to the roi
+# - would be memory efficient, but perhaps it is not. Worth a shot
+
+
+
+
+
+
+
+
+
+
 # function to filter reads by size and plot pileup density
 # @param chrom_name a string
 # @param reg_start a string
@@ -76,19 +91,11 @@
     seqnames <- pos <- count <- NULL
 
     which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
-    if (strand == "-") {
-      bam_scan <- Rsamtools::ScanBamParam(
-        flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
-        what = c("rname", "pos", "qwidth"),
-        which = which
-      )
-    } else {
-      bam_scan <- Rsamtools::ScanBamParam(
-        flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
-        what = c("rname", "pos", "qwidth"),
-        which = which
-      )
-    }
+    bam_scan <- Rsamtools::ScanBamParam(
+      flag = Rsamtools::scanBamFlag(isMinusStrand = strand == "-"),
+      what = c("pos"),
+      which = which
+    )
 
     params <- Rsamtools::PileupParam(
       max_depth = 4000,
@@ -196,7 +203,6 @@
   pos_counts <- dplyr::bind_rows(pos_18_19_res, pos_20_22_res, pos_23_25_res, pos_26_32_res)
   neg_counts <- dplyr::bind_rows(neg_18_19_res, neg_20_22_res, neg_23_25_res, neg_26_32_res)
 
-  # df <- data.frame(position = pos_counts$pos, pos_count = pos_counts$count, neg_count = neg_counts$size) #%>% dplyr::select(-c(pos_count.pos, neg_counts.pos))
   pos_18_19_res <- neg_18_19_res <- pos_20_22_res <- neg_20_22_res <- NULL
   pos_23_25_res <- neg_23_25_res <- pos_26_32_res <- neg_26_32_res <- NULL
 
