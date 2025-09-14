@@ -190,11 +190,11 @@
     if (annotate_region) {
       gtf_plot <- .plot_gtf_region_new(gtf_file, chrom_name, reg_start, reg_stop, logfile)
       if(is.null(gtf_plot)){
-        gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters or lack of features in region.")
+        gtf_plot <- null_plot("Annotation Plot", "No features in region")
       }
       
     } else {
-      gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters or lack of features in region.")
+      gtf_plot <- null_plot("Annotation Plot", "Plot not generated due to input parameters")
     }
     
     hairpin_plots <- plot_dsh(dsh$plus_dsh, dsh$minus_dsh, dicer_overhangs, wkdir)
