@@ -263,7 +263,7 @@
     write_fastas, out_type, calling_method
   )
   
-  max_si_heat <- .get_max_si_heat(si_res)
+  max_si_heat <- .get_max_si_heat(si_res$heat)
   local_ml$highest_si_col <- max_si_heat$highest_si_col
   
   si_dicerz <- si_res$si_dicer$ml_zscore[5]
