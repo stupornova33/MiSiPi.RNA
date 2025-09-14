@@ -74,16 +74,14 @@
 
   ####################################################################### process bam input files #############################################################################
 
-  logfile <- file.path(output_dir, "run_all_log.txt")
-
+  #logfile <- file.path(output_dir, "run_all_log.txt")
+  
+  log_msg <- paste0("Starting bed line ", current_iteration, ": ", iteration_input)
+  .log(log_msg, output_dir)
+  
+  .log("-Getting size and strand filtered reads from bam file", output_dir)
+  
   bam_obj <- .open_bam(bam_file)
-  bam_header <- Rsamtools::scanBamHeader(bam_obj)
-  chr_name <- names(bam_header[["targets"]])
-  chr_length <- unname(bam_header[["targets"]])
-  bam_header <- NULL
-
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop, "\n"), append = TRUE)
-  cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
   
   forward_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus", min_width = 18, max_width = 32, include_seq = TRUE)
   reverse_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus", min_width = 18, max_width = 32, include_seq = TRUE)
@@ -122,7 +120,7 @@
   # ave_size
   # perc_first_nucT
   # perc_A10
-
+  
   sizes <- data.frame(width = c(forward_df$width, reverse_df$width))
 
   set.seed(1234)
@@ -218,8 +216,6 @@
     
     local_ml$ave_size <- ave_size
     
-    cat(file = logfile, "Creating size plots\n", append = TRUE)
-    
     # TODO
     # Move this down into the plot section
     # We are currently using the read size distribution plots returned from sub modules
@@ -249,7 +245,7 @@
   # num_si_dicer_reads
   # hp_perc_paired
 
-  cat(file = logfile, "Beginning siRNA function\n", append = TRUE)
+  .log("-Starting siRNA processing", output_dir)
 
   si_dir <- file.path(output_dir, "siRNA")
   si_log <- file.path(si_dir, "siRNA_log.txt")
@@ -297,7 +293,7 @@
   # mirna_mfe
   # mirna_overlapz
 
-  cat(file = logfile, "Beginning miRNA function\n", append = TRUE)
+  .log("-Starting miRNA processing", output_dir)
 
   mi_dir <- file.path(output_dir, "miRNA")
   mi_log <- file.path(mi_dir, "miRNA_log.txt")
@@ -387,8 +383,8 @@
   # max_pi_count
   # max_piz_overlap
 
-  cat(file = logfile, "Begin piRNA function\n", append = TRUE)
-
+  .log("-Starting piRNA processing", output_dir)
+  
   pi_dir <- file.path(output_dir, "piRNA")
   pi_log <- file.path(pi_dir, "piRNA_log.txt")
 
@@ -458,9 +454,8 @@
 
   local_ml <- as.matrix(local_ml)
 
-  cat(file = logfile, "Writing machine learning results to table\n", append = TRUE)
+  .log("-Gathering machine learning results. Appending to output file.", output_dir)
   .write.quiet(local_ml, ml_file)
- 
   
   if (plot_output == FALSE) {
     si_res <- NULL
@@ -471,12 +466,15 @@
   }
   
   #### Make combined plot for current locus ####
+  .log("-Generating read size plots", output_dir)
   # Generate General Read Plots
   
   density_data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, output_dir)
   read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
   
   read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
+  
+  .log("-Organizing plots from subfunctions", output_dir)
   
   # Generate miRNA Plots
   miRNA_plus_overhangs <- mi_res_plus$overhangs
@@ -568,6 +566,8 @@
   # miRNA Overlap Prob       -  GTF Plot      -  siRNA Phasing Prob       -  piRNA Phasing Prob
   
   plot_details <- plot_title(bam_file, roi, genome_file, prefix, current_iteration)
+  
+  .log("-Combining plots and writing to file", output_dir, add_newline = TRUE)
   
   # Arrange plots and write to a file
   plot_combined_plots(plot_list, out_type, prefix, output_dir, plot_details)

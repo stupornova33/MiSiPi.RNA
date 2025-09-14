@@ -54,6 +54,13 @@ misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
   
   write.table(metadata, metadata_file, quote = FALSE, col.names = FALSE, row.names = FALSE)
   
+  log_msg_title <- paste0("Started MiSiPi.RNA at: ", now_hr)
+  log_msg_process <- paste0("PROCESSING: ", method)
+  log_msg_files <- paste0("BED: ", vars$roi, " | BAM: ", vars$bam_file, " | GENOME: ", vars$genome)
+  .log(log_msg_title, output_dir)
+  .log(log_msg_process, output_dir)
+  .log(log_msg_files, output_dir, add_newline = TRUE)
+  
   if (method == "all") {
     run_all(vars, output_dir)
   } else if (method == "miRNA") {
