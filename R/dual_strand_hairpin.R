@@ -98,7 +98,7 @@ process_hairpin_strand <- function(chrom_name, reg_start, dicer_df, df_summarize
   
   #### Phasing Signatures ####
   hp_phased_tbl <- .calc_phasing(r1_dt, r2_dt, 50)
-  hp_phased_counts <- sum(hp_phased_tbl$phased_num[1:4])
+  # hp_phased_counts <- sum(hp_phased_tbl$phased_num[1:4]) # Appears to not be used anywhere
   hp_phased_z <- mean(hp_phased_tbl$phased_z[1:4])
   hp_phased_mlz <- mean(hp_phased_tbl$phased_ml_z[1:4])
   
@@ -157,8 +157,8 @@ process_hairpin_strand <- function(chrom_name, reg_start, dicer_df, df_summarize
     all_overlaps = all_overlaps,
     hp_overhangz = overhangs$hp_overhangz,
     hp_overhang_mlz = overhangs$hp_overhang_mlz,
-    hp_phasedz = hp_phased_z,
-    hp_phased_mlz = hp_phased_mlz,
+    hp_phasedz = hp_phased_z, # Avg of hp_phased_tbl first 4 z scores
+    hp_phased_mlz = hp_phased_mlz, # Avg of hp_phased_tbl first 4 ml z scores
     hp_phased_tbl = hp_phased_tbl,
     phased_tbl.dist = hp_phased_tbl$phased_dist,
     phased_tbl.phased_z = hp_phased_tbl$phased_z,
@@ -233,7 +233,11 @@ plot_dsh <- function(dsh_plus, dsh_minus, dicer_overhangs, wkdir) {
   }
   
   #### Hairpin Phasing Probability Plot ####
-  phasedz <- .plot_siRNA_hp_phasing_probability_combined(dsh_plus$hp_phased_tbl, dsh_minus$hp_phased_tbl)
+  if (dsh_plus$hp_phasedz == 0 & dsh_minus$hp_phasedz == 0) {
+    phasedz <- null_plot("siRNA Phasing Probability", "No results on which to test phasing")
+  } else {
+    phasedz <- .plot_siRNA_hp_phasing_probability_combined(dsh_plus$hp_phased_tbl, dsh_minus$hp_phased_tbl)
+  }
   
   #### Gather and return plots ####
   plots <- list(

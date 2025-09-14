@@ -9,11 +9,11 @@
     ml_zscore = rep(-33, times = 9)
   )
   
-  phased_tbl <- data.frame(
-    dist = seq(0, 50),
+  hp_phased_tbl <- data.frame(
+    phased_dist = seq(0, 50),
     phased_num = rep(0, times = 51),
-    zscore = rep(0, times = 51),
-    ml_zscore = rep(-33, times = 51)
+    phased_z = rep(0, times = 51),
+    phased_mlz = rep(-33, times = 51)
   )
   
   all_overlaps <- data.frame()
@@ -24,9 +24,10 @@
     hp_overhang_mlz = -33,
     hp_phasedz = 0,
     hp_phased_mlz = -33,
-    phased_tbl.dist = phased_tbl$dist,
-    phased_tbl.phased_z = phased_tbl$zscore,
-    phased_tbl.phased_mlz = phased_tbl$ml_zscore,
+    hp_phased_tbl = hp_phased_tbl,
+    phased_tbl.dist = hp_phased_tbl$phased_dist,
+    phased_tbl.phased_z = hp_phased_tbl$phased_z,
+    phased_tbl.phased_mlz = hp_phased_tbl$phased_mlz,
     dicer_tbl.shift = dicer_tbl$shift,
     dicer_tbl.zscore = dicer_tbl$zscore,
     dicer_tbl.ml_zscore = dicer_tbl$ml_zscore

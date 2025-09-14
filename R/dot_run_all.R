@@ -278,20 +278,16 @@
   mfe <- si_res$dsh$MFE
   perc_paired <- si_res$dsh$perc_paired
   
-  plus_phasedz <- si_res$dsh$plus_dsh$phased_tbl.phased_mlz
-  plus_mean <- mean(plus_phasedz[1:4])
-  
-  minus_phasedz <- si_res$dsh$minus_dsh$phased_tbl.phased_mlz
-  minus_mean <- mean(minus_phasedz[1:4])
-
-  local_ml$hp_phasedz <- max(plus_mean, minus_mean)
-  local_ml$hp_mfe <- mfe
-  local_ml$hp_perc_paired <- perc_paired
+  plus_phasedz_mean <- si_res$dsh$plus_dsh$hp_phased_mlz
+  minus_phasedz_mean <- si_res$dsh$minus_dsh$hp_phased_mlz
 
   plus_dicerz <- si_res$dsh$plus_dsh$hp_overhang_mlz
   minus_dicerz <- si_res$dsh$minus_dsh$hp_overhang_mlz
 
+  local_ml$hp_mfe <- mfe
+  local_ml$hp_perc_paired <- perc_paired
   local_ml$hp_dicerz <- max(plus_dicerz, minus_dicerz)
+  local_ml$hp_phasedz <- max(plus_phasedz_mean, minus_phasedz_mean)
 
   max_si_heat <- NULL
 

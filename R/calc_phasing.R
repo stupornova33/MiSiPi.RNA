@@ -24,11 +24,11 @@
       dplyr::summarize(num = sum(total_dupes)) %>%
       dplyr::mutate(dist = abs(dist))
   } else {
-    phased <- data.table::data.table(dist = 1, num = 0L)
+    phased <- data.frame(dist = 1, num = 0L)
   }
 
   # make the results data table
-  all_table <- data.table::data.table(
+  all_table <- data.frame(
     dist = seq(0, 50),
     num = rep(0, 51)
   )
@@ -49,14 +49,9 @@
         phased_num = num.x
       )
   } else {
-    phased <- data.table::data.table(dist = seq(0, 50), num = rep(0, 51))
-    phased$phased_z <- .calc_zscore(phased$num)
-    phased$phased_ml_z <- .calc_ml_zscore(phased$num)
-    phased <- phased_counts %>%
-      dplyr::rename(
-        phased_dist = dist,
-        phased_num = num,
-      )
+    phased <- data.frame(phased_dist = seq(0, 50), phased_num = rep(0, 51))
+    phased$phased_z <- .calc_zscore(phased$phased_num)
+    phased$phased_ml_z <- .calc_ml_zscore(phased$phased_num)
   }
 
   return(phased)
