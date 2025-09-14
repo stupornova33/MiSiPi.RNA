@@ -867,6 +867,11 @@ plot_title <- function(bam_file, bed_file, genome_file, prefix, i) {
   
   iteration_str <- paste0(i, ")")
   
+  # Drop full path of file and keep basename
+  bam_file <- basename(bam_file)
+  bed_file <- basename(bed_file)
+  genome_file <- basename(genome_file)
+  
   p_title <- paste("MiSiPi Results for locus:", prefix, "(Bed file line:", iteration_str)
   p_subtitle <- paste("Bam:", bam_file, "| Bed:", bed_file, "| Genome:", genome_file)
   p_caption <- paste("Run at:", now, "with MiSiPi.RNA Version:", misipi_version)
