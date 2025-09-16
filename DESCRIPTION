@@ -26,6 +26,7 @@ Imports:
     lubridate,
     magrittr,
     pheatmap,
+    R.utils,
     R4RNA,
     Rcpp,
     reshape2,

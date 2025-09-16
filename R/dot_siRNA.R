@@ -25,13 +25,15 @@
 # @param current_iteration
 # @param i_total
 # @param iteration_input
+# @param density_timeout A timeout in seconds defining how long read_densityBySize is allowed to run
 # @return results
 
 .siRNA <- function(chrom_name, reg_start, reg_stop, prefix,
                    genome_file, bam_file, bed_file, logfile, wkdir, pal, plot_output,
                    path_to_RNAfold, annotate_region, weight_reads, gtf_file,
                    write_fastas, out_type, method = c("self", "all"),
-                   current_iteration = NULL, i_total = NULL, iteration_input = NULL) {
+                   current_iteration = NULL, i_total = NULL, iteration_input = NULL,
+                   density_timeout) {
   width <- pos <- phased_num <- NULL
   
   # current iteration, i_total, and iteration_input will be null if called from run_all
@@ -189,6 +191,7 @@
     
     if (annotate_region) {
       gtf_plot <- .plot_gtf_region_new(gtf_file, chrom_name, reg_start, reg_stop, logfile)
+
       if(is.null(gtf_plot)){
         gtf_plot <- null_plot("Annotation Plot", "No features in region")
       }
@@ -216,16 +219,8 @@
       
       read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
       
-      data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
+      density_plot <- .read_density_by_size(chrom_name, reg_start, reg_stop, bam_file, wkdir, logfile, timeout = density_timeout)
       
-      if (is_small_locus) {
-        # Smaller Loci
-        density_plot <- .plot_density(data, reg_start, reg_stop)
-      } else {
-        # Large Loci
-        density_plot <- .plot_large_density(data, reg_start, reg_stop)
-      }
-
       plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, current_iteration)
       
       .plot_siRNA(read_distribution_plot, density_plot, phasedz_plot, overhang_probability_plot, arc_plot, gtf_plot, heat_plot, out_type, prefix, wkdir, plot_details)

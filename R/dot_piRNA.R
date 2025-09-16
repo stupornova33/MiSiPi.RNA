@@ -19,12 +19,14 @@
 # @param current_iteration
 # @param i_total
 # @param iteration_input
+# @param density_timeout A timeout in seconds defining how long read_densityBySize is allowed to run
 # @return plots, heat results, and zdf
 
 .piRNA <- function(chrom_name, reg_start, reg_stop, prefix, bam_file,
                    genome_file, bed_file, logfile, wkdir, pal, plot_output,
                    weight_reads, write_fastas, out_type, method = c("self", "all"),
-                   current_iteration = NULL, i_total = NULL, iteration_input = NULL) {
+                   current_iteration = NULL, i_total = NULL, iteration_input = NULL,
+                   density_timeout) {
   
   # i and i_total will be null if called from run_all
   if (!is.null(current_iteration)) {
@@ -516,13 +518,7 @@
       plots <- NULL
       
       ## These 2 plots will be made by .run_all and don't need to be remade unless method is "self"
-      data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
-      if ((reg_stop - reg_start) > 7000) {
-        density_plot <- .plot_large_density(data, reg_start, reg_stop)
-      } else {
-        density_plot <- .plot_density(data, reg_start, reg_stop)
-      }
-      data <- NULL
+      density_plot <- .read_density_by_size(chrom_name, reg_start, reg_stop, bam_file, wkdir, logfile, timeout = density_timeout)
       
       plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, current_iteration)
       

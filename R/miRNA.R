@@ -17,6 +17,7 @@ miRNA <- function(vars, output_dir) {
   weight_reads <- vars$weight_reads
   out_type <- vars$out_type
   use_bed_names <- vars$use_bed_names
+  density_timeout <- vars$density_timeout
   
   .print_intro(
     roi = bed_file,
@@ -103,8 +104,7 @@ miRNA <- function(vars, output_dir) {
       read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist)
       .close_bam(bam_obj)
       
-      density_data <- .read_densityBySize(chrom, reg_start, reg_stop, bam_file, mi_dir)
-      read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
+      read_density_plot <- .read_density_by_size(chrom, reg_start, reg_stop, bam_file, mi_dir, logfile, density_timeout)
       
       plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, i)
       

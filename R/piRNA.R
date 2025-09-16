@@ -41,7 +41,8 @@ piRNA <- function(vars, output_dir) {
       calling_method,
       idx_vec,
       total_iterations,
-      vars$iteration_output
+      vars$iteration_output,
+      vars$density_timeout
     )
   )
   

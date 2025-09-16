@@ -22,6 +22,7 @@
 # @param current_iteration
 # @param i_total
 # @param iteration_input
+# @param density_timeout A timeout in seconds defining how long read_densityBySize is allowed to run
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
@@ -32,7 +33,8 @@
                      annotate_region, weight_reads,
                      gtf_file, write_fastas, out_type,
                      output_dir, use_bed_names,
-                     current_iteration, i_total, iteration_input) {
+                     current_iteration, i_total, iteration_input,
+                     density_timeout) {
   width <- pos <- start <- end <- NULL
 
   .inform_iteration(current_iteration, i_total, iteration_input)
@@ -472,9 +474,7 @@
   
   #### Make combined plot for current locus ####
   # Generate General Read Plots
-  
-  density_data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, output_dir)
-  read_density_plot <- .plot_density(density_data, reg_start, reg_stop)
+  read_density_plot <- .read_density_by_size(chrom_name, reg_start, reg_stop, bam_file, output_dir, logfile, density_timeout)
   
   read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
   

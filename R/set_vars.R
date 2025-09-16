@@ -28,6 +28,9 @@
 #'   If TRUE, bed line names will be used unless column 4 is not present in the bed file.
 #'   In that case, this parameter will toggle to FALSE.
 #'   If FALSE, results will be named using a region string in the format: chr-start_stop
+#' @param density_timeout an integer defining how long (in seconds) read_densityBySize is allowed to
+#'   run before being interrupted. By default this is set to 3600 seconds - 1hr. If you
+#'   you want to eliminate the timeout, set it to Inf
 #' @return a list
 #' @export
 
@@ -38,7 +41,7 @@ set_vars <- function(roi, bam_file, genome,
                      weight_reads = c("None", "top", "locus_norm", "none", "Top", "Locus_Norm"), 
                      write_fastas = FALSE, annotate_region = FALSE, gtf_file = FALSE,
                      out_type = c("pdf", "png", "PDF", "PNG"),
-                     use_bed_names = FALSE) {
+                     use_bed_names = FALSE, density_timeout = 3600) {
   #### Parameter Validation ####
   # roi - bed file
   stopifnot("Parameter `roi` must be a valid filepath to a BED file." = file.exists(roi))
@@ -226,6 +229,9 @@ set_vars <- function(roi, bam_file, genome,
   
   bed_lines <- NULL
   
+  # Validate density_timeout
+  stopifnot("Parameter `density_timeout` must be numeric." = is.numeric(density_timeout))
+  
   var_list <- list(
     chrom_name = chrom_name,
     reg_start = reg_start,
@@ -245,7 +251,8 @@ set_vars <- function(roi, bam_file, genome,
     write_fastas = write_fastas,
     out_type = out_type,
     use_bed_names = use_bed_names,
-    iteration_output = iteration_output
+    iteration_output = iteration_output,
+    density_timeout = density_timeout
   )
 
   return(var_list)

@@ -59,7 +59,8 @@ run_all <- function(vars, output_dir) {
       vars$use_bed_names,
       idx_vec,
       total_iterations,
-      vars$iteration_output
+      vars$iteration_output,
+      vars$density_timeout
     )
   )
   

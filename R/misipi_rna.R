@@ -28,7 +28,7 @@ misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
   now_hr <- sub("(\\d{2})(\\d{2})(\\d{2})$", "\\1:\\2:\\3", now_hr) 
   
   # Create a metadata object to track how the program was run
-  metadata <- data.frame(Data = character(19))
+  metadata <- data.frame(Data = character(20))
   
   metadata$Data[1] <- paste0("Version: ", toString(packageVersion("MiSiPi.RNA")))
   metadata$Data[2] <- paste0("Started At: ", now_hr)
@@ -48,7 +48,8 @@ misipi_rna <- function(vars, method = c("all", "miRNA", "piRNA", "siRNA")) {
   metadata$Data[16] <- paste0("Fastas Written: ", vars$write_fastas)
   metadata$Data[17] <- paste0("piRNA Palette: ", vars$pi_pal)
   metadata$Data[18] <- paste0("siRNA Palette: ", vars$si_pal)
-  metadata$Data[19] <- paste0("Interactive: ", interactive())
+  metadata$Data[19] <- paste0("Read Density Timeout: ", vars$density_timeout)
+  metadata$Data[20] <- paste0("Interactive: ", interactive())
   
   metadata_file <- file.path(output_dir, "run_info.txt")
   

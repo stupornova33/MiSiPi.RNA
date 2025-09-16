@@ -1,17 +1,61 @@
-# TODO
-# Idea to reduce memory and time (9/14/25)
-# - Try subsetting the bam file by the current region of interest before filtering it by read size
-# - We have been operating under the assumption that using scanBam with scanBamParams bound to the roi
-# - would be memory efficient, but perhaps it is not. Worth a shot
+# Wrapper function to handle timeout errors of .read_densityBySize
 
-
-
-
-
-
-
-
-
+.read_density_by_size <- function(chrom_name, reg_start, reg_stop, input_file, wkdir, logfile, timeout = 3600) {
+  
+  # This function will be called in the finally block to cleanup any remains of the timed out function
+  cleanup_bams <- function() {
+    bam_path <- file.path(wkdir, "tmp_bam")
+    
+    # Gather and close bam files in case they are still open
+    bam_files <- list.files(path = bam_path, pattern = "\\.bam$")
+    
+    #for (bam_file in bam_files) {
+    #  if (Rsamtools::isOpen(bam_file)) {
+    #    .close_bam(bam_file)
+    #  }
+    #}
+    
+    # Add index files to list and delete files and directory
+    bam_files <- append(bam_files, list.files(path = bam_path, pattern = "\\.bai$"))
+    
+    unlink(file.path(bam_path, bam_files), force = TRUE)
+    fs::dir_delete(bam_path)
+  }
+  
+  
+  # Set a default result in case read_densityBySize times out and fails to return anything
+  density_data <- NULL
+  
+  tryCatch(
+    density_data <- R.utils::withTimeout(
+      .read_densityBySize(chrom_name, reg_start, reg_stop, input_file, wkdir, logfile),
+      timeout = timeout
+    ),
+    # Log the errors and move on
+    error = function(e) {
+      error_msg <- paste("ERROR: Timeout of", timeout, "seconds was exceeded by .read_density_by_size. Timeout can be increased in set_vars.\nSetting null plot for read density and continuing.")
+      cat(file = logfile, error_msg)
+    },
+    # Some temporary bam files might still exist that need to be removed in the finally block
+    finally = cleanup_bams()
+  )
+  
+  # Will either be NULL or a data frame
+  # Plot density_data
+  if (is.null(density_data)) {
+    density_plot <- null_plot("Read Density Plot", "Timeout exceeded during processing")
+  } else {
+    if ((reg_stop - reg_start) > 7000) {
+      density_plot <- .plot_large_density(density_data, reg_start, reg_stop)
+    } else {
+      density_plot <- .plot_density(density_data, reg_start, reg_stop)
+    }
+  }
+  
+  density_data <- NULL
+  
+  return(density_plot)
+}
 
 # function to filter reads by size and plot pileup density
 # @param chrom_name a string
@@ -24,7 +68,7 @@
 
 .read_densityBySize <- function(chrom_name, reg_start, reg_stop, input_file, wkdir, logfile) {
   pos <- width <- rname <- NULL
-
+  
   filter_bamfile <- function(input_file, size1, size2, strand) {
     seqnames <- NULL
     which <- GenomicRanges::GRanges(
