@@ -6,6 +6,9 @@
   cleanup_bams <- function() {
     bam_path <- file.path(wkdir, "tmp_bam")
     
+    # No cleanup needed if directory doesn't exist
+    if (!dir.exists(bam_path)) return()
+    
     # Gather and close bam files in case they are still open
     bam_files <- list.files(path = bam_path, pattern = "\\.bam$")
     
