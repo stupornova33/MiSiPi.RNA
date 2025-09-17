@@ -1,4 +1,4 @@
-# If not seen as to annoying it will be called at the start misipi_rna()
+# If not seen as too annoying it will be called at the start misipi_rna()
 .print_intro <- function(roi, bam, genome, method) {
   # Widest line here is 81
   cat("\n")
@@ -13,8 +13,13 @@
   cat(r"(        _\///______________\///__\///____\///////////_____\///__\///______________\///__)", "\n")
   cat("\n")
 
+  
+  bed_file <- basename(roi)
+  bam_file <- basename(bam_file)
+  genome_file <- basename(genome)
+  
   msg1 <- paste("Processing method:", method)
-  msg2 <- paste("BED:", vars$roi, "| BAM:", vars$bam_file, "| GENOME:", vars$genome)
+  msg2 <- paste("BED:", bed_file, "| BAM:", bam_file, "| GENOME:", genome_file)
   
   cli::cli_inform(c(msg1, msg2, ""))
 }
