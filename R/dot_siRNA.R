@@ -171,7 +171,7 @@
   # Get hairpin specific results
   dsh <- dual_strand_hairpin(
     chrom_name, reg_start, reg_stop, genome_file, prefix, locus_length,
-    dicer_df_plus, dicer_df_minus, f_summarized, r_summarized, path_to_RNAfold, logfile, wkdir)
+    dicer_df_plus, dicer_df_minus, f_summarized, r_summarized, path_to_RNAfold, logfile, wkdir, density_timeout)
   
   f_summarized <- NULL
   r_summarized <- NULL

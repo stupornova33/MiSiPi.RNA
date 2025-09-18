@@ -1,6 +1,6 @@
 dual_strand_hairpin <- function(
     chrom_name, reg_start, reg_stop, genome_file, prefix, locus_length, 
-    dicer_df_plus, dicer_df_minus, f_df, r_df, path_to_RNAfold, logfile, wkdir) {
+    dicer_df_plus, dicer_df_minus, f_df, r_df, path_to_RNAfold, logfile, wkdir, density_timeout) {
   
   # Return null results if locus too long to fold
   if (locus_length > 10000) {
@@ -54,7 +54,7 @@ dual_strand_hairpin <- function(
     cat(file = logfile, output_msg, append = TRUE)
     plus_dsh <- .null_hp_res()
   } else {
-    plus_dsh <- process_hairpin_strand(chrom_name, reg_start, dicer_df_plus, f_df, fold_list, logfile, wkdir)
+    plus_dsh <- process_hairpin_strand(chrom_name, reg_start, dicer_df_plus, f_df, fold_list, logfile, wkdir, density_timeout)
   }
   
   if (nrow(r_df) == 0) {
@@ -62,7 +62,7 @@ dual_strand_hairpin <- function(
     cat(file = logfile, output_msg, append = TRUE)
     minus_dsh <- .null_hp_res()
   } else {
-    minus_dsh <- process_hairpin_strand(chrom_name, reg_start, dicer_df_minus, r_df, fold_list, logfile, wkdir)
+    minus_dsh <- process_hairpin_strand(chrom_name, reg_start, dicer_df_minus, r_df, fold_list, logfile, wkdir, density_timeout)
   }
   
   # write results to files
@@ -86,21 +86,46 @@ dual_strand_hairpin <- function(
 # @param fold_list The return object from Vienna RNAfold
 # @param logfile The name of the file to which log information will be written.
 # @param wkdir The path to the directory where all outputs will be written.
+# @param density_timeout The amount of time to try to calculate phasing before returning null results. Default 3600 
 # @return a list of results
 
 # New dsh function
-process_hairpin_strand <- function(chrom_name, reg_start, dicer_df, df_summarized, fold_list, logfile, wkdir) {
+process_hairpin_strand <- function(chrom_name, reg_start, dicer_df, df_summarized, fold_list, logfile, wkdir, density_timeout) { 
   r2_dt <- df_summarized
   # We're operating on a single strand but need one data frame where the reads aren't transformed, one where they are
   # so set the other dt to be the same as the first with transformed ends
   r1_dt <- r2_dt %>%
     dplyr::mutate(end = end + 30)
   
-  #### Phasing Signatures ####
-  hp_phased_tbl <- .calc_phasing(r1_dt, r2_dt, 50)
-  # hp_phased_counts <- sum(hp_phased_tbl$phased_num[1:4]) # Appears to not be used anywhere
-  hp_phased_z <- mean(hp_phased_tbl$phased_z[1:4])
-  hp_phased_mlz <- mean(hp_phased_tbl$phased_ml_z[1:4])
+  hp_phased_tbl <- NULL 
+  
+  timeout <- density_timeout 
+  
+  tryCatch( 
+    #### Phasing Signatures #### 
+    # should n being passed in be 30, not 50? 
+    hp_phased_tbl <- R.utils::withTimeout( 
+      .calc_phasing(r1_dt, r2_dt, 50), 
+      # hp_phased_counts <- sum(hp_phased_tbl$phased_num[1:4]) # Appears to not be used anywhere 
+      timeout = timeout 
+    ),  
+    # Log the errors and move on  
+    error = function(e) {  
+      error_msg <- paste("ERROR: Timeout of", timeout, "seconds was exceeded by .calc_phasing from dual_strnd_hairpin. Timeout can be increased in set_vars.\nSetting null results for phasing and continuing.")  
+      cat(file = logfile, error_msg)  
+    }, 
+    finally 
+  ) 
+  
+  if (!is.null(hp_phased_tbl)) { 
+    hp_phased_z <- mean(hp_phased_tbl$phased_z[1:4]) 
+    hp_phased_mlz <- mean(hp_phased_tbl$phased_ml_z[1:4]) 
+  } else { 
+    tmp <- .null_hp_res() 
+    hp_phased_tbl <- tmp$hp_phased_tbl 
+    hp_phased_z <- tmp$hp_phasedz 
+    hp_phased_mlz <- tmp$hp_phased_mlz 
+  } 
   
   r1_dt <- r2_dt <- NULL
   
