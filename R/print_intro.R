@@ -15,7 +15,7 @@
 
   
   bed_file <- basename(roi)
-  bam_file <- basename(bam_file)
+  bam_file <- basename(bam)
   genome_file <- basename(genome)
   
   msg1 <- paste("Processing method:", method)
