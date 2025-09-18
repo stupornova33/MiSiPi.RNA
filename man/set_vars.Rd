@@ -18,7 +18,8 @@ set_vars(
   annotate_region = FALSE,
   gtf_file = FALSE,
   out_type = c("pdf", "png", "PDF", "PNG"),
-  use_bed_names = FALSE
+  use_bed_names = FALSE,
+  density_timeout = 3600
 )
 }
 \arguments{
@@ -64,6 +65,10 @@ the bed file should be used for results.
 If TRUE, bed line names will be used unless column 4 is not present in the bed file.
 In that case, this parameter will toggle to FALSE.
 If FALSE, results will be named using a region string in the format: chr-start_stop}
+
+\item{density_timeout}{an integer defining how long (in seconds) read_densityBySize is allowed to
+run before being interrupted. By default this is set to 3600 seconds - 1hr. If you
+you want to eliminate the timeout, set it to Inf}
 }
 \value{
 a list

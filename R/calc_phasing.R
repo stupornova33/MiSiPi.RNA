@@ -7,8 +7,13 @@
 .calc_phasing <- function(df1, df2, n) {
   dist <- num.y <- num.x <- num <- NULL
 
-  phased <- .find_hp_overlaps(df1, df2, n)
-
+  if(nrow(df1) > 2000){ 
+    phased <- find_overlaps_chunks(df1, df2, n) 
+  } else { 
+    phased <- .find_hp_overlaps(df2, df2, n) 
+  } 
+  #phased <- .find_hp_overlaps(df1, df2, n) 
+  
   # Convert the dupes columns to numeric so they can handle larger numbers
   # A few loci were giving combined duplicate counts into the trillions
   # The largest number R can store in an integer is system dependent,
