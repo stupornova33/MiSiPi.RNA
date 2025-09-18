@@ -113,8 +113,7 @@ process_hairpin_strand <- function(chrom_name, reg_start, dicer_df, df_summarize
     error = function(e) {  
       error_msg <- paste("ERROR: Timeout of", timeout, "seconds was exceeded by .calc_phasing from dual_strnd_hairpin. Timeout can be increased in set_vars.\nSetting null results for phasing and continuing.")  
       cat(file = logfile, error_msg)  
-    }, 
-    finally 
+    }
   ) 
   
   if (!is.null(hp_phased_tbl)) { 
