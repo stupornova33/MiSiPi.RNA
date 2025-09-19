@@ -12,11 +12,11 @@
     # Gather and close bam files in case they are still open
     bam_files <- list.files(path = bam_path, pattern = "\\.bam$")
     
-    #for (bam_file in bam_files) {
-    #  if (Rsamtools::isOpen(bam_file)) {
-    #    .close_bam(bam_file)
-    #  }
-    #}
+    # Need to establish new file connection handles for remaining files, so they can be closed if still open
+    for (bam_file in bam_files) {
+      bam_con <- .open_bam(bam_file, logfile)
+      .close_bam(bam_file)
+    }
     
     # Add index files to list and delete files and directory
     bam_files <- append(bam_files, list.files(path = bam_path, pattern = "\\.bai$"))
