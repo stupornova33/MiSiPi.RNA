@@ -1,26 +1,42 @@
 # write_proper_overhangs function
 # if write_fastas == TRUE, outputs read pairs with 3' 2nt overhang as a fasta file
 # @param df1 a data frame of reads
+#   - When called from .siRNA(), this will be the sense strand of reads
+#   - When called from .miRNA(), this will be whatever strand of reads is currently being processed
 # @param df2 a data frame of reads
+#   - When called from .siRNA(), this will be the antisense strand of reads
+#   - When called from .miRNA(), this will be NULL as only one strand is being processed
 # @param wkdir a string specifying the directory to write the file to
 # @param prefix a string specifying the prefix of the file name
 # @param overlaps
 # @param suffix a string specifying the suffix of the file name
 # @return nothing
 
-.write_proper_overhangs <- function(df1, df2, wkdir, prefix, overlaps, suffix) {
+.write_proper_overhangs <- function(df1, df2 = NULL, wkdir, prefix, overlaps, suffix) {
+  
+  # If called from .miRNA, mutate in the overhang columns
+  if (is.null(df2)) {
+    overlaps <- overlaps %>%
+      dplyr::mutate(
+        p5_overhang = r1_start - r2_start,
+        p3_overhang = r1_end - r2_end
+      )
+  }
+  
   proper_overhangs <- overlaps %>%
     dplyr::filter(p5_overhang == 2 & p3_overhang == 2) %>%
     dplyr::select(-c(r1_dupes, r2_dupes))
 
   rname <- df1$rname[1]
 
-  # We might be able to get rid of this and pass in the summarized dts
-  # In .siRNA, at least they are available
-  # TODO check other call locations
   uniq_forward <- dplyr::distinct(df1)
-  uniq_reverse <- dplyr::distinct(df2)
-
+  
+  if (is.null(df2)) {
+    uniq_reverse <- uniq_forward
+  } else {
+    uniq_reverse <- dplyr::distinct(df2)
+  }
+  
   r1_matches <- proper_overhangs %>%
     dplyr::select(r1_start, r1_end) %>%
     dplyr::distinct() %>%
@@ -62,11 +78,13 @@
   
   fastas <- .compile_fastas(freads, rreads, rname)
 
+  if (is.null(fastas)) return()
+  
   rreads <- NULL
   freads <- NULL
-
+  
   filename <- paste0(prefix, "_dicer", suffix, ".fa")
-
+  
   write.table(unlist(fastas),
     file = file.path(wkdir, filename),
     sep = " ",

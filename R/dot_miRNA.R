@@ -306,6 +306,7 @@
   z_res <- make_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
   #z_res <- make_miRNA_count_table(r1_dt$start, r1_dt$end, r1_dt$width, r2_dt$start, r2_dt$end, r2_dt$width)
   
+  r1_dt <- NULL
   
   # make_count_table was originally written for piRNAs. Need to subtract 3 from each overlap size.
   # TODO
@@ -331,8 +332,6 @@
   #   filtered_dcr_overlaps$r1_dupes
   # )
   
-  r1_dt <- r2_dt <- NULL
-  
   # create empty z_df
   z_df <- data.frame("Overlap" = z_res[, 1], "zscore" = .calc_zscore(z_res$count), "ml_zscore" = .calc_ml_zscore(z_res$count))
   
@@ -350,8 +349,13 @@
     overhangs <- data.frame(shift = c(-4, -3, -2, -1, 0, 1, 2, 3, 4), proper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0), improper_count = c(0, 0, 0, 0, 0, 0, 0, 0, 0))
     overhangs$zscore <- .calc_zscore(overhangs$proper_count)
     overhangs$ml_zscore <- .calc_ml_zscore(overhangs$proper_count)
+    r2_dt <- NULL
   } else {
-    # if(write_fastas == TRUE) .write_proper_overhangs(wkdir, prefix, overlaps, "_miRNA")
+    
+    if (write_fastas == TRUE) .write_proper_overhangs(r2_dt, NULL, wkdir, prefix, dicer_overlaps, "_miRNA")
+    
+    r2_dt <- NULL
+    
     overhangs <- calc_overhangs(
       dicer_overlaps$r2_start, dicer_overlaps$r2_end,
       dicer_overlaps$r1_start, dicer_overlaps$r1_width,
