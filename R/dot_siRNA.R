@@ -109,12 +109,10 @@
     # get overlapping reads
     overlaps <- .find_overlaps(f_summarized, r_summarized) %>%
       dplyr::mutate(
-        p5_overhang = r1_start - r2_start,
+        p5_overhang = r1_start - r2_start, # In this context p5_overhang just refers to the overhang on the 5' side of the sense strand
         p3_overhang = r1_end - r2_end
       )
     
-    # TODO This function runs very slowly on large loci
-    # See if it can be run on the summarized dts
     if (write_fastas == TRUE) .write_proper_overhangs(forward_df, reverse_df, wkdir, prefix, overlaps, "")
     
     # calculate the number of dicer pairs for the zscore
