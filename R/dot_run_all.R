@@ -258,7 +258,7 @@
     si_log, si_dir, si_pal,
     plot_output, path_to_RNAfold,
     annotate_region, weight_reads, gtf_file,
-    write_fastas, out_type, calling_method
+    write_fastas, out_type, calling_method, density_timeout = density_timeout
   )
   
   max_si_heat <- .get_max_si_heat(si_res$heat)

@@ -8,7 +8,7 @@
 # @param n the number of bases to transform the read by
 # @return overlap table
 
-find_overlaps_chunks  <- function(r1_dt, r2_dt, n){
+.find_overlaps_chunks  <- function(r1_dt, r2_dt, n){
   r1_stop <- r1_start <- dist <- start_r1 <- widthx <- start_r2 <- widthy <- NULL
   
   tot_rows <- nrow(r1_dt)
@@ -78,5 +78,5 @@ find_overlaps_chunks  <- function(r1_dt, r2_dt, n){
     # Combine results
     all_overlaps_df <- dplyr::bind_rows(final_list)
   }
-  
+    return(all_overlaps_df)
 }

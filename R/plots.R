@@ -56,110 +56,137 @@
   gtf <- read.csv(gtf_file, header = FALSE, sep = "\t", fill = TRUE, quote="")
   colnames(gtf)[1:9] <- c("seqname","source","feature","start","end","score","strand","frame","attribute")
   
+  
+  
   # Filter for region
   gtf <- gtf %>% 
-    dplyr::filter(seqname == chrom_name, 
-                  (start >= reg_start & start <= reg_stop) |
-                    (end   >= reg_start & end   <= reg_stop))  %>%
-    dplyr::filter(feature != "start_codon" & feature != "CDS")
-  
+    # filter features that 
+    dplyr::filter(seqname == chrom_name, start >= reg_start & start <= reg_stop | end >= reg_start & end <= reg_stop)  %>%
+    dplyr::filter(feature != "start_codon" & feature != "CDS" & feature != "stop_codon")
   
   if (nrow(gtf) == 0) {
     message("No features found in region.")
     return(NULL)
   }
   
+  # Remove quotation marks
+  gtf$attribute <- gsub("\"", "", gtf$attribute)
   
+  exons_present <- any(gtf$feature == "exon")
   
-  ### test with exons/introns
-  # Separate exons and introns
-  exons <- gtf %>% dplyr::filter(feature == "exon")
-  
-  # if only transcripts in gtf 
-  if(nrow(exons) != 0){
-    
-    
-    
+  # if transcript and exon information is both present
+  if (exons_present) {
     # Extract transcript ID from attribute field
     # Assign all transcripts to gene_id for easy matching
-    for(i in 1:nrow(gtf)){
-      if(gtf$feature[i] == "transcript" | gtf$feature[i] == "exon"){
-        tmp <- unlist(strsplit(gtf$attribute[i], ";"))
+    na_counter <- 1
+    na_idx <- vector()
+    for (i in 1:nrow(gtf)) {
+      # Gene ids should be present in all remaining observations
+      tmp <- unlist(strsplit(gtf$attribute[i], ";"))
+      gene_idx <- grep("gene_id", tmp)
+      gene <- gsub("gene_id ", "", tmp[gene_idx])
+      gtf$gene_id[i] <- gene
+      #gtf$transcript_id[i] <- NA # By default, set to NA, will change if row is transcript or exon
+      
+      if (gtf$feature[i] == "transcript" | gtf$feature[i] == "exon") {
+        # Transcript ids should only be present in transcript and exon rows
         trans_idx <- grep(" transcript_id", tmp)
         trans <- tmp[trans_idx]
         gtf$transcript_id[i] <- gsub(" transcript_id ", "", trans)
-        gene_idx <- grep("gene_id ", tmp)
-        gene <- tmp[gene_idx]
-        gtf$gene_id[i] <- gsub("gene_id ", "", gene)
-        
-      } else if(gtf$feature[i] == "gene") {
-        tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-        gene_idx <- grep("gene_id", tmp)
-        
-        gene <- unlist(strsplit(gtf$attribute[i], ";"))[1]
-        gtf$transcript_id[i] <- gsub("gene_id", "", gene) # if feature is gene, use gene name for plot
-        gtf$gene_id[i] <- gsub("gene_id ", "", gene) 
-        
-      } 
-    } 
+      } else {
+        transcript_id <- paste0("NA_", na_counter)
+        gtf$transcript_id[i] <- transcript_id
+        na_idx <- append(na_idx, i)
+        na_counter <- na_counter + 1
+      }
+    }
     
     # Separate exons
+    exons <- gtf %>%
+      dplyr::filter(feature == "exon")
     
-    exons <- gtf %>% dplyr::filter(feature == "exon")
-    genes_transcripts <- gtf %>% dplyr::filter(feature == "transcript" | feature == "gene") %>% dplyr::distinct()
-    if(nrow(genes_transcripts) > 30){
-      message("Warning: region contains more features than are plottable. Selecting only first 10. See log file for details.")
-      cat(file = logfile, "Region contains more features than are plottable Selecting only first 10. 
+    # Separate transcripts and genes
+    genes_transcripts <- gtf %>%
+      dplyr::filter(feature == "transcript" | feature == "gene") %>%
+      dplyr::distinct()
+    
+    if (nrow(genes_transcripts) > 30) {
+      message("Warning: region contains more features than are plottable. Selecting only first 30. See log file for details.")
+      cat(file = logfile, "Region contains more features than are plottable Selecting only first 30. 
      Please consider filtering input GTF file (e.g. select only genes or transcripts or select transcript isoform of interest). \n", append = TRUE)
       genes_transcripts <- genes_transcripts[1:30,]
     }
     
-    #Group exons belonging to same transcript
-    gene_list <- list()
-    for(i in 1:nrow(genes_transcripts)){
-      if(genes_transcripts$feature[i] == "transcript" | genes_transcripts$feature[i] == "exon"){
-        idx <- which(exons$transcript_id == genes_transcripts$transcript_id[i])
-        gene_list[[i]] <- c(exons[idx,])
-      } else if(genes_transcripts$feature[i] == "gene"){
-        gene_list[[i]] <- as.list(genes_transcripts[i,])
-      }
+    if (nrow(genes_transcripts) > 0) {
+      #Group exons belonging to same transcript and assign transcript index
+      plot_df <- gtf %>%
+        dplyr::mutate(trans_idx = match(transcript_id, unique(transcript_id))) %>%
+        dplyr::select(-c(score, frame, attribute))
+      
+      # Revert numbered NAs to actual NAs
+      plot_df$transcript_id[na_idx] <- NA
+      
+      
+      # genes with no transcript_id (gene-only features)
+      genes_only <- plot_df %>%
+        dplyr::filter(feature == "gene" & is.na(transcript_id)) %>%
+        dplyr::mutate(track = min(transcripts$track, 0) + dplyr::row_number())
+      
+      genes_only <- genes_only %>%
+        dplyr::mutate(start = dplyr::case_when(
+          start < reg_start ~ reg_start, # if start is less than cutoff, set it to cutoff
+          TRUE ~ start)) %>%
+        dplyr::mutate(end = dplyr::case_when(
+          end > reg_stop ~ reg_stop, # if stop is greater than cutoff, set it to reg_stop
+          TRUE ~ end))
+      
+      # calculate the x and y coordinates for the exons/transcripts/genes
+      transcripts <- plot_df %>%
+        dplyr::filter(!is.na(transcript_id)) %>%
+        dplyr::distinct(transcript_id, gene_id, strand, .keep_all = TRUE) %>%
+        dplyr::arrange(transcript_id) %>%
+        dplyr::mutate(track = dplyr::row_number() + nrow(genes_only), midpoint = (end - start)/2) #make genes plot first
+      
+      # exons with transcript info
+      exons <- plot_df %>%
+        dplyr::filter(feature == "exon") %>%
+        dplyr::left_join(transcripts %>% dplyr::select(transcript_id, track, strand),
+                         by = "transcript_id") %>%
+        dplyr::arrange(track, start) %>%
+        dplyr::group_by(transcript_id) %>%
+        dplyr::rename("strand" = "strand.x") %>%
+        dplyr::mutate(
+          exon_idx  = dplyr::row_number(),
+          n_exons   = dplyr::n(),
+          pointed   = dplyr::case_when(
+            strand == "+" & exon_idx == n_exons ~ TRUE,
+            strand == "-" & exon_idx == 1 ~ TRUE,
+            TRUE ~ FALSE),
+          next_start = dplyr::lead(start)) %>%
+        dplyr::ungroup()
+      
+      
+    } else if (nrow(genes_transcripts) == 0) {
+      # exons -> add info on first/last per transcript
+      plot_df <- exons
+      exons <- plot_df %>%
+        dplyr::filter(feature == "exon") %>%
+        #dplyr::left_join(transcripts %>% dplyr::select(transcript_id, track, strand), by = "transcript_id") %>%
+        dplyr::rename("strand" = "strand.x") %>%
+        #dplyr::arrange(track, start) %>%
+        dplyr::mutate(track = dplyr::row_number()) %>%
+        dplyr::group_by(transcript_id) %>%
+        dplyr::mutate(
+          exon_idx  = dplyr::row_number(),
+          n_exons   = dplyr::n(),
+          pointed   = dplyr::case_when(
+            strand == "+" & exon_idx == n_exons ~ TRUE,   # last exon for +
+            strand == "-" & exon_idx == 1 ~ TRUE,   # first exon for -
+            TRUE ~ FALSE),
+          next_start = dplyr::lead(start)) %>%
+        dplyr::ungroup()
+      transcripts <- exons
     }
-    
-    #assign transcript number to exons for plotting
-    plot_df <- data.frame()
-    for(i in 1:length(gene_list)){
-      df <- data.frame(gene_list[[i]])
-      df$trans_idx <- i
-      plot_df <- rbind(plot_df, df)
-    }
-    
-    plot_df <- plot_df %>% dplyr::select(-c(score, frame, attribute))
-    # calculate the x and y coordinates for the exons/transcripts/genes
-    # Compute transcript spans
-    
-    # transcripts -> track positions
-    transcripts <- plot_df %>%
-      dplyr::filter(!is.na(transcript_id)) %>%
-      dplyr::distinct(transcript_id, gene_id, strand, .keep_all = TRUE) %>%
-      dplyr::arrange(transcript_id) %>%
-      dplyr::mutate(track = dplyr::row_number())
-    
-    # exons -> add info on first/last per transcript
-    exons <- plot_df %>%
-      dplyr::filter(feature == "exon") %>%
-      dplyr::left_join(transcripts %>% dplyr::select(transcript_id, track, strand), by = "transcript_id") %>%
-      dplyr::rename("strand" = "strand.x") %>%
-      dplyr::arrange(track, start) %>%
-      dplyr::group_by(transcript_id) %>%
-      dplyr::mutate(
-        exon_idx  = dplyr::row_number(),
-        n_exons   = dplyr::n(),
-        pointed   = dplyr::case_when(
-          strand == "+" & exon_idx == n_exons ~ TRUE,   # last exon for +
-          strand == "-" & exon_idx == 1 ~ TRUE,   # first exon for -
-          TRUE ~ FALSE),
-        next_start = dplyr::lead(start)) %>%
-      dplyr::ungroup()
     
     # keep separate datasets
     exons_normal <- exons %>% dplyr::filter(!pointed)   # only normal exons
@@ -187,19 +214,59 @@
             x = c(end, start + tip, start, start + tip, end),
             y = c(track - exon_height, track - exon_height,
                   track, track + exon_height, track + exon_height))
+        }})) %>%
+      tidyr::unnest(coords) %>%
+      dplyr::distinct()
+    
+    transcripts <- transcripts %>%
+      dplyr::mutate(midpoint = (end + start) / 2)
+    
+    
+    # genes -> make polygons with tip like transcripts
+    gene_poly <- genes_only %>%
+      dplyr::rowwise() %>%
+      dplyr::mutate(coords = list({
+        width <- end - start
+        tip <- max(width * tip_size, 50)  # at least 50 bp tip
+        
+        if (strand == "+") {
+          # right-pointing
+          data.frame(
+            x = c(start, end - tip, end, end - tip, start),
+            y = c(track - exon_height, track - exon_height,
+                  track, track + exon_height, track + exon_height)
+          )
+        } else {
+          # left-pointing
+          data.frame(
+            x = c(end, start + tip, start, start + tip, end),
+            y = c(track - exon_height, track - exon_height,
+                  track, track + exon_height, track + exon_height)
+          )
         }
       })) %>%
       tidyr::unnest(coords)
     
     # plot
     gtf_plot <- ggplot2::ggplot() +
-      # introns
+      ggplot2::geom_polygon(
+        data = gene_poly,
+        ggplot2::aes(x = x, y = y, group = gene_id, fill = strand),
+        color = "black"
+      ) +
+      
+      ggplot2::geom_text(
+        data = genes_only %>% dplyr::mutate(midpoint = (end + start) / 2),
+        ggplot2::aes(x = midpoint, y = track, label = gene_id),
+        vjust = 0.5, size = 3
+      ) +
+      # draw the line that connects exons
       ggplot2::geom_segment(
         data = exons %>% dplyr::filter(!is.na(next_start)),
         ggplot2::aes(x = end, xend = next_start,
                      y = track, yend = track),
         color = "black", linewidth = 0.3) +
-      # normal exons
+      #normal exons
       ggplot2::geom_rect(
         data = exons_normal,
         ggplot2::aes(xmin = start, xmax = end,
@@ -214,12 +281,13 @@
       # transcript labels inside plot
       ggplot2::geom_text(
         data = transcripts,
-        ggplot2::aes(x = start, y = track, label = transcript_id),
-        hjust = 1.1, vjust = 0.5, size = 3) +
+        ggplot2::aes(x = midpoint, y = track, label = transcript_id),
+        hjust = 1, vjust = 0.5, size = 3) +
       
-      # remove y-axis labels since we now draw them manually
+      
       ggplot2::scale_y_continuous(limits = c(0.5, max(transcripts$track) + 0.5),
                                   breaks = NULL, labels = NULL) +
+      ggplot2::scale_x_continuous(limits = c(reg_start, reg_stop))+
       
       ggplot2::scale_fill_manual(values = c("+" = "lightcoral", "-" = "skyblue")) +
       ggplot2::labs(x = "Genomic coordinate") +
@@ -233,29 +301,43 @@
     
     genes_transcripts <- gtf %>% dplyr::filter(feature == "transcript" | feature == "gene") %>% dplyr::distinct()
     if(nrow(genes_transcripts) > 30){
-      message("Warning: region contains more features than are plottable. Selecting only first 10. See log file for details.")
-      cat(file = logfile, "Region contains more features than are plottable Selecting only first 10. 
+      message("Warning: region contains more features than are plottable. Selecting only first 30. See log file for details.")
+      cat(file = logfile, "Region contains more features than are plottable Selecting only first 30. 
      Please consider filtering input GTF file (e.g. select only genes or transcripts or select transcript isoform of interest). \n", append = TRUE)
       genes_transcripts <- genes_transcripts[1:30,]
       
     }
     
     # Extract transcript_id and gene_id from attribute field
-    gtf$transcript_id <- sub('.*transcript_id "([^"]+)".*', '\\1', gtf$attribute)
-    gtf$gene_id <- sub('.*gene_id "([^"]+)".*', '\\1', gtf$attribute)
+    genes_transcripts$transcript_id <- sub('.*transcript_id "([^"]+)".*', '\\1', genes_transcripts$attribute)
+    genes_transcripts$gene_id <- sub('.*gene_id "([^"]+)".*', '\\1', genes_transcripts$attribute)
+    genes_transcripts$gene_id <- stringr::str_extract(genes_transcripts$gene_id, "(?<=gene_id )[^;]+")
     
-    # Keep only transcript rows
-    transcripts <- gtf %>%
+    # Keep only transcripts (no polygon building here)
+    transcripts <- genes_transcripts %>%
       dplyr::filter(feature == "transcript") %>%
       dplyr::distinct(transcript_id, .keep_all = TRUE) %>%
       dplyr::mutate(track = dplyr::row_number()) %>%
-      dplyr::select(transcript_id, gene_id, start, end, strand, track)
+      dplyr::select(transcript_id, gene_id, start, end, strand, track) %>%
+      dplyr::mutate(
+        start = ifelse(start < reg_start, reg_start, start),
+        end   = ifelse(end > reg_stop, reg_stop, end)
+      )
+    
+    transcripts <- transcripts %>%
+      dplyr::mutate(start = dplyr::case_when(
+        start < reg_start ~ reg_start, # if start is less than cutoff, set it to cutoff
+        TRUE ~ start)) %>%
+      dplyr::mutate(end = dplyr::case_when(
+        end > reg_stop ~ reg_stop, # if stop is greater than cutoff, set it to reg_stop
+        TRUE ~ end))
+    
     
     # Parameters
     tip_size <- 0.2
     exon_height <- 0.2
     
-    # Build polygons for transcript rectangles with tip
+    # Build polygons
     poly_data <- transcripts %>%
       dplyr::rowwise() %>%
       dplyr::mutate(coords = list({
@@ -263,17 +345,19 @@
         tip <- max(width * tip_size, 50)  # at least 50 bp tip
         
         if (strand == "+") {
-          # Rectangle with right-pointing tip
+          # Right-pointing trapezoid
           data.frame(
-            x = c(start, end - tip, end, end - tip, start),
+            x = c(start, end - tip, end, end - tip, start, start),
             y = c(track - exon_height, track - exon_height,
-                  track, track + exon_height, track + exon_height))
+                  track, track + exon_height, track + exon_height, track - exon_height)
+          )
         } else {
-          # Rectangle with left-pointing tip
+          # Left-pointing trapezoid
           data.frame(
-            x = c(end, start + tip, start, start + tip, end),
+            x = c(end, start + tip, start, start + tip, end, end),
             y = c(track - exon_height, track - exon_height,
-                  track, track + exon_height, track + exon_height))
+                  track, track + exon_height, track + exon_height, track - exon_height)
+          )
         }
       })) %>%
       tidyr::unnest(coords)
@@ -284,9 +368,16 @@
         data = poly_data,
         ggplot2::aes(x = x, y = y, group = transcript_id, fill = strand),
         color = "black") +
+      
+      ggplot2::geom_text(
+        data = transcripts %>% dplyr::mutate(midpoint = (end + start) / 2),
+        ggplot2::aes(x = midpoint, y = track, label = gene_id),
+        vjust = 0.5, size = 3
+      ) +
       ggplot2::scale_y_continuous(
         limits = c(0.5, max(transcripts$track) + 0.5),# add padding
-        breaks = NULL, labels = NULL) +   
+        breaks = NULL, labels = NULL) +
+      ggplot2::scale_x_continuous(limits = c(reg_start, reg_stop))+
       
       ggplot2::scale_fill_manual(values = c("+" = "lightcoral", "-" = "skyblue")) +
       ggplot2::labs(x = "Genomic coordinate", y = "Transcript") +
@@ -295,7 +386,9 @@
         axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
         axis.title.y = ggplot2::element_blank()
       )
+    
   }
+  
   
   
 }
