@@ -404,26 +404,58 @@ return(gtf_plot)
       midpoint = pmin(pmax(midpoint, reg_start), reg_stop))
   
  
+  # exons <- plot_df %>%
+  #   dplyr::filter(feature == "exon") %>%
+  #   dplyr::mutate(track = dplyr::row_number()) %>%
+  #   dplyr::arrange(track, start) %>%
+  #   dplyr::group_by(transcript_id) %>%
+  #   dplyr::mutate(
+  #     exon_idx= dplyr::row_number(),
+  #     n_exons = dplyr::n(),
+  #     pointed = dplyr::case_when(
+  #       strand == "+" & exon_idx == n_exons ~ TRUE,   # last exon for +
+  #       strand == "-" & exon_idx == 1 ~ TRUE,   # first exon for -
+  #       TRUE ~ FALSE),
+  #     next_start = dplyr::lead(start)) %>%
+  #   dplyr::ungroup() %>%
+  #   dplyr::mutate(
+  #     midpoint = (end - start)/2 + start,
+  #     start = ifelse(start < reg_start, reg_start, start),
+  #     end = ifelse(end > reg_stop, reg_stop, end),
+  #     midpoint = pmin(pmax(midpoint, reg_start), reg_stop))
+
   exons <- plot_df %>%
     dplyr::filter(feature == "exon") %>%
-    dplyr::mutate(track = dplyr::row_number()) %>%
-    dplyr::arrange(track, start) %>%
     dplyr::group_by(transcript_id) %>%
     dplyr::mutate(
-      exon_idx= dplyr::row_number(),
-      n_exons = dplyr::n(),
-      pointed = dplyr::case_when(
+      track = dplyr::cur_group_id(),   # one track per transcript_id
+      exon_idx = dplyr::row_number(),
+      n_exons  = dplyr::n(),
+      pointed  = dplyr::case_when(
         strand == "+" & exon_idx == n_exons ~ TRUE,   # last exon for +
-        strand == "-" & exon_idx == 1 ~ TRUE,   # first exon for -
-        TRUE ~ FALSE),
-      next_start = dplyr::lead(start)) %>%
+        strand == "-" & exon_idx == 1 ~ TRUE,         # first exon for -
+        TRUE ~ FALSE
+      ),
+      next_start = dplyr::lead(start)
+    ) %>%
     dplyr::ungroup() %>%
     dplyr::mutate(
       midpoint = (end - start)/2 + start,
-      start = ifelse(start < reg_start, reg_start, start),
-      end = ifelse(end > reg_stop, reg_stop, end),
-      midpoint = pmin(pmax(midpoint, reg_start), reg_stop))
-
+      start    = ifelse(start < reg_start, reg_start, start),
+      end      = ifelse(end > reg_stop, reg_stop, end),
+      midpoint = pmin(pmax(midpoint, reg_start), reg_stop)
+    )
+  
+  exon <- exons %>%
+    dplyr::left_join(
+      transcripts %>% dplyr::select(transcript_id, track), by = "transcript_id") %>%
+    dplyr::rename(track = track.x) %>%
+    dplyr::mutate(
+      # put exons slightly below the transcript line so they don't overlap:
+      track_exon = track - 0.35
+    )
+  
+  
   # keep separate datasets
   exons_normal <- exons %>% dplyr::filter(!pointed)   # only normal exons
   exons_pointed <- exons %>% dplyr::filter(pointed)   # only the directional ones
@@ -815,20 +847,6 @@ return(gtf_plot)
     # Revert numbered NAs to actual NAs
     plot_df$transcript_id[na_idx] <- NA
     
-    
-    # calculate the x and y coordinates for the exons/transcripts/genes
-    transcripts <- plot_df %>%
-      dplyr::filter(!is.na(transcript_id)) %>%
-      dplyr::distinct(transcript_id, gene_id, strand, .keep_all = TRUE) %>%
-      dplyr::arrange(transcript_id) %>%
-      #dplyr::mutate(track = dplyr::row_number() + nrow(transcripts)) %>%
-      dplyr::mutate(track = nrow(genes_only) + length(unique(exons$transcript_id)) + dplyr::row_number()) %>%
-      dplyr::mutate(
-        midpoint = (end - start)/2 + start,
-        start = ifelse(start < reg_start, reg_start, start),
-        end = ifelse(end > reg_stop, reg_stop, end),
-        midpoint = pmin(pmax(midpoint, reg_start), reg_stop))
-   
     # genes with no transcript_id (gene-only features)
     genes_only <- plot_df %>%
       dplyr::filter(feature == "gene" & is.na(transcript_id)) %>%
@@ -840,17 +858,21 @@ return(gtf_plot)
       end = ifelse(end > reg_stop, reg_stop, end),
       midpoint = pmin(pmax(midpoint, reg_start), reg_stop))
     
+
+   
     # exons with transcript info
     exons <- plot_df %>%
       dplyr::filter(feature == "exon") %>%
-      dplyr::left_join(transcripts %>% dplyr::select(transcript_id, track, strand),
+      dplyr::left_join(plot_df %>% 
+                       dplyr::filter(!is.na(transcript_id)) %>%
+                       dplyr::select(transcript_id, gene_id, strand),
                        by = "transcript_id") %>%
-      dplyr::arrange(track, start) %>%
+      dplyr::arrange(transcript_id, start) %>%
       dplyr::group_by(transcript_id) %>%
-      dplyr::rename("strand" = "strand.x") %>%
+      dplyr::rename("strand" = "strand.x", "gene_id" = "gene_id.y") %>%
       dplyr::mutate(
         exon_idx  = dplyr::row_number(),
-        track = nrow(genes_only) + length(unique(transcript_id)) + dplyr::cur_group_id(),
+        track = nrow(genes_only) + dplyr::cur_group_id(),
         n_exons   = dplyr::n(),
         pointed   = dplyr::case_when(
           strand == "+" & exon_idx == n_exons ~ TRUE,
@@ -864,7 +886,19 @@ return(gtf_plot)
         end = ifelse(end > reg_stop, reg_stop, end),
         midpoint = pmin(pmax(midpoint, reg_start), reg_stop))
       
-    
+        # calculate the x and y coordinates for the exons/transcripts/genes
+    transcripts <- plot_df %>%
+      dplyr::filter(!is.na(transcript_id)) %>%
+      dplyr::distinct(transcript_id, gene_id, strand, .keep_all = TRUE) %>%
+      dplyr::arrange(transcript_id) %>%
+      #dplyr::mutate(track = dplyr::row_number() + nrow(transcripts)) %>%
+      dplyr::mutate(track = max(exons$track) + dplyr::row_number()) %>%
+      dplyr::mutate(
+        midpoint = (end - start)/2 + start,
+        start = ifelse(start < reg_start, reg_start, start),
+        end = ifelse(end > reg_stop, reg_stop, end),
+        midpoint = pmin(pmax(midpoint, reg_start), reg_stop))
+   
     exons_normal <- exons %>% dplyr::filter(!pointed)   # only normal exons
     exons_pointed <- exons %>% dplyr::filter(pointed)   # only the directional ones
     
@@ -920,7 +954,10 @@ return(gtf_plot)
             #midpoint = (end - start)/2 + reg_start)
         }
       })) %>%
-      tidyr::unnest(coords)
+      tidyr::unnest(coords) %>%
+      dplyr::group_by(gene_id) %>%
+      dplyr::mutate(poly_id = dplyr::cur_group_id()) %>%
+      dplyr::ungroup()
     
     
     # genes -> make polygons with tip like transcripts
@@ -954,7 +991,7 @@ return(gtf_plot)
       # draw the line that connects exons
       ggplot2::geom_polygon(
         data = gene_poly,
-        ggplot2::aes(x = x, y = y, group = interaction(transcript_id, gene_id), fill = strand),
+        ggplot2::aes(x = x, y = y, group = poly_id, fill = strand),
         color = "black")+
       
       ggplot2::geom_text(
@@ -976,7 +1013,7 @@ return(gtf_plot)
       
       ggplot2::geom_text(
         data = exons_normal,
-        ggplot2::aes(x = midpoint, y = track, label = transcript_id),
+        ggplot2::aes(x = midpoint, y = track, label = gene_id),
         hjust = 1, vjust = 0.5, size = 3) +
       
       
