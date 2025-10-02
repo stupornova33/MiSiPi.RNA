@@ -55,7 +55,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE, struct_plo
   if(ml_plots == TRUE){
     ####  Add predicted ML probabilities ordered as in the readsize dist heatmap
     ml <- read.table(paste0(path_to_tables, "ml_probability.txt"), sep = "\t", header = TRUE) 
-    
+    ml_tab <- ml_tab %>% dplyr::full_join(ml, by = "locus", keep = TRUE) %>% dplyr::rename(locus = locus.x) %>% dplyr::select(-c(locus.y))
     ordered_ml <- ml[order,]
     rownames(ordered_ml) <- seq(1:nrow(ordered_ml))
     
