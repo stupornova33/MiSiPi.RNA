@@ -352,7 +352,7 @@
     r2_dt <- NULL
   } else {
     
-    if (write_fastas == TRUE) .write_proper_overhangs(r2_dt, NULL, wkdir, prefix, dicer_overlaps, "_miRNA")
+    if (write_fastas == TRUE) .write_proper_pairs(r2_dt, NULL, wkdir, prefix, dicer_overlaps, suffix = "_miRNA", calling_func = "mi", strand = strand)
     
     r2_dt <- NULL
     

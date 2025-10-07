@@ -141,59 +141,7 @@
 
     # 1/9/24 now make_BamDF returns sequence too, so read sequences can be extracted from that
     # ignoring reads with same start/stop but internal mismatches from output fasta
-    if (write_fastas == TRUE) {
-      # proper_overlaps <- overlaps %>% dplyr::filter(r1_end - r2_start == 10)
-      # overlaps <- NULL
-      proper_overlaps <- overlaps %>%
-        dplyr::mutate(overlap = dplyr::case_when(
-          r1_start > r2_start ~ (r2_end - r1_start), r1_start < r2_start ~ (r1_end - r2_start),
-          (r1_start >= r2_start & r1_end <= r2_end) ~ (r1_end - r1_start + 1),
-          (r2_start >= r1_start & r2_end <= r1_end) ~ (r2_end - r2_start + 1)
-        )) %>%
-        dplyr::filter(overlap == 10)
-      rreads <- data.frame()
-      freads <- data.frame()
-      tmp <- rbind(forward_dt, reverse_dt)
-
-      # need to fix this and make more efficient
-      for (i in 1:nrow(proper_overlaps)) {
-        tmp_r <- tmp[which(tmp$start == proper_overlaps$r1_start[i] & tmp$end == proper_overlaps$r1_end[i]), ] %>%
-          dplyr::distinct(start, end, .keep_all = TRUE)
-        tmp_f <- tmp[which(tmp$start == proper_overlaps$r2_start[i] & tmp$end == proper_overlaps$r2_end[i]), ] %>%
-          dplyr::distinct(start, end, .keep_all = TRUE)
-
-        rreads <- rbind(rreads, tmp_r)
-        freads <- rbind(freads, tmp_f)
-      }
-
-
-      rreads <- rreads %>%
-        dplyr::rename("r1_start" = "start", "r1_end" = "end", "r1_seq" = seq) %>%
-        dplyr::select(-c(width, first, rname))
-      freads <- freads %>%
-        dplyr::rename("r2_start" = "start", "r2_end" = "end", "r2_seq" = seq) %>%
-        dplyr::select(-c(width, first, rname))
-
-      paired_seqs <- cbind(rreads, freads)
-
-      rreads <- NULL
-      freads <- NULL
-
-      paired_seqs <- paired_seqs %>%
-        dplyr::mutate(read1_seq = paste0(">", chrom_name, ":", paired_seqs$r1_start, "-", paired_seqs$r1_end, " ", paired_seqs$r1_seq), read2_seq = paste0(">", chrom_name, ":", paired_seqs$r2_start, "-", paired_seqs$r2_end, " ", paired_seqs$r2_seq))
-
-      fastas <- paired_seqs %>%
-        dplyr::select(c(read1_seq, read2_seq)) %>%
-        dplyr::transmute(col1 = paste0(read1_seq, ",", read2_seq)) %>%
-        tidyr::separate_rows(col1, sep = ",")
-
-      fastas <- stringi::stri_split_regex(fastas$col1, " ")
-
-      write.table(unlist(fastas), file = paste0(prefix, "_piRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
-
-      paired_seqs <- NULL
-      fastas <- NULL
-    }
+    if (write_fastas == TRUE) .write_proper_pairs(forward_dt, reverse_dt, wkdir, prefix, overlaps, suffix = "", calling_func = "pi")
 
     cat(file = logfile, paste0("Making counts table.", "\n"), append = TRUE)
 

@@ -113,7 +113,7 @@
         p3_overhang = r1_end - r2_end
       )
     
-    if (write_fastas == TRUE) .write_proper_overhangs(forward_df, reverse_df, wkdir, prefix, overlaps, "")
+    if (write_fastas == TRUE) .write_proper_pairs(forward_df, reverse_df, wkdir, prefix, overlaps, suffix = "", calling_func = "si")
     
     # calculate the number of dicer pairs for the zscore
     dicer_overhangs <- calc_overhangs(overlaps$r1_start, overlaps$r1_end,
