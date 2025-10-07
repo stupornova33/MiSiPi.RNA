@@ -10,7 +10,7 @@ For more details about the package or to cite, please visit https://www.biorxiv.
 Characterization of small RNA pathways
 
 ### Installation and Basic Usage
-You can find the full documentation and examples [here](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html).
+You can find the full documentation and examples [here](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.md).
 
 In order to install MiSiPi.RNA, you must first install devtools and BiocManager:
 
@@ -54,6 +54,8 @@ The input for MiSiPi.RNA's main function is an object created by the set_vars() 
 - **gtf_file**        - Full path to a 9 column GTF file. Required only if annotate_region is TRUE
 - **write_fastas**    - (TRUE or FALSE) If TRUE, MiSiPi.RNA will write read pairs from functions to a file. Default is FALSE
 - **out_type**        - ("pdf" or "png") Specifies the output type. Default is "pdf"
+- **use_bed_names**   - (Optional) Specifies whether column 4 of the region of interest BED file should be used as names for output files (Default = FALSE)
+- **density_timeout** - (Optional) The density plot and calc_phasing functions can take awhile to run for highly abundant loci, and thus we set a default timeout of 3600 seconds (1 hour). If you wish to override this, provide a time in seconds. 
 
 
 ```
@@ -70,7 +72,8 @@ vars <- set_vars(
     weight_reads = "none",
     gtf_file = "path/to/gtf",
     write_fastas = FALSE,
-    out_type = "pdf"
+    out_type = "pdf", 
+    use_bed_names = FALSE
 )
 
 ```
