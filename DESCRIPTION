@@ -1,6 +1,6 @@
 Package: MiSiPi.RNA
 Title: Characterization of Small RNA Pathways
-Version: 1.1.4
+Version: 1.1.5
 Authors@R: c(
     person("Taiya", "Jarva", email = "t.m.jarva13@gmail.com", role = c("aut", "cre")),
     person("Chris", "Baugh", email = "chris.baugh@gmail.com", role = "ctb"))
