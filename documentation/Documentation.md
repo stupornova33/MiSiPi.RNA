@@ -71,7 +71,9 @@ miRNAs, you would run:
         weight_reads = "none",
         gtf_file = "path/to/gtf",
         write_fastas = FALSE,
-        out_type = "pdf"
+        out_type = "pdf",
+		use_bed_names = F, # OPTIONAL (default is FALSE). Specifies whether column 4 of the ROI file contains the locus name to use as file names
+		density_timeout = 3600 # OPTIONAL (default is 3600s), for functions that can run for a long time, move on to next locus after this amount of time 
     )
 
     misipi_rna(vars) - Default method is "all"
@@ -399,6 +401,9 @@ in your path:
 ``` bash
 
 #Identifying small RNA regions of interest
+# all small RNAs
+awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qseq ; if (length(seq) >= 18 && length(seq) <= 32) {print header, seq, qheader, qseq}}' < trimmed.fq > all.fastq
+
 #miRNAs & siRNAs: get reads of only miRNA and siRNA length
 awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qseq ; if (length(seq) >= 19 && length(seq) <= 23) {print header, seq, qheader, qseq}}' < trimmed.fq > small.fastq
 
@@ -406,8 +411,10 @@ awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qse
 awk 'BEGIN {OFS = "\n"} {header = $0; getline seq; getline qheader ; getline qseq ; if(length(seq) >= 23 && length(seq) <= 30) {print header, seq, qheader, qseq}}' < trimmed.fq > large.fastq
 
 #Align reads to genome
-bowtie -p 10 -a -m 100 --best --strata --no-unal genome.fna small.fastq -S | samtools view -@ 10 -q 10 -b |samtools sort -@ 10 -m 6G > small.bam
+bowtie -p 10 -a -m 100 --best --strata --no-unal genome.fna all.fastq -S | samtools view -@ 10 -q 10 -b |samtools sort -@ 10 -m 6G > all.bam
+samtools index all.bam
 
+bowtie -p 10 -a -m 100 --best --strata --no-unal genome.fna small.fastq -S | samtools view -@ 10 -q 10 -b |samtools sort -@ 10 -m 6G > small.bam
 samtools index small.bam
 
 bowtie -p 20 -a -m 100 --no-unal genome.fna large.fastq -S | samtools view -@ 10 -q 10 -b | samtools sort -@ 10 -m 6G > large.bam
