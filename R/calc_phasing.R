@@ -10,7 +10,7 @@
   if(nrow(df1) > 2000){ 
     phased <- .find_overlaps_chunks(df1, df2, n) 
   } else { 
-    phased <- .find_hp_overlaps(df2, df2, n) 
+    phased <- .find_hp_overlaps(df1, df2, n) 
   } 
   #phased <- .find_hp_overlaps(df1, df2, n) 
   
