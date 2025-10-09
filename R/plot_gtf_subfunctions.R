@@ -4,7 +4,9 @@
 # @param reg_stop an integer specifying the end location of region of interest
 # @return gtf_plot
 
-.plot_exons_only <- function(gtf, reg_start, reg_stop){
+.plot_exons_only <- function(gtf, reg_start, reg_stop) {
+  
+  roi_length <- reg_stop - reg_start + 1
   
   # Extract transcript ID from attribute field
   # Assign all transcripts to gene_id for easy matching
@@ -93,11 +95,8 @@
       label = glue::glue("{gene_id} - {transcript_id}")
     )
   
-  tip_size <- 0.2
-  track_height <- 0.2
-  
   # Generate coordinates for exon polygons
-  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, tip_size, track_height)
+  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, roi_length)
   
   TXT_SIZE <- 6
   
@@ -174,7 +173,9 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_transcripts_only <- function(gtf, reg_start, reg_stop){
+.plot_transcripts_only <- function(gtf, reg_start, reg_stop) {
+  
+  roi_length <- reg_stop - reg_start + 1
   
   # Extract Gene ID and transcript ID from attribute field
   for (i in 1:nrow(gtf)) {
@@ -243,12 +244,8 @@
       label = glue::glue("{gene_id} - {transcript_id} - (transcript)")
     )
   
-  # make polygons for pointed exons
-  tip_size <- 0.2  # fraction of exon width to convert to tip
-  track_height <- 0.2
-  
   # transcripts -> make polygons with tip
-  transcript_poly_data <- .get_pointed_poly_data(transcripts, tip_size, track_height)
+  transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
   TXT_SIZE <- 6
   
@@ -310,7 +307,9 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_genes_only <- function(gtf, reg_start, reg_stop){
+.plot_genes_only <- function(gtf, reg_start, reg_stop) {
+  
+  roi_length <- reg_stop - reg_start + 1
   
   # Extract Gene ID from attribute field
   for (i in 1:nrow(gtf)) {
@@ -374,11 +373,8 @@
       label = glue::glue("{gene_id} - (gene)")
     )
   
-  tip_size <- 0.2
-  track_height <- 0.2
-  
   # genes -> make polygons with tip
-  gene_poly_data <- .get_pointed_poly_data(genes, tip_size, track_height)
+  gene_poly_data <- .get_pointed_poly_data(genes, roi_length)
   
   TXT_SIZE <- 6
   
@@ -439,7 +435,9 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_transcripts_exons <- function(gtf, reg_start, reg_stop){
+.plot_transcripts_exons <- function(gtf, reg_start, reg_stop) {
+  
+  roi_length <- reg_stop - reg_start + 1
   
   # if transcript and exon information is both present
   # Extract transcript ID from attribute field
@@ -552,14 +550,11 @@
       label = glue::glue("{gene_id} - {transcript_id} - (transcript)")
     )
   
-  tip_size <- 0.2
-  track_height <- 0.2
-  
   # Generate polygon coordinates for exons
-  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, tip_size, track_height)
+  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, roi_length)
   
   # transcripts -> make polygons with tip like transcripts
-  transcript_poly_data <- .get_pointed_poly_data(transcripts, tip_size, track_height)
+  transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
   TXT_SIZE <- 6
   
@@ -661,7 +656,9 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_genes_exons <- function(gtf, reg_start, reg_stop){
+.plot_genes_exons <- function(gtf, reg_start, reg_stop) {
+  
+  roi_length <- reg_stop - reg_start + 1
 
   # Extract Gene ID from attribute field
   # Assign gene_id to gene and exon observations for grouping
@@ -779,15 +776,12 @@
       y = row_index - 0.4,
       label = glue::glue("{gene_id} - (gene)")
     )
-  
-  tip_size <- 0.2
-  track_height <- 0.2
 
   # Generate polygon coordinates for exons
-  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, tip_size, track_height)
+  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, roi_length)
   
   # genes -> make polygons with tip like transcripts
-  gene_poly_data <- .get_pointed_poly_data(genes, tip_size, track_height)
+  gene_poly_data <- .get_pointed_poly_data(genes, roi_length)
   
   TXT_SIZE <- 6
   
@@ -886,6 +880,8 @@
 
 .plot_genes_transcripts <- function(gtf, reg_start, reg_stop) {
   
+  roi_length <- reg_stop - reg_start + 1
+  
   # Extract Gene ID and Transcript Id from attribute field
   # Assign gene_id to all observations
   # Assign transcript_id to transcripts and exons for grouping
@@ -976,14 +972,11 @@
       label = glue::glue("{gene_id} - {transcript_id} - (transcript)")
     )
   
-  tip_size <- 0.2  # fraction of exon width to convert to tip
-  track_height <- 0.2
-  
   # genes -> make polygons with tip like transcripts
-  gene_poly_data <- .get_pointed_poly_data(genes, tip_size, track_height)
+  gene_poly_data <- .get_pointed_poly_data(genes, roi_length)
   
   # transcripts -> make polygons with tip like transcripts
-  transcript_poly_data <- .get_pointed_poly_data(transcripts, tip_size, track_height)
+  transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
   TXT_SIZE <- 6
   
@@ -1064,14 +1057,14 @@
     )
   
   return(gtf_plot)
-  
-  
 }
 
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_genes_exon_transcripts <- function(gtf, reg_start, reg_stop){
+.plot_genes_exon_transcripts <- function(gtf, reg_start, reg_stop) {
+  
+  roi_length <- reg_stop - reg_start + 1
   
   # Extract Gene ID and Transcript Id from attribute field
   # Assign gene_id to all observations
@@ -1209,18 +1202,15 @@
       y = row_index - 0.4,
       label = glue::glue("{gene_id} - {transcript_id} - (transcript)")
     )
-
-  tip_size <- 0.2  # fraction of exon width to convert to tip
-  track_height <- 0.2
   
   # Generate polygon coordinates for exons
-  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, tip_size, track_height)
+  exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, roi_length)
   
   # genes -> make polygons with tip like transcripts
-  gene_poly_data <- .get_pointed_poly_data(genes, tip_size, track_height)
+  gene_poly_data <- .get_pointed_poly_data(genes, roi_length)
   
   # transcripts -> make polygons with tip like transcripts
-  transcript_poly_data <- .get_pointed_poly_data(transcripts, tip_size, track_height)
+  transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
   TXT_SIZE <- 6
   
@@ -1342,7 +1332,7 @@
 }
 
 # Generate exon polygon coordinates for pointed and non-pointed exons
-.get_exon_poly_data <- function(normal_exons, pointed_exons, tip_size, track_height) {
+.get_exon_poly_data <- function(normal_exons, pointed_exons, roi_length) {
   # Empty data frame for safe row binding
   empty_poly_data <- data.frame(
     seqname = character(0),
@@ -1370,7 +1360,7 @@
   if (nrow(pointed_exons) == 0) {
     pointed_poly_data <- empty_poly_data
   } else {
-    pointed_poly_data <- .get_pointed_poly_data(pointed_exons, tip_size, track_height)
+    pointed_poly_data <- .get_pointed_poly_data(pointed_exons, roi_length)
   }
   
   # There might be a situation where there are no non-pointed exons
@@ -1378,7 +1368,7 @@
   if (nrow(normal_exons) == 0) {
     unpointed_poly_data <- empty_poly_data
   } else {
-    unpointed_poly_data <- .get_unpointed_poly_data(normal_exons, tip_size, track_height)
+    unpointed_poly_data <- .get_unpointed_poly_data(normal_exons)
   }
   
   combined_poly_data <- dplyr::bind_rows(unpointed_poly_data, pointed_poly_data)
@@ -1387,12 +1377,20 @@
 }
 
 # Generate coordinates for pointed exons, genes, and transcripts
-.get_pointed_poly_data <- function(df, tip_size, track_height) {
+.get_pointed_poly_data <- function(df, roi_length) {
+  
+  tip_size <- 0.1 * roi_length # Fraction of roi length being plotted to determine arrow size
+  track_height <- 0.2
+  
+  
   pointed_poly_data <- df %>%
     dplyr::rowwise() %>%
     dplyr::mutate(coords = list({
       width <- (end - start)
-      tip <- max(width * tip_size, 50)  # at least 50 bp tip
+      #tip <- max(width * tip_size, 50)  # at least 50 bp tip
+      # Arrows should be 10% of the region in length unless the feature length * .5 is smaller.
+      # That would make the features/arrows look odd, so fallback to half the feature width
+      tip <- ifelse(tip_size > width * .5, width * .5, tip_size)
       end_mod <- end - tip
       start_mod <- start + tip
       
@@ -1427,7 +1425,10 @@
 }
 
 # Generate coordinates for unpointed exons
-.get_unpointed_poly_data <- function(df, tip_size, track_height) {
+.get_unpointed_poly_data <- function(df) {
+  
+  track_height <- 0.2
+  
   unpointed_poly_data <- df %>%
     dplyr::rowwise() %>%
     dplyr::mutate(coords = list({
