@@ -22,7 +22,10 @@
   
   
   plot_df <- gtf %>%
-    dplyr::mutate(transcript_idx = match(transcript_id, unique(transcript_id))) %>%
+    dplyr::mutate(
+      transcript_idx = match(transcript_id, unique(transcript_id)),
+      polygon_idx = dplyr::row_number()
+    ) %>%
     dplyr::select(-c(score, frame, attribute))
   
   # Just in case, put rows in a good order for determining plot layout
@@ -120,7 +123,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, exon_idx),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -187,7 +190,10 @@
   }
   
   plot_df <- gtf %>%
-    dplyr::mutate(transcript_idx = match(transcript_id, unique(transcript_id))) %>%
+    dplyr::mutate(
+      transcript_idx = match(transcript_id, unique(transcript_id)),
+      polygon_idx = dplyr::row_number()
+    ) %>%
     dplyr::select(-c(score, frame, attribute))
   
   # Arrange rows for plotting
@@ -255,7 +261,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, gene_id),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -316,7 +322,10 @@
   }
   
   plot_df <- gtf %>%
-    dplyr::mutate(gene_idx = match(gene_id, unique(gene_id))) %>%
+    dplyr::mutate(
+      gene_idx = match(gene_id, unique(gene_id)),
+      polygon_idx = dplyr::row_number()
+    ) %>%
     dplyr::select(-c(score, frame, attribute))
   
   # Arrange rows for plotting
@@ -382,6 +391,7 @@
       ggplot2::aes(
         x = x,
         y = y,
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -448,7 +458,10 @@
   
 
   plot_df <- gtf %>%
-    dplyr::mutate(transcript_idx = match(transcript_id, unique(transcript_id))) %>%
+    dplyr::mutate(
+      transcript_idx = match(transcript_id, unique(transcript_id)),
+      polygon_idx = dplyr::row_number()
+    ) %>%
     dplyr::select(-c(score, frame, attribute))
   
   # Just in case, put rows in a good order for determining plot layout
@@ -572,7 +585,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, exon_idx),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -597,7 +610,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, gene_id),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -672,7 +685,8 @@
   plot_df <- gtf %>%
     dplyr::mutate(
       gene_idx = match(gene_id, unique(gene_id)),
-      transcript_idx = match(transcript_id, unique(transcript_id))
+      transcript_idx = match(transcript_id, unique(transcript_id)),
+      polygon_idx = dplyr::row_number()
     ) %>%
     dplyr::select(-c(score, frame, attribute))
   
@@ -799,7 +813,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, exon_idx),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -824,6 +838,7 @@
       ggplot2::aes(
         x = x,
         y = y,
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -893,7 +908,8 @@
   plot_df <- gtf %>%
     dplyr::mutate(
       gene_idx = match(gene_id, unique(gene_id)),
-      transcript_idx = match(transcript_id, unique(transcript_id))
+      transcript_idx = match(transcript_id, unique(transcript_id)),
+      polygon_idx = dplyr::row_number()
     ) %>%
     dplyr::select(-c(score, frame, attribute))
   
@@ -980,6 +996,7 @@
       ggplot2::aes(
         x = x,
         y = y,
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -1004,7 +1021,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, gene_id),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -1078,7 +1095,8 @@
   plot_df <- gtf %>%
     dplyr::mutate(
       gene_idx = match(gene_id, unique(gene_id)),
-      transcript_idx = match(transcript_id, unique(transcript_id))
+      transcript_idx = match(transcript_id, unique(transcript_id)),
+      polygon_idx = dplyr::row_number()
     ) %>%
     dplyr::select(-c(score, frame, attribute))
     
@@ -1228,7 +1246,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, exon_idx),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -1253,6 +1271,7 @@
       ggplot2::aes(
         x = x,
         y = y,
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
@@ -1277,7 +1296,7 @@
       ggplot2::aes(
         x = x,
         y = y,
-        group = interaction(transcript_id, gene_id),
+        group = polygon_idx,
         fill = strand
       ),
       color = "black"
