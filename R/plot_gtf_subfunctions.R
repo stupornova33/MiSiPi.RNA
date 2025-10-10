@@ -4,7 +4,7 @@
 # @param reg_stop an integer specifying the end location of region of interest
 # @return gtf_plot
 
-.plot_exons_only <- function(gtf, reg_start, reg_stop) {
+.plot_exons_only <- function(gtf, reg_start, reg_stop, logfile) {
   
   roi_length <- reg_stop - reg_start + 1
   
@@ -173,7 +173,7 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_transcripts_only <- function(gtf, reg_start, reg_stop) {
+.plot_transcripts_only <- function(gtf, reg_start, reg_stop, logfile) {
   
   roi_length <- reg_stop - reg_start + 1
   
@@ -307,7 +307,7 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_genes_only <- function(gtf, reg_start, reg_stop) {
+.plot_genes_only <- function(gtf, reg_start, reg_stop, logfile) {
   
   roi_length <- reg_stop - reg_start + 1
   
@@ -435,7 +435,7 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_transcripts_exons <- function(gtf, reg_start, reg_stop) {
+.plot_transcripts_exons <- function(gtf, reg_start, reg_stop, logfile) {
   
   roi_length <- reg_stop - reg_start + 1
   
@@ -656,7 +656,7 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_genes_exons <- function(gtf, reg_start, reg_stop) {
+.plot_genes_exons <- function(gtf, reg_start, reg_stop, logfile) {
   
   roi_length <- reg_stop - reg_start + 1
 
@@ -878,7 +878,7 @@
 }
 
 
-.plot_genes_transcripts <- function(gtf, reg_start, reg_stop) {
+.plot_genes_transcripts <- function(gtf, reg_start, reg_stop, logfile) {
   
   roi_length <- reg_stop - reg_start + 1
   
@@ -1062,7 +1062,7 @@
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
-.plot_genes_exon_transcripts <- function(gtf, reg_start, reg_stop) {
+.plot_genes_exon_transcripts <- function(gtf, reg_start, reg_stop, logfile) {
   
   roi_length <- reg_stop - reg_start + 1
   

@@ -32,19 +32,19 @@
   genes_present <- any(gtf$feature == "gene")
   
   if (exons_present & !transcripts_present & !genes_present) { # exons only
-    gtf_plot <- .plot_exons_only(gtf, reg_start, reg_stop)
+    gtf_plot <- .plot_exons_only(gtf, reg_start, reg_stop, logfile)
   } else if (exons_present & transcripts_present & !genes_present) { # exons and transcripts
-    gtf_plot <- .plot_transcripts_exons(gtf, reg_start, reg_stop)
+    gtf_plot <- .plot_transcripts_exons(gtf, reg_start, reg_stop, logfile)
   } else if (!exons_present & transcripts_present & genes_present) { # genes and transcripts
-    gtf_plot <- .plot_genes_transcripts(gtf, reg_start, reg_stop)
+    gtf_plot <- .plot_genes_transcripts(gtf, reg_start, reg_stop, logfile)
   } else if (exons_present & transcripts_present & genes_present) { # exons and transcripts and genes
-    gtf_plot <- .plot_genes_exon_transcripts(gtf, reg_start, reg_stop)
+    gtf_plot <- .plot_genes_exon_transcripts(gtf, reg_start, reg_stop, logfile)
   } else if (!exons_present & transcripts_present & !genes_present) { # transcripts only
-    gtf_plot <- .plot_transcripts_only(gtf, reg_start, reg_stop)
+    gtf_plot <- .plot_transcripts_only(gtf, reg_start, reg_stop, logfile)
   } else if (!exons_present & !transcripts_present & genes_present) { # genes only
-    gtf_plot <- .plot_genes_only(gtf, reg_start, reg_stop)
+    gtf_plot <- .plot_genes_only(gtf, reg_start, reg_stop, logfile)
   } else { # exons and genes only
-    gtf_plot <- .plot_genes_exons(gtf, reg_start, reg_stop)
+    gtf_plot <- .plot_genes_exons(gtf, reg_start, reg_stop, logfile)
   }
   
   return(gtf_plot)

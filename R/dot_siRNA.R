@@ -188,7 +188,8 @@
     }
     
     if (annotate_region) {
-      gtf_plot <- .wrapper_plot_gtf(gtf_file, chrom_name, reg_start, reg_stop, logfile)
+      log_path <- file.path(wkdir, logfile)
+      gtf_plot <- .wrapper_plot_gtf(gtf_file, chrom_name, reg_start, reg_stop, log_path)
 
       if(is.null(gtf_plot)){
         gtf_plot <- null_plot("Annotation Plot", "No features in region")
