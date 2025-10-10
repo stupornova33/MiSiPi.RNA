@@ -98,7 +98,7 @@ miRNA <- function(vars, output_dir) {
       # If miRNA is called from run_all, then density and distribution will be generated in that function
       bam_obj <- .open_bam(bam_file, logfile)
       plus_df <- .get_filtered_bam_df(bam_obj, chrom, reg_start, reg_stop, "plus", 18, 32, FALSE)
-      minus_df <- .get_filtered_bam_df(bam_obj, chrom, reg_start, reg_stop, "plus", 18, 32, FALSE)
+      minus_df <- .get_filtered_bam_df(bam_obj, chrom, reg_start, reg_stop, "minus", 18, 32, FALSE)
 
       stranded_size_dist <- .get_stranded_read_dist(plus_df, minus_df)
       read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist)
