@@ -7,10 +7,22 @@ miRNA <- function(vars, output_dir) {
   total_iterations <- length(vars$chrom_name)
   idx_vec <- 1:total_iterations
 
+  genome_file <- vars$genome
+  bam_file <- vars$bam_file
+  bed_file <- vars$roi
+  plot_output <- vars$plot_output
+  RNAfold_path <- vars$path_to_RNAfold
+  RNAplot_path <- vars$path_to_RNAplot
+  write_fastas <- vars$write_fastas
+  weight_reads <- vars$weight_reads
+  out_type <- vars$out_type
+  use_bed_names <- vars$use_bed_names
+  density_timeout <- vars$density_timeout
+  
   .print_intro(
-    roi = vars$roi,
-    bam = vars$bam_file,
-    genome = vars$genome,
+    roi = bed_file,
+    bam = bam_file,
+    genome = genome_file,
     method = "miRNA"
   )
 
@@ -20,30 +32,24 @@ miRNA <- function(vars, output_dir) {
   dir.create(mi_dir)
   file.create(logfile)
   
-  genome <- vars$genome
-  bam <- vars$bam_file
-  plot_output <- vars$plot_output
-  RNAfold_path <- vars$path_to_RNAfold
-  RNAplot_path <- vars$path_to_RNAplot
-  write_fastas <- vars$write_fastas
-  weight_reads <- vars$weight_reads
-  out_type <- vars$out_type
-  
   for (i in idx_vec) {
     chrom <- vars$chrom_name[i]
     reg_start <- vars$reg_start[i]
     reg_stop <- vars$reg_stop[i]
-    chr_length <- vars$length[i]
+    prefix <- vars$prefix[i]
+    iteration_output <- vars$iteration_output[i]
     
-    cli::cli_inform("Starting plus strand")
+    .inform_iteration(i, total_iterations, iteration_output)
+    
+    #cli::cli_inform("Starting plus strand")
     plus_results <- .miRNA(
       chrom_name = chrom,
       reg_start = reg_start,
       reg_stop = reg_stop,
-      length = chr_length,
+      prefix = prefix,
       strand = "+",
-      genome_file = genome,
-      bam_file = bam,
+      genome_file = genome_file,
+      bam_file = bam_file,
       logfile = logfile,
       wkdir = mi_dir,
       plot_output = plot_output,
@@ -52,19 +58,18 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
-      i = i,
-      i_total = total_iterations
+      use_bed_names = use_bed_names
     )
     
-    cli::cli_inform(c("", "Starting minus strand"))
+    #cli::cli_inform("Starting minus strand")
     minus_results <- .miRNA(
       chrom_name = chrom,
       reg_start = reg_start,
       reg_stop = reg_stop,
-      length = chr_length,
+      prefix = prefix,
       strand = "-",
-      genome_file = genome,
-      bam_file = bam,
+      genome_file = genome_file,
+      bam_file = bam_file,
       logfile = logfile,
       wkdir = mi_dir,
       plot_output = plot_output,
@@ -73,42 +78,39 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
-      i = i,
-      i_total = total_iterations
+      use_bed_names = use_bed_names
     )
     
-    .compare_miRNA_strands(vars$chrom_name, vars$reg_start, vars$reg_stop, output_dir)
+    .compare_miRNA_strands(output_dir)
     
-    # Generate plots
-    plus_plots <- plus_results$plots
-    plus_overhangs <- plus_results$overhangs
-    plus_overlaps <- plus_results$overlaps
-    
-    minus_plots <- minus_results$plots
-    minus_overhangs <- minus_results$overhangs
-    minus_overlaps <- minus_results$overlaps
-    
-    dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(plus_overhangs, minus_overhangs)
-    overlap_probability_plot <- .plot_miRNA_overlap_probability(plus_overlaps, minus_overlaps)
-    
-    
-    if (!is.null(plus_plots$distribution)) {
-      read_distribution_plot <- plus_plots$distribution
-    } else {
-      read_distribution_plot <- minus_plots$distribution
-    }
-    
-    if (!is.null(plus_plots$density)) {
-      read_density_plot <- plus_plots$density
-    } else {
-      read_density_plot <- minus_plots$density
-    }
-    
-    prefix <- .get_region_string(chrom, reg_start, reg_stop)
-    
-    # Print the plots to a file
-    .print_miRNA_plots(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, mi_dir)
+    if (plot_output == TRUE) {
+      # Generate plots
+      plus_overhangs <- plus_results$overhangs
+      plus_overlaps <- plus_results$overlaps
+      
+      minus_overhangs <- minus_results$overhangs
+      minus_overlaps <- minus_results$overlaps
+      
+      dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(plus_overhangs, minus_overhangs)
+      overlap_probability_plot <- .plot_miRNA_overlap_probability(plus_overlaps, minus_overlaps)
+      
+      # Moved the density and distribution plots here so they wouldn't be called twice if both strands get processed
+      # If miRNA is called from run_all, then density and distribution will be generated in that function
+      bam_obj <- .open_bam(bam_file, logfile)
+      plus_df <- .get_filtered_bam_df(bam_obj, chrom, reg_start, reg_stop, "plus", 18, 32, FALSE)
+      minus_df <- .get_filtered_bam_df(bam_obj, chrom, reg_start, reg_stop, "minus", 18, 32, FALSE)
 
+      stranded_size_dist <- .get_stranded_read_dist(plus_df, minus_df)
+      read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist)
+      .close_bam(bam_obj)
+      
+      read_density_plot <- .read_density_by_size(chrom, reg_start, reg_stop, bam_file, mi_dir, logfile, density_timeout)
+      
+      plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, i)
+      
+      # Print the plots to a file
+      .print_miRNA_plots(read_distribution_plot, read_density_plot, dicer_overhang_plot, overlap_probability_plot, out_type, prefix, mi_dir, plot_details)
+    }
   }
   
   .inform_complete(mi_dir)

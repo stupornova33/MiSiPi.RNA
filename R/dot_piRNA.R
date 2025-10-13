@@ -4,9 +4,10 @@
 # @param chrom_name a string
 # @param reg_start a whole number
 # @param reg_stop a whole number
-# @param length an integer
+# @param prefix either the bed file name or a roi string in the format chr-start_stop
 # @param bam_file a string
 # @param genome_file a string
+# @param bed_file a string
 # @param logfile a string
 # @param wkdir a string
 # @param pal a string
@@ -14,48 +15,46 @@
 # @param weight_reads a string, Determines whether read counts will be weighted and with which method. Valid options are "weight_by_prop", "locus_norm", a user-defined value, or "none". See MiSiPi documentation for descriptions of the weighting methods.
 # @param write_fastas a bool, Determines whether piRNA pairs will be written to fasta. Expected values are TRUE or FALSE
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf". Default is PDF.
+# @param method
+# @param current_iteration
+# @param i_total
+# @param iteration_input
+# @param density_timeout A timeout in seconds defining how long read_densityBySize is allowed to run
 # @return plots, heat results, and zdf
 
-.piRNA <- function(chrom_name, reg_start, reg_stop, length, bam_file,
-                   genome_file, logfile, wkdir, pal, plot_output,
-                   weight_reads, write_fastas, out_type,
-                   method = c("self", "all"), i = NULL, i_total = NULL) {
+.piRNA <- function(chrom_name, reg_start, reg_stop, prefix, bam_file,
+                   genome_file, bed_file, logfile, wkdir, pal, plot_output,
+                   weight_reads, write_fastas, out_type, method = c("self", "all"),
+                   current_iteration = NULL, i_total = NULL, iteration_input = NULL,
+                   density_timeout) {
   
   # i and i_total will be null if called from run_all
-  if (!is.null(i)) {
-    .inform_iteration(i, i_total, chrom_name)
+  if (!is.null(current_iteration)) {
+    .inform_iteration(current_iteration, i_total, iteration_input)
   }
   
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
   width <- pos <- NULL
-  bam_obj <- .open_bam(bam_file, logfile)
-
-  # Get the reads from the BAM using Rsamtools
-  cat(file = logfile, "Making chromP and chromM\n", append = TRUE)
-  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
-  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
-
+  
   ################################################################# ping pong piRNA ##############################################################
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, paste0(prefix, "\n"), append = TRUE)
   cat(file = logfile, paste0("Filtering forward and reverse reads by length", "\n"), append = TRUE)
 
-
+  # Get the reads from the BAM using Rsamtools
+  bam_obj <- .open_bam(bam_file, logfile)
+  
   # Make forward and reverse dataframes filtered for width
-  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 16) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1)
-
-  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 16) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1)
-
-
-  # for the read size dist plot
-  cat(file = logfile, paste0("Getting read size distribution.", "\n"), append = TRUE)
-
-  read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
+  forward_dt <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop,
+                                     strand = "+", min_width = 18, max_width = 32,
+                                     include_seq = TRUE)
+  reverse_dt <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop,
+                                     strand = "-", min_width = 18, max_width = 32,
+                                     include_seq = TRUE)
+  
+  # Generating this plot earlier than others due to the need for unsummarized reads
+  if (plot_output & method == "self") {
+    stranded_size_dist <- .get_stranded_read_dist(forward_dt, reverse_dt)
+    read_distribution_plot <- .plot_sizes_by_strand(stranded_size_dist)
+  }
 
   # Summarize data frames into unique reads with a column of duplicates
   forward_dt <- forward_dt %>%
@@ -66,20 +65,16 @@
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
 
-  reverse_dt <- reverse_dt %>%
-    dplyr::group_by_all() %>%
-    dplyr::summarize(count = dplyr::n())
-
-  chromP <- NULL
-  chromM <- NULL
-
-  # for piRNA output tables
-  size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
-    dplyr::group_by(width) %>%
-    dplyr::summarize(count = sum(count))
-
-  .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, type = "piRNA")
-  size_dist <- NULL
+  if (method == "self") {
+    # for piRNA output tables
+    size_dist <- dplyr::bind_rows(forward_dt, reverse_dt) %>%
+      dplyr::group_by(width) %>%
+      dplyr::summarize(count = sum(count))
+    
+    .output_readsize_dist(size_dist, prefix, wkdir, strand = NULL, type = "piRNA")
+    size_dist <- NULL
+  }
+  
 
   # Expand the data frames back to full size and weight reads in some cases
   # include "T" argument to return read sequences
@@ -108,9 +103,9 @@
   if (nrow(forward_dt) == 0 || nrow(reverse_dt) == 0) {
     z_res <- data.frame(overlap = 4:30, count = 0)
     z_df <- data.frame(Overlap = c(seq(4, 30)), zscore = 0, ml_zscore = -33)
-    heat_results <- matrix(data = 0, nrow = 17, ncol = 17)
-    row.names(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
-    colnames(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    heat_results <- matrix(data = 0, nrow = 15, ncol = 15)
+    row.names(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    colnames(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
     
     # Setup overlap counts and overlap zscore data for appending to files
     overlap_out <- data.frame(t(z_res))
@@ -132,7 +127,7 @@
     .write.quiet(overlapz_out, overlapz_file)
     
   } else { 
-    # Summarize the reads for more efficient processing
+    # Re-summarize the weighted reads for more efficient processing
     f_summarized <- forward_dt %>%
       dplyr::group_by_all() %>%
       dplyr::count()
@@ -146,59 +141,7 @@
 
     # 1/9/24 now make_BamDF returns sequence too, so read sequences can be extracted from that
     # ignoring reads with same start/stop but internal mismatches from output fasta
-    if (write_fastas == TRUE) {
-      # proper_overlaps <- overlaps %>% dplyr::filter(r1_end - r2_start == 10)
-      # overlaps <- NULL
-      proper_overlaps <- overlaps %>%
-        dplyr::mutate(overlap = dplyr::case_when(
-          r1_start > r2_start ~ (r2_end - r1_start), r1_start < r2_start ~ (r1_end - r2_start),
-          (r1_start >= r2_start & r1_end <= r2_end) ~ (r1_end - r1_start + 1),
-          (r2_start >= r1_start & r2_end <= r1_end) ~ (r2_end - r2_start + 1)
-        )) %>%
-        dplyr::filter(overlap == 10)
-      rreads <- data.frame()
-      freads <- data.frame()
-      tmp <- rbind(forward_dt, reverse_dt)
-
-      # need to fix this and make more efficient
-      for (i in 1:nrow(proper_overlaps)) {
-        tmp_r <- tmp[which(tmp$start == proper_overlaps$r1_start[i] & tmp$end == proper_overlaps$r1_end[i]), ] %>%
-          dplyr::distinct(start, end, .keep_all = TRUE)
-        tmp_f <- tmp[which(tmp$start == proper_overlaps$r2_start[i] & tmp$end == proper_overlaps$r2_end[i]), ] %>%
-          dplyr::distinct(start, end, .keep_all = TRUE)
-
-        rreads <- rbind(rreads, tmp_r)
-        freads <- rbind(freads, tmp_f)
-      }
-
-
-      rreads <- rreads %>%
-        dplyr::rename("r1_start" = "start", "r1_end" = "end", "r1_seq" = seq) %>%
-        dplyr::select(-c(width, first, rname))
-      freads <- freads %>%
-        dplyr::rename("r2_start" = "start", "r2_end" = "end", "r2_seq" = seq) %>%
-        dplyr::select(-c(width, first, rname))
-
-      paired_seqs <- cbind(rreads, freads)
-
-      rreads <- NULL
-      freads <- NULL
-
-      paired_seqs <- paired_seqs %>%
-        dplyr::mutate(read1_seq = paste0(">", chrom_name, ":", paired_seqs$r1_start, "-", paired_seqs$r1_end, " ", paired_seqs$r1_seq), read2_seq = paste0(">", chrom_name, ":", paired_seqs$r2_start, "-", paired_seqs$r2_end, " ", paired_seqs$r2_seq))
-
-      fastas <- paired_seqs %>%
-        dplyr::select(c(read1_seq, read2_seq)) %>%
-        dplyr::transmute(col1 = paste0(read1_seq, ",", read2_seq)) %>%
-        tidyr::separate_rows(col1, sep = ",")
-
-      fastas <- stringi::stri_split_regex(fastas$col1, " ")
-
-      write.table(unlist(fastas), file = paste0(prefix, "_piRNA_pairs.fa"), sep = " ", quote = FALSE, row.names = FALSE, col.names = FALSE)
-
-      paired_seqs <- NULL
-      fastas <- NULL
-    }
+    if (write_fastas == TRUE) .write_proper_pairs(forward_dt, reverse_dt, wkdir, prefix, overlaps, suffix = "", calling_func = "pi")
 
     cat(file = logfile, paste0("Making counts table.", "\n"), append = TRUE)
 
@@ -215,7 +158,6 @@
       check_pi = TRUE
     )
 
-    # new_heat_plot <- .plot_si_heat(new_heat, chrom_name, reg_start, reg_stop, wkdir, pal = pal)
     # calculate overlaps of all reads for output table
     overlaps <- overlaps %>%
       dplyr::mutate(
@@ -242,9 +184,9 @@
 
     # forward_dt <- NULL
     # reverse_dt <- NULL
-    row.names(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    row.names(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
 
-    colnames(heat_results) <- c("16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
+    colnames(heat_results) <- c("18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32")
 
     output <- t(c(prefix, as.vector(heat_results)))
 
@@ -275,8 +217,6 @@
   overlaps <- NULL
 
   ################################################################### phased piRNAs #########################################################################
-  # prefix <- paste0(chrom_name, "_", reg_start, "-", reg_stop)
-
   ################## compute plus strand
 
   cat(file = logfile, paste0("Running plus strand for phased piRNAs.", "\n"), append = TRUE)
@@ -498,111 +438,43 @@
 
   #################################################################################################
   ### make plots
-  #  if(!sum(heat_results) == 0 && plot_output == TRUE){
 
   if (plot_output == TRUE) {
     cat(file = logfile, paste0("Generating plots.", "\n"), append = TRUE)
+    options(scipen = 999)
+    
     ### ping pong plots
-    ## calculate read density by size
-    data <- .read_densityBySize(chrom_name, reg_start, reg_stop, bam_file, wkdir)
-    stranded_size_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+    overlap_probability_plot <- .plot_piRNA_overlap_probability(z_df)
 
-    z <- .plot_piRNA_overlap_probability(z_df)
-    dist_plot <- .plot_sizes_by_strand(wkdir, stranded_size_dist, chrom_name, reg_start, reg_stop)
-
-    if ((reg_stop - reg_start) > 7000) {
-      density_plot <- .plot_large_density(data, reg_start, reg_stop)
-    } else {
-      density_plot <- .plot_density(data, reg_start, reg_stop)
-    }
-    data <- NULL
-
-    #plus_phased_plot <- .plot_phasedz(plus_df, "+")
-    #minus_phased_plot <- .plot_phasedz(minus_df, "-")
     phased_probability_plot <- .plot_piRNA_phasing_probability_combined(plus_df, minus_df)
 
-    options(scipen = 999)
     if (sum(heat_results) > 0) {
-      heat_plot <- .plot_heat(heat_results, chrom_name, reg_start, reg_stop, wkdir, "piRNA", pal = pal)
+      heat_plot <- .plot_heat(heat_results, "piRNA", pal = pal)
     } else {
-      heat_plot <- NULL
+      heat_plot <- null_plot("piRNA Proper Overlaps By Size", "No overlaps present")
     }
     
     # If called from run_all, then return plots as objects instead of writing them to files
     # They will be processed in run_all
     if (method == "all") {
       plots <- list()
-      plots$prefix <- prefix
-      plots$dist_plot <- dist_plot
-      plots$density_plot <- density_plot
-      plots$z <- z
-      plots$phased_plot <- phased_probability_plot
-      
-      # Wrap heat_plot in ggplotify::as.grob if not null since pheatmaps can't be coerced to grob by default
-      if (!is.null(heat_plot)) {
-        heat_plot <- ggplotify::as.grob(heat_plot)
-      }
-      
+      plots$overlap_probability_plot <- overlap_probability_plot
+      plots$phased_probability_plot <- phased_probability_plot
       plots$heat_plot <- heat_plot
     } else {
       # Create a null plots object for safe return
       plots <- NULL
-      if (!is.null(heat_plot)) {
-        top_left <- cowplot::plot_grid(dist_plot, NULL, ggplotify::as.grob(heat_plot),
-                                       ncol = 1, rel_widths = c(0.8, 1, 1),
-                                       rel_heights = c(0.8, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        top_right <- cowplot::plot_grid(z, NULL, phased_probability_plot,
-                                        ncol = 1, rel_widths = c(1, 1, 1),
-                                        rel_heights = c(1, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        
-        top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1, 0.1, 1))
-        
-        bottom <- cowplot::plot_grid(density_plot)
-        ## phased plots
-        # left null right null bottom
-        all_plot <- cowplot::plot_grid(top, NULL, bottom,
-                                       nrow = 3, ncol = 1, rel_widths = c(0.9, 0.9, 0.9),
-                                       rel_heights = c(1, 0.1, 0.8), align = "vh", axis = "lrtb"
-        )
-        # grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
-      } else {
-        top_left <- cowplot::plot_grid(dist_plot,
-                                       ncol = 1, rel_widths = c(1),
-                                       rel_heights = c(0.8, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        top_right <- cowplot::plot_grid(z, NULL, phased_probability_plot,
-                                        ncol = 1, rel_widths = c(1, 1, 1),
-                                        rel_heights = c(1, 0.1, 1), align = "vh", axis = "lrtb"
-        )
-        
-        top <- cowplot::plot_grid(top_left, NULL, top_right, ncol = 3, rel_widths = c(1, 0.1, 1))
-        
-        bottom <- cowplot::plot_grid(density_plot)
-        ## phased plots
-        # left null right null bottom
-        all_plot <- cowplot::plot_grid(top, NULL, bottom,
-                                       nrow = 3, ncol = 1, rel_widths = c(0.9, 0.9, 0.9),
-                                       rel_heights = c(1, 0.1, 0.8), align = "vh", axis = "lrtb"
-        )
-        # grDevices::pdf(file = paste0(wkdir, chrom_name,"_", reg_start,"-", reg_stop, "_pi-zscore.pdf"), height = 10, width = 14)
-      }
       
-      if (out_type == "png" || out_type == "PNG") {
-        grDevices::png(file = file.path(wkdir, paste0(prefix, "_pi-zscore.png")), width = 10, height = 11, bg = "white", units = "in", res = 300)
-        print(all_plot)
-        grDevices::dev.off()
-      } else {
-        grDevices::cairo_pdf(file = file.path(wkdir, paste0(prefix, "_pi-zscore.pdf")), width = 10, height = 11)
-        print(all_plot)
-        grDevices::dev.off()
-      }
+      ## These 2 plots will be made by .run_all and don't need to be remade unless method is "self"
+      density_plot <- .read_density_by_size(chrom_name, reg_start, reg_stop, bam_file, wkdir, logfile, timeout = density_timeout)
+      
+      plot_details <- plot_title(bam_file, bed_file, genome_file, prefix, current_iteration)
+      
+      plot_piRNA(read_distribution_plot, density_plot, overlap_probability_plot, phased_probability_plot, heat_plot, out_type, prefix, wkdir, plot_details)
     }
   } else { # plot_output == FALSE
     plots <- NULL
   }
-
 
   # get average zscore for first 4 distances (1-4nt)
   ave_plus_z <- mean(phased_plus_counts$phased_ml_z[1:4])

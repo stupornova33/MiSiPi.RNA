@@ -3,7 +3,7 @@
 # @param chrom_name a string
 # @param reg_stop an integer
 # @param reg_start an integer
-# @param length an integer
+# @param prefix either the bed file name or a roi string in the format chr-start_stop
 # @param bam_file a string
 # @param roi a string
 # @param genome_file a string
@@ -18,21 +18,26 @@
 # @param write_fastas a bool, TRUE or FALSE. Default is FALSE
 # @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
 # @param output_dir The current output directory
-# @param i
+# @param use_bed_names A boolean indicating if the names from the bed file are being used or if a region string is being used
+# @param current_iteration
 # @param i_total
+# @param iteration_input
+# @param density_timeout A timeout in seconds defining how long read_densityBySize is allowed to run
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
-                     length, bam_file,
+                     prefix, bam_file,
                      roi, genome_file,
                      si_pal, pi_pal, plot_output,
                      path_to_RNAfold, path_to_RNAplot,
                      annotate_region, weight_reads,
                      gtf_file, write_fastas, out_type,
-                     output_dir, i, i_total) {
+                     output_dir, use_bed_names,
+                     current_iteration, i_total, iteration_input,
+                     density_timeout) {
   width <- pos <- start <- end <- NULL
 
-  .inform_iteration(i, i_total, chrom_name)
+  .inform_iteration(current_iteration, i_total, iteration_input)
   
   calling_method <- "all"
 
@@ -65,51 +70,44 @@
     pi_phased26z = numeric(1)
   )
 
-  local_ml$locus <- .get_region_string(chrom_name, reg_start, reg_stop)
+  local_ml$locus <- prefix
 
   local_ml$locus_length <- reg_stop - reg_start + 1
-
-  prefix <- .get_region_string(chrom_name, reg_start, reg_stop)
 
   ####################################################################### process bam input files #############################################################################
 
   logfile <- file.path(output_dir, "run_all_log.txt")
 
   bam_obj <- .open_bam(bam_file)
-  bam_header <- Rsamtools::scanBamHeader(bam_obj)
-  chr_name <- names(bam_header[["targets"]])
-  chr_length <- unname(bam_header[["targets"]])
-  bam_header <- NULL
 
-  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop - 1, "\n"), append = TRUE)
+  cat(file = logfile, paste0("chrom_name: ", chrom_name, " reg_start: ", reg_start - 1, " reg_stop: ", reg_stop, "\n"), append = TRUE)
   cat(file = logfile, "Filtering forward and reverse reads by length\n", append = TRUE)
+  
+  forward_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus", min_width = 18, max_width = 32, include_seq = TRUE)
+  reverse_df <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus", min_width = 18, max_width = 32, include_seq = TRUE)
 
-  chromP <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "plus")
-  chromM <- .get_chr(bam_obj, chrom_name, reg_start, reg_stop, strand = "minus")
-
-  forward_dt <- data.table::setDT(.make_si_BamDF(chromP)) %>%
-    subset(width <= 32 & width >= 16) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1) %>%
-    dplyr::group_by_all() %>%
-    # get the number of times a read occurs
-    dplyr::summarize(count = dplyr::n()) %>%
-    na.omit()
-
-  reverse_dt <- data.table::setDT(.make_si_BamDF(chromM)) %>%
-    subset(width <= 32 & width >= 16) %>%
-    dplyr::rename(start = pos) %>%
-    dplyr::mutate(end = start + width - 1) %>%
+  # Get stranded read distribution data before summarizing
+  if (plot_output == TRUE) {
+    stranded_read_dist <- .get_stranded_read_dist(forward_df, reverse_df)
+  }
+  
+  # Summarize the reads for faster processing
+  forward_df <- forward_df %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n()) %>%
     na.omit()
+  
+  reverse_df <- reverse_df %>%
+    dplyr::group_by_all() %>%
+    dplyr::summarize(count = dplyr::n()) %>%
+    na.omit()
 
-  stranded_read_dist <- .get_stranded_read_dist(bam_obj, chrom_name, reg_start, reg_stop)
+  size_dist <- dplyr::bind_rows(forward_df, reverse_df) %>%
+    dplyr::group_by(width) %>%
+    dplyr::summarize(count = sum(count))
+  # Append read size distribution table to output file
+  .output_readsize_dist(size_dist, prefix, output_dir, strand = NULL, type = "all")
   
-  .plot_sizes_by_strand(wkdir, stranded_read_dist, chrom_name, reg_start, reg_stop)
-  
-  chromP <- NULL
-  chromM <- NULL
   size_dist <- NULL
 
   ############################################################################ get extra metrics for ML ###################################################################
@@ -123,7 +121,7 @@
   # perc_first_nucT
   # perc_A10
 
-  sizes <- data.frame(width = c(forward_dt$width, reverse_dt$width))
+  sizes <- data.frame(width = c(forward_df$width, reverse_df$width))
 
   set.seed(1234)
   sample <- sizes[sample(1:nrow(sizes)), ]
@@ -136,27 +134,27 @@
     local_ml$log_shap_p <- 2
   }
 
-  total_read_count <- sum(forward_dt$count) + sum(reverse_dt$count)
+  total_read_count <- sum(forward_df$count) + sum(reverse_df$count)
 
-  unique_read_count <- nrow(forward_dt) + nrow(reverse_dt)
+  unique_read_count <- nrow(forward_df) + nrow(reverse_df)
 
   local_ml$unique_read_bias <- unique_read_count / total_read_count
 
-  if (nrow(forward_dt) > 0) {
-    forward_dt <- .weight_reads(forward_dt, weight_reads = "none", 0L, 0L)
+  if (nrow(forward_df) > 0) {
+    forward_df <- .weight_reads(forward_df, weight_reads = "none", 0L, 0L)
   } else {
-    forward_dt <- forward_dt %>%
+    forward_df <- forward_df %>%
       dplyr::select(-c(count))
   }
 
-  if (nrow(reverse_dt) > 0) {
-    reverse_dt <- .weight_reads(reverse_dt, weight_reads = "none", 0L, 0L)
+  if (nrow(reverse_df) > 0) {
+    reverse_df <- .weight_reads(reverse_df, weight_reads = "none", 0L, 0L)
   } else {
-    reverse_dt <- reverse_dt %>% dplyr::select(-c(count))
+    reverse_df <- reverse_df %>% dplyr::select(-c(count))
   }
 
-  if (nrow(forward_dt) + nrow(reverse_dt) > 1) {
-    all_widths <- c(forward_dt$width, reverse_dt$width)
+  if (nrow(forward_df) + nrow(reverse_df) > 1) {
+    all_widths <- c(forward_df$width, reverse_df$width)
 
     m <- mean(all_widths)
     std <- sd(all_widths)
@@ -190,7 +188,7 @@
   all_widths <- NULL
 
   # If no data present, set machine learning defaults
-  if (nrow(forward_dt) == 0 && nrow(reverse_dt) == 0) {
+  if (nrow(forward_df) == 0 && nrow(reverse_df) == 0) {
     
     local_ml$strand_bias <- -33
     local_ml$perc_GC <- -33
@@ -199,8 +197,8 @@
     local_ml$perc_A10 <- -33
     
   } else {
-    perc_plus <- nrow(forward_dt) / (nrow(forward_dt) + nrow(reverse_dt))
-    perc_minus <- nrow(reverse_dt) / (nrow(reverse_dt) + nrow(forward_dt))
+    perc_plus <- nrow(forward_df) / (nrow(forward_df) + nrow(reverse_df))
+    perc_minus <- nrow(reverse_df) / (nrow(reverse_df) + nrow(forward_df))
     
     # combine perc minus and perc plus into "strand bias"
     if (perc_plus > perc_minus) {
@@ -209,10 +207,10 @@
       local_ml$strand_bias <- perc_minus
     }
     
-    all_seqs <- c(forward_dt$seq, reverse_dt$seq)
+    all_seqs <- c(forward_df$seq, reverse_df$seq)
     local_ml$perc_GC <- .get_GC_content(all_seqs)
     
-    read_dist <- .get_read_size_dist(forward_dt, reverse_dt)
+    read_dist <- .get_read_size_dist(forward_df, reverse_df)
     
     ave_size <- .highest_sizes(read_dist)
     
@@ -220,29 +218,15 @@
     
     cat(file = logfile, "Creating size plots\n", append = TRUE)
     
-    if (plot_output == TRUE) {
-      size_dir <- file.path(getwd(), "run_all", "size_plots")
-      
-      if (!dir.exists(size_dir)) {
-        dir.create(size_dir)
-      }
-      
-      plot_context <- paste0(chrom_name, ": ", reg_start, "-", reg_stop)
-      
-      size_plot <- .plot_sizes(read_dist)
-      plot_filename <- paste0(prefix, "_read_size_distribution.", out_type)
-      plot_file <- file.path(size_dir, plot_filename)
-      ggplot2::ggsave(
-        plot = size_plot,
-        filename = plot_file,
-        device = out_type,
-        height = 8,
-        width = 11,
-        units = "in"
-      )
-    }
+    # TODO
+    # Move this down into the plot section
+    # We are currently using the read size distribution plots returned from sub modules
+    # However, there is a slight chances that all 3 sub modules could return null results
+    # So we should perhaps generate the size dist plot here for some output to be displayed
+    # In each region's combined plot
+    #size_plot <- .plot_sizes(read_dist)
     
-    local_ml$perc_first_nucT <- .first_nuc_T(forward_dt, reverse_dt)
+    local_ml$perc_first_nucT <- .first_nuc_T(forward_df, reverse_df)
     
     all_nuc_10 <- all_seqs %>%
       stringr::str_sub(10, 10)
@@ -269,47 +253,40 @@
   si_log <- file.path(si_dir, "siRNA_log.txt")
 
   si_res <- .siRNA(
-    chrom_name, reg_start, reg_stop,
-    length, genome_file,
-    bam_file, si_log, si_dir,
-    si_pal, plot_output, path_to_RNAfold,
+    chrom_name, reg_start, reg_stop, prefix,
+    genome_file, bam_file, roi,
+    si_log, si_dir, si_pal,
+    plot_output, path_to_RNAfold,
     annotate_region, weight_reads, gtf_file,
-    write_fastas, out_type, calling_method
+    write_fastas, out_type, calling_method, density_timeout = density_timeout
   )
   
-  # If plots object is not in si_res, it will return NULL
-  siRNA_plots <- si_res$plots
-
-  max_si_heat <- .get_max_si_heat(si_res)
+  max_si_heat <- .get_max_si_heat(si_res$heat)
   local_ml$highest_si_col <- max_si_heat$highest_si_col
   
   si_dicerz <- si_res$si_dicer$ml_zscore[5]
   local_ml$si_dicerz <- si_dicerz
 
-  plus_perc_paired <- si_res$dsh$plus_res$perc_paired
-  minus_perc_paired <- si_res$dsh$minus_res$perc_paired
-
   # changed 3/25 to be RPM
   local_ml$num_si_dicer_reads <- (si_res$si_dicer$proper_count[5] * 1000000) / total_read_count
-  local_ml$hp_perc_paired <- max(plus_perc_paired, minus_perc_paired)
+  
 
   ######################################################################### get hairpin-specific results ###############################################################
 
-  plus_phasedz <- si_res$dsh$plus_res$phased_tbl.phased_mlz
-  plus_mean <- mean(plus_phasedz[1:4])
+  mfe <- si_res$dsh$MFE
+  perc_paired <- si_res$dsh$perc_paired
   
-  minus_phasedz <- si_res$dsh$minus_res$phased_tbl.phased_mlz
-  minus_mean <- mean(minus_phasedz[1:4])
+  plus_phasedz_mean <- si_res$dsh$plus_dsh$hp_phased_mlz
+  minus_phasedz_mean <- si_res$dsh$minus_dsh$hp_phased_mlz
 
-  local_ml$hp_phasedz <- max(plus_mean, minus_mean)
-  local_ml$hp_mfe <- min(unlist(unname(si_res$dsh$minus_res$MFE)), unlist(unname(si_res$dsh$plus_res$MFE)))
+  plus_dicerz <- si_res$dsh$plus_dsh$hp_overhang_mlz
+  minus_dicerz <- si_res$dsh$minus_dsh$hp_overhang_mlz
 
-  plus_dicerz <- si_res$dsh$plus_res$hp_overhang_mlz
-  minus_dicerz <- si_res$dsh$minus_res$hp_overhang_mlz
-
+  local_ml$hp_mfe <- mfe
+  local_ml$hp_perc_paired <- perc_paired
   local_ml$hp_dicerz <- max(plus_dicerz, minus_dicerz)
+  local_ml$hp_phasedz <- max(plus_phasedz_mean, minus_phasedz_mean)
 
-  si_res <- NULL
   max_si_heat <- NULL
 
   ############################################################################# run miRNA function ####################################################################
@@ -323,62 +300,61 @@
   mi_dir <- file.path(output_dir, "miRNA")
   mi_log <- file.path(mi_dir, "miRNA_log.txt")
 
-  mi_res <- .miRNA(
-    chrom_name, reg_start, reg_stop,
-    length, "+",
-    genome_file, bam_file,
-    mi_log, mi_dir,
-    plot_output,
-    path_to_RNAfold,
-    path_to_RNAplot,
-    weight_reads,
-    write_fastas,
-    out_type,
+  mi_res_plus <- .miRNA(
+    chrom_name = chrom_name,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    prefix = prefix,
+    strand = "+",
+    genome_file = genome_file,
+    bam_file = bam_file,
+    logfile = mi_log,
+    wkdir = mi_dir,
+    plot_output = plot_output,
+    path_to_RNAfold = path_to_RNAfold,
+    path_to_RNAplot = path_to_RNAplot,
+    write_fastas = write_fastas,
+    weight_reads = weight_reads,
+    out_type = out_type,
+    use_bed_names = use_bed_names
   )
 
-  miRNA_plus_plots <- mi_res$plots
-  miRNA_plus_overhangs <- mi_res$overhangs
-  miRNA_plus_overlaps <- mi_res$overlaps
+  mirnaMFE_plus <- mi_res_plus$mfe
 
-  # Look at first result
-  # mi_res <- mi_res[[1]]
-  mirnaMFE_plus <- mi_res$mfe
-
-  pp_plus <- mi_res$perc_paired
+  pp_plus <- mi_res_plus$perc_paired
   
-  mirna_dicerz_plus <- mi_res$overhangs$ml_zscore[5]
+  mirna_dicerz_plus <- mi_res_plus$overhangs$ml_zscore[5]
 
-  plus_overlapz <- mean(mi_res$overlaps$ml_zscore[17:19])
+  plus_overlapz <- mean(mi_res_plus$overlaps$ml_zscore[17:19])
 
-  mi_res <- .miRNA(
-    chrom_name, reg_start, reg_stop,
-    length, "-",
-    genome_file, bam_file,
-    mi_log, mi_dir,
-    plot_output,
-    path_to_RNAfold,
-    path_to_RNAplot,
-    weight_reads,
-    write_fastas,
-    out_type,
+  mi_res_minus <- .miRNA(
+    chrom_name = chrom_name,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    prefix = prefix,
+    strand = "-",
+    genome_file = genome_file,
+    bam_file = bam_file,
+    logfile = mi_log,
+    wkdir = mi_dir,
+    plot_output = plot_output,
+    path_to_RNAfold = path_to_RNAfold,
+    path_to_RNAplot = path_to_RNAplot,
+    write_fastas = write_fastas,
+    weight_reads = weight_reads,
+    out_type = out_type,
+    use_bed_names = use_bed_names
   )
   
-  miRNA_minus_plots <- mi_res$plots
-  miRNA_minus_overhangs <- mi_res$overhangs
-  miRNA_minus_overlaps <- mi_res$overlaps
-  
-  miRNA_dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(miRNA_plus_overhangs, miRNA_minus_overhangs)
-  miRNA_overlap_probability_plot <- .plot_miRNA_overlap_probability(miRNA_plus_overlaps, miRNA_minus_overlaps)
+  .compare_miRNA_strands(output_dir)
 
-  # mi_res <- mi_res[[1]]
-  mirnaMFE_minus <- mi_res$mfe
+  mirnaMFE_minus <- mi_res_minus$mfe
   
-  pp_minus <- mi_res$perc_paired
+  pp_minus <- mi_res_minus$perc_paired
   
-  mirna_dicerz_minus <- mi_res$overhangs$ml_zscore[5]
+  mirna_dicerz_minus <- mi_res_minus$overhangs$ml_zscore[5]
   
-  minus_overlapz <- mean(mi_res$overlaps$ml_zscore[17:19])
-
+  minus_overlapz <- mean(mi_res_minus$overlaps$ml_zscore[17:19])
 
   if (is.na(mirnaMFE_minus) && !is.na(mirnaMFE_plus)) {
     local_ml$mirna_mfe <- mirnaMFE_plus
@@ -415,7 +391,7 @@
   pi_log <- file.path(pi_dir, "piRNA_log.txt")
 
   pi_res <- .piRNA(chrom_name, reg_start, reg_stop,
-    length, bam_file, genome_file,
+    prefix, bam_file, genome_file, roi,
     pi_log, pi_dir, pi_pal,
     plot_output = plot_output,
     weight_reads,
@@ -423,8 +399,6 @@
     out_type,
     calling_method
   )
-  
-  piRNA_plots <- pi_res$plots
 
   if (sum(pi_res$heat_results) != 0) {
     max_pi_heat <- .get_max_pi_heat(pi_res)
@@ -468,8 +442,6 @@
     local_ml$pi_phased26z <- max(phasedz26_plus, phasedz26_minus)
   }
 
-  pi_res <- NULL
-
   ####################################################################### add results to table ########################################################################
 
   tbl_pref <- strsplit(roi, "[.]")[[1]][1]
@@ -488,252 +460,111 @@
   .write.quiet(local_ml, ml_file)
  
   
-  #### Make combined plot for current locus #### 
-  # Set all possible plots to NULL initially
-  density_plot <- NULL
-  distribution_plot <- NULL
-  # miRNA specific plots
-  # Generated above
-  
-  # piRNA specific plots
-  piRNA_overlap_probability_plot <- NULL # piRNA_plots$z
-  piRNA_proper_overlaps_by_size_plot <- NULL # piRNA_plots$heat_plot
-  piRNA_phasing_probability_plot <- NULL # piRNA_plots$phased_plot
-  # siRNA specific plots
-  siRNA_arc_plot <- NULL # siRNA_plots$arc_plot
-  siRNA_dicer_overhang_probability_plot <- NULL # siRNA_plots$overhang_probability_plot
-  siRNA_phasing_probability_plot <- NULL # siRNA_plots$phasedz
-  siRNA_proper_overhangs_by_size_plot <- NULL # siRNA_plots$heat_plot
-  siRNA_gtf_plot <- NULL # siRNA_plots$gtf_plot
-  
-  # miRNA Plus Strand
-  if (!is.null(miRNA_plus_plots)) {
-    # Redundant plots
-    density_plot <- miRNA_plus_plots$density
-    distribution_plot <- miRNA_plus_plots$distribution
+  if (plot_output == FALSE) {
+    si_res <- NULL
+    mi_res_plus <- NULL
+    mi_res_minus <- NULL
+    pi_res <- NULL
+    return()
   }
   
-  # miRNA Minus Strand
-  if (!is.null(miRNA_minus_plots)) {
-    # Redundant Plots
-    if (is.null(density_plot)) {
-      density_plot <- miRNA_minus_plots$density
-    }
-    if (is.null(distribution_plot)) {
-      distribution_plot <- miRNA_minus_plots$distribution
-    }
-  }
+  #### Make combined plot for current locus ####
+  # Generate General Read Plots
+  read_density_plot <- .read_density_by_size(chrom_name, reg_start, reg_stop, bam_file, output_dir, logfile, density_timeout)
   
-  # piRNA
-  if (!is.null(piRNA_plots)) {
-    # Redundant Plots
-    if (is.null(density_plot)) {
-      density_plot <- piRNA_plots$density_plot
-    }
-    if (is.null(distribution_plot)) {
-      distribution_plot <- piRNA_plots$dist_plot
-    }
-    # piRNA specific plots
-    piRNA_overlap_probability_plot <- piRNA_plots$z
-    piRNA_proper_overlaps_by_size_plot <-piRNA_plots$heat_plot
-    piRNA_phasing_probability_plot <- piRNA_plots$phased_plot
-  }
+  read_distribution_plot <- .plot_sizes_by_strand(stranded_read_dist)
   
-  # siRNA
-  if (!is.null(siRNA_plots)) {
-    # Redundant Plots
-    if (is.null(density_plot)) {
-      density_plot <- siRNA_plots$density_plot
-    }
-    if (is.null(distribution_plot)) {
-      distribution_plot <- siRNA_plots$size_plot
-    }
-    # siRNA specific plots
+  # Generate miRNA Plots
+  miRNA_plus_overhangs <- mi_res_plus$overhangs
+  miRNA_plus_overlaps <- mi_res_plus$overlaps
+  mi_res_plus <- NULL
+  
+  miRNA_minus_overhangs <- mi_res_minus$overhangs
+  miRNA_minus_overlaps <- mi_res_minus$overlaps
+  mi_res_minus <- NULL
+  
+  miRNA_dicer_overhang_plot <- .plot_miRNA_dicer_overhang_probability(miRNA_plus_overhangs, miRNA_minus_overhangs)
+  miRNA_overlap_probability_plot <- .plot_miRNA_overlap_probability(miRNA_plus_overlaps, miRNA_minus_overlaps)
+  
+  # Gather siRNA Plots
+  siRNA_plots <- si_res$plots
+  
+  if (is.null(siRNA_plots)) {
+    # Generate plot placeholders for missing plots
+    siRNA_arc_plot <- NULL
+    siRNA_dicer_overhang_probability_plot <- NULL
+    siRNA_phasing_probability_plot <- NULL
+    siRNA_proper_overhangs_by_size_plot <- NULL
+    siRNA_gtf_plot <- NULL
+  } else {
+    # Arc Plot
     siRNA_arc_plot <- siRNA_plots$arc_plot
+    
+    # Dicer Overhang Probability
     siRNA_dicer_overhang_probability_plot <- siRNA_plots$overhang_probability_plot
-    siRNA_phasing_probability_plot <- siRNA_plots$phasedz
+    
+    # Phasing Probability
+    if (length(siRNA_plots$phasedz) == 1) {
+      siRNA_phasing_probability_plot <- NULL
+    } else {
+      siRNA_phasing_probability_plot <- siRNA_plots$phasedz
+    }
+    
+    # Proper Overhangs by Size
+    # NULL plot is now handled closer to plot generation
     siRNA_proper_overhangs_by_size_plot <- siRNA_plots$heat_plot
+    
+    # GTF Annotation
     siRNA_gtf_plot <- siRNA_plots$gtf_plot
   }
   
-  # Generate plot object
-  # There are currently a total of 18 possible plots
-  # Work will be done to considate these plots soon, but for now,
-  # we'll test out making a plot that is 2 columns wide and up to
-  # 9 columns long
+  si_res <- NULL
   
-  # miRNA_dicer_overhang_plot
-  # miRNA_overlap_probability_plot
   
-  # Check if each plot is null, if not place in all_plots list
-  all_plots <- list()
-  i <- 1
   
-  if (!is.null(distribution_plot)) {
-    all_plots[[i]] <- distribution_plot
-    i <- i + 1
-  }
-  if (!is.null(density_plot)) {
-    all_plots[[i]] <- density_plot
-    i <- i + 1
-  }
+  # Gather piRNA Plots
+  piRNA_plots <- pi_res$plots
   
-  if (!is.null(miRNA_dicer_overhang_plot)) {
-    all_plots[[i]] <- miRNA_dicer_overhang_plot
-    i <- i + 1
-  }
-  if (!is.null(miRNA_overlap_probability_plot)) {
-    all_plots[[i]] <- miRNA_overlap_probability_plot
-    i <- i + 1
-  }
-  if (!is.null(piRNA_overlap_probability_plot)) {
-    all_plots[[i]] <- piRNA_overlap_probability_plot
-    i <- i + 1
-  }
-  if (!is.null(piRNA_proper_overlaps_by_size_plot)) {
-    all_plots[[i]] <- piRNA_proper_overlaps_by_size_plot
-    i <- i + 1
-  }
-  if (!is.null(piRNA_phasing_probability_plot)) {
-    all_plots[[i]] <- piRNA_phasing_probability_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_arc_plot)) {
-    all_plots[[i]] <- siRNA_arc_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_dicer_overhang_probability_plot)) {
-    all_plots[[i]] <- siRNA_dicer_overhang_probability_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_phasing_probability_plot)) {
-    all_plots[[i]] <- siRNA_phasing_probability_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_proper_overhangs_by_size_plot)) {
-    all_plots[[i]] <- siRNA_proper_overhangs_by_size_plot
-    i <- i + 1
-  }
-  if (!is.null(siRNA_gtf_plot)) {
-    all_plots[[i]] <- siRNA_gtf_plot
-    i <- i + 1
-  }
-  
-  # Undo the last increment
-  i <- i - 1
-  
-  # Create plot row
-  # Since there will be 2 plots per row, we'll just round up
-  NUM_PLOT_ROWS <- ceiling(i / 2)
-  
-  plot_rows <- list() 
-  
-  for (i in seq(1, length(all_plots), 2)) {
-    left_plot <- all_plots[[i]]
-    
-    # Last Row
-    if ((length(all_plots) - i) < 2) {
-      if (length(all_plots) %% 2 == 0) {
-        right_plot <- all_plots[[i + 1]]
-      } else {
-        right_plot <- NULL
-      }
-    } else {
-      right_plot <- all_plots[[i + 1]]
-    }
-    
-    current_row <- cowplot::plot_grid(
-      left_plot,
-      NULL,
-      right_plot,
-      ncol = 3,
-      rel_widths = c(1, 0.3, 1),
-      rel_heights = c(1, 1, 1),
-      align = "hv", # Align both vertically and horizontally
-      axis = "lrtb"
-    )
-    
-    current_row_number <- length(plot_rows) + 1
-    plot_rows[[current_row_number]] <- current_row
-  }
-  
-  print(paste0("NUM_PLOT_ROWS: ", NUM_PLOT_ROWS))
-  # I hate that we currently have to do this series of if checks
-  # TODO: revisit this later
-  if (NUM_PLOT_ROWS == 1) {
-    all_plot <- plot_rows[[1]]
-  } else if (NUM_PLOT_ROWS == 2) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
-      align = "hv",
-      axis = "lrtb"
-    )
-  } else if (NUM_PLOT_ROWS == 3) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      plot_rows[[3]],
-      ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
-      align = "hv",
-      axis = "lrtb"
-    )
-  } else if (NUM_PLOT_ROWS == 4) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      plot_rows[[3]],
-      plot_rows[[4]],
-      ncol = 1,
-      rel_heights = rep(1, NUM_PLOT_ROWS),
-      rel_widths = rep(1, NUM_PLOT_ROWS),
-      align = "hv",
-      axis = "lrtb"
-    )
-  } else if (NUM_PLOT_ROWS == 5) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      plot_rows[[3]],
-      NULL,
-      plot_rows[[4]],
-      plot_rows[[5]],
-      ncol = 1,
-      rel_heights = c(1, 1, 1, 0.2, 1, 1), # 0.2 to add space above the arc, rest are 1
-      rel_widths = rep(1, NUM_PLOT_ROWS + 1),
-      align = "hv",
-      axis = "lrtb"
-    )
-  } else if (NUM_PLOT_ROWS == 6) {
-    all_plot <- cowplot::plot_grid(
-      plot_rows[[1]],
-      plot_rows[[2]],
-      plot_rows[[3]],
-      NULL,
-      plot_rows[[4]],
-      plot_rows[[5]],
-      plot_rows[[6]],
-      ncol = 1,
-      rel_heights = c(1, 1, 1, 0.2, 1, 1, 1), # 0.2 to add space above the arc, rest are 1
-      rel_widths = rep(1, NUM_PLOT_ROWS + 1),
-      align = "hv",
-      axis = "lrtb"
-    )
-  }
-  
-  height <- 4 * NUM_PLOT_ROWS
-  
-  if (out_type == "png") {
-    grDevices::png(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.png", sep = "_")), height = height, width = 11, units = "in", res = 300)
+  if (is.null(piRNA_plots)) {
+    piRNA_overlap_probability_plot <- NULL
+    piRNA_proper_overlaps_by_size_plot <- NULL
+    piRNA_phasing_probability_plot <- NULL
   } else {
-    grDevices::pdf(file = file.path(output_dir, "combined_plots", paste(prefix, "combined.pdf", sep = "_")), height = height, width = 11)
+    # Overlap Probability
+    piRNA_overlap_probability_plot <- piRNA_plots$overlap_probability_plot
+    
+    # Proper Overlaps by Size
+    piRNA_proper_overlaps_by_size_plot <- piRNA_plots$heat_plot
+    
+    # Phasing Probability
+    piRNA_phasing_probability_plot <- piRNA_plots$phased_probability_plot
   }
-  print(all_plot)
-  grDevices::dev.off()
+
+  pi_res <- NULL
   
+  plot_list <- list(
+    read_distribution_plot = read_distribution_plot,
+    siRNA_arc_plot = siRNA_arc_plot,
+    siRNA_dicer_overhang_probability_plot = siRNA_dicer_overhang_probability_plot,
+    piRNA_overlap_probability_plot = piRNA_overlap_probability_plot,
+    miRNA_dicer_overhang_plot = miRNA_dicer_overhang_plot,
+    read_density_plot = read_density_plot,
+    siRNA_phasing_probability_plot = siRNA_phasing_probability_plot,
+    piRNA_phasing_probability_plot = piRNA_phasing_probability_plot,
+    miRNA_overlap_probability_plot = miRNA_overlap_probability_plot,
+    siRNA_gtf_plot = siRNA_gtf_plot,
+    siRNA_proper_overhangs_by_size_plot = siRNA_proper_overhangs_by_size_plot,
+    piRNA_proper_overlaps_by_size_plot = piRNA_proper_overlaps_by_size_plot
+  )
+  
+  # Combined plot is 3 rows and 4 columns and will display in the order shown below
+  #
+  # Read Distribution Plot   -  Arc Plot      -  siRNA Overhangs by Size  -  piRNA Overlaps by Size
+  # miRNA Dcr Overhang Prob  -  Read Density  -  siRNA Dcr Overhang Prob  -  piRNA Overlap Prob
+  # miRNA Overlap Prob       -  GTF Plot      -  siRNA Phasing Prob       -  piRNA Phasing Prob
+  
+  plot_details <- plot_title(bam_file, roi, genome_file, prefix, current_iteration)
+  
+  # Arrange plots and write to a file
+  plot_combined_plots(plot_list, out_type, prefix, output_dir, plot_details)
 }

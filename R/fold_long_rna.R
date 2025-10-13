@@ -1,20 +1,17 @@
 # function to run RNAfold
 # processes output of RNA fold to get MFE and vien struct
 # returns list of values for each region
-# @param chrom_name a string
-# @param start a whole number
-# @param stop a whole number
+# @param prefix a string
 # @param converted a vector containing a sequence
 # @param path_to_RNAfold a string
 # @param wkdir a string
 # @return list
 
-.fold_long_rna <- function(chrom_name, start, stop, converted, path_to_RNAfold, wkdir) {
+.fold_long_rna <- function(prefix, converted, path_to_RNAfold, wkdir) {
   
   converted_df <- data.frame(converted)
   
-  region_string <- paste0(chrom_name, "-", start - 1, "_", stop - 1)
-  fasta_header <- paste0(">", region_string)
+  fasta_header <- paste0(">", prefix)
   
   colnames(converted_df) <- fasta_header
   
@@ -85,7 +82,9 @@
   #            FIELD 5: Dot bracket part 2 and MFE
   # 
   
-  
+  # Default NA results
+  mfe <- 0
+  vien_struct <- NA
   
   if (length(fold) == 0) {                        # EMPTY RESULTS
     warning("Empty RNAfold results, check input")
@@ -102,7 +101,7 @@
     
   } else if (length(fold) == 3 &&
              length(grep("WARNING", fold)) == 0) { # Normal result
-    output_file <- paste0(region_string, "_ss.ps")
+    output_file <- paste0(prefix, "_ss.ps")
     vien_seq <- fold[2]
     vien_mfe <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][2]
     vien_struct <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][1]
@@ -118,45 +117,32 @@
              length(grep("WARNING", fold)) > 0) { # Warning result/s
     idx <- grep("WARNING", fold)
     fold <- fold[-idx] # remove warnings since the number of warnings is unknown and need consistent indices
-    output_file <- paste0(region_string, "_ss.ps")
+    output_file <- paste0(prefix, "_ss.ps")
     vien_seq <- fold[2]
     vien_mfe <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][2]
     vien_struct <- stringi::stri_split_fixed(fold[3], pattern = " ", n = 2)[[1]][1]
     
   } else if(length(fold) > 4 &&
             identical(grep("WARNING", fold), integer(0)) ){
-    output_file <- paste0(region_string, "_ss.ps")
+    output_file <- paste0(prefix, "_ss.ps")
     vien_seq <- paste0(fold[2], fold[3])
     vien_mfe <- stringi::stri_split_fixed(fold[5], pattern = " ", n = 2)[[1]][2]
     struct <- paste0(fold[4], fold[5])
     vien_struct <- stringi::stri_split_fixed(struct, pattern = " ", n = 2)[[1]][1]
   }
-  
-  ct <- RRNA::makeCt(vien_struct, vien_seq)
 
-  if(sum(ct$bound) > 0){
-    # Using capture.output to silence the excessive console output from ct2coord
-    utils::capture.output(coord <- RRNA::ct2coord(ct), file = nullfile())
-    # RRNA::RNAPlot(coord, nt = TRUE)
+  if (!is.na(vien_struct)) {
     # split the string to get mfe
     # Split based on space and remove parentheses
-    mfe <- gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_mfe)))
-    mfe <- as.numeric(mfe)
-    start <- start
-    stop <- stop
-  
+    mfe <- as.numeric(gsub(" ", "", gsub("[)]", "", gsub("[(]", "", vien_mfe))))
+    
     # RNAfold creates files in the base directory in which MiSiPi was originally called
     # Move to results siRNA directory
     file.rename(from = output_file,
                 to = file.path(wkdir, output_file))
-  
-    return(list(start, stop, mfe, coord, vien_struct))
-  } else {
-    mfe <- 0
-    start <- start
-    stop <- stop
-    coord <- NA
-    res <- c(start, stop, mfe, coord, vien_struct)
-    return(res)
   }
+  
+  res <- list(mfe = mfe, vien_struct = vien_struct)
+  
+  return(res)
 }
