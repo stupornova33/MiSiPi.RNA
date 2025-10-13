@@ -137,16 +137,17 @@
   
   #### COMBINE ####
   # Modify the row_index of antisense to start after sense and nonsense to start after antisense
-  max_sense_row <- dplyr::if_else(
-    nrow(sense_df) == 0,
-    0,
-    max(sense_df$row_index)
-  )
-  max_antisense_row <- dplyr::if_else(
-    nrow(antisense_df) == 0,
-    0,
-    max(antisense_df$row_index)
-  )
+  if (nrow(sense_df) == 0) {
+    max_sense_row <- 0
+  } else {
+    max_sense_row <- max(sense_df$row_index)
+  }
+  
+  if (nrow(antisense_df) == 0) {
+    max_antisense_row <- 0
+  } else {
+    max_antisense_row <- max(antisense_df$row_index)
+  }
   
   antisense_df$row_index <- antisense_df$row_index + max_sense_row
   nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
@@ -224,72 +225,15 @@
   }
   
   # Generate Plot Object
-  gtf_plot <- ggplot2::ggplot() +
-    
-    # Draw the line that connects exons
-    ggplot2::geom_segment(
-      data = exons %>% dplyr::filter(!is.na(next_start)),
-      ggplot2::aes(
-        x = end,
-        xend = next_start,
-        y = row_index,
-        yend = row_index
-      ),
-      color = "black",
-      linewidth = 0.3
-    ) +
-    
-    # Exons
-    ggplot2::geom_polygon(
-      data = exon_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Exon Labels
-    ggplot2::geom_text(
-      data = exon_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Plot layout
-    ggplot2::scale_y_continuous(
-      breaks = NULL,
-      labels = NULL,
-      # The row indexes are currently in ascending order
-      # but the intention is to plot row 1 on top
-      # this transform of the y axis accomplishes that
-      transform = scales::transform_reverse()
-    ) +
-    ggplot2::scale_x_continuous(
-      limits = c(reg_start, reg_stop)
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(
-        "+" = "lightcoral",
-        "-" = "skyblue",
-        "." = "lightgray"
-      )
-    ) +
-    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank(),
-      plot.title = ggplot2::element_text(hjust = 0.5)
-    )
+  gtf_plot <- .get_gtf_plot(
+    plot_title = plot_title,
+    TXT_SIZE = TXT_SIZE,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    exons = exons,
+    exon_poly_data = exon_poly_data,
+    exon_labels = exon_labels
+  )
   
   return(gtf_plot)
 }
@@ -399,16 +343,17 @@
   
   #### COMBINE ####
   # Modify the row_index of antisense to start after sense and nonsense to start after antisense
-  max_sense_row <- dplyr::if_else(
-    nrow(sense_df) == 0,
-    0,
-    max(sense_df$row_index)
-  )
-  max_antisense_row <- dplyr::if_else(
-    nrow(antisense_df) == 0,
-    0,
-    max(antisense_df$row_index)
-  )
+  if (nrow(sense_df) == 0) {
+    max_sense_row <- 0
+  } else {
+    max_sense_row <- max(sense_df$row_index)
+  }
+  
+  if (nrow(antisense_df) == 0) {
+    max_antisense_row <- 0
+  } else {
+    max_antisense_row <- max(antisense_df$row_index)
+  }
   
   antisense_df$row_index <- antisense_df$row_index + max_sense_row
   nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
@@ -456,56 +401,14 @@
   }
 
   # Generate Plot Object
-  gtf_plot <- ggplot2::ggplot() +
-    
-    # Transcripts
-    ggplot2::geom_polygon(
-      data = transcript_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Transcript labels
-    ggplot2::geom_text(
-      data = transcript_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Plot layout
-    ggplot2::scale_y_continuous(
-      breaks = NULL,
-      labels = NULL,
-      transform = scales::transform_reverse()
-    ) +
-    ggplot2::scale_x_continuous(
-      limits = c(reg_start, reg_stop)
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(
-        "+" = "lightcoral",
-        "-" = "skyblue",
-        "." = "lightgray"
-      )
-    ) +
-    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank(),
-      plot.title = ggplot2::element_text(hjust = 0.5)
-    )
+  gtf_plot <- .get_gtf_plot(
+    plot_title = plot_title,
+    TXT_SIZE = TXT_SIZE,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    transcript_poly_data = transcript_poly_data,
+    transcript_labels = transcript_labels
+  )
   
   return(gtf_plot)
 }
@@ -616,16 +519,17 @@
   
   #### COMBINE ####
   # Modify the row_index of antisense to start after sense and nonsense to start after antisense
-  max_sense_row <- dplyr::if_else(
-    nrow(sense_df) == 0,
-    0,
-    max(sense_df$row_index)
-  )
-  max_antisense_row <- dplyr::if_else(
-    nrow(antisense_df) == 0,
-    0,
-    max(antisense_df$row_index)
-  )
+  if (nrow(sense_df) == 0) {
+    max_sense_row <- 0
+  } else {
+    max_sense_row <- max(sense_df$row_index)
+  }
+  
+  if (nrow(antisense_df) == 0) {
+    max_antisense_row <- 0
+  } else {
+    max_antisense_row <- max(antisense_df$row_index)
+  }
   
   antisense_df$row_index <- antisense_df$row_index + max_sense_row
   nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
@@ -675,56 +579,14 @@
   }
   
   # Generate Plot Object
-  gtf_plot <- ggplot2::ggplot() +
-
-    # Genes
-    ggplot2::geom_polygon(
-      data = gene_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Gene labels
-    ggplot2::geom_text(
-      data = gene_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Plot layout
-    ggplot2::scale_y_continuous(
-      breaks = NULL,
-      labels = NULL,
-      transform = scales::transform_reverse()
-    ) +
-    ggplot2::scale_x_continuous(
-      limits = c(reg_start, reg_stop)
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(
-        "+" = "lightcoral",
-        "-" = "skyblue",
-        "." = "lightgray"
-      )
-    ) +
-    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank(),
-      plot.title = ggplot2::element_text(hjust = 0.5)
-    )
+  gtf_plot <- .get_gtf_plot(
+    plot_title = plot_title,
+    TXT_SIZE = TXT_SIZE,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    gene_poly_data = gene_poly_data,
+    gene_labels = gene_labels
+  )
   
   return(gtf_plot)
 }
@@ -924,16 +786,17 @@
   
   #### COMBINE ####
   # Modify the row_index of antisense to start after sense and nonsense to start after antisense
-  max_sense_row <- dplyr::if_else(
-    nrow(sense_df) == 0,
-    0,
-    max(sense_df$row_index)
-  )
-  max_antisense_row <- dplyr::if_else(
-    nrow(antisense_df) == 0,
-    0,
-    max(antisense_df$row_index)
-  )
+  if (nrow(sense_df) == 0) {
+    max_sense_row <- 0
+  } else {
+    max_sense_row <- max(sense_df$row_index)
+  }
+  
+  if (nrow(antisense_df) == 0) {
+    max_antisense_row <- 0
+  } else {
+    max_antisense_row <- max(antisense_df$row_index)
+  }
   
   antisense_df$row_index <- antisense_df$row_index + max_sense_row
   nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
@@ -1033,97 +896,17 @@
   }
   
   # Generate Plot Object
-  gtf_plot <- ggplot2::ggplot() +
-    
-    # Draw the line that connects exons
-    ggplot2::geom_segment(
-      data = exons %>% dplyr::filter(!is.na(next_start)),
-      ggplot2::aes(
-        x = end,
-        xend = next_start,
-        y = row_index,
-        yend = row_index
-      ),
-      color = "black",
-      linewidth = 0.3
-    ) +
-    
-    # Exons
-    ggplot2::geom_polygon(
-      data = exon_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Exon Labels
-    ggplot2::geom_text(
-      data = exon_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Transcripts
-    ggplot2::geom_polygon(
-      data = transcript_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Transcript labels
-    ggplot2::geom_text(
-      data = transcript_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Plot layout
-    ggplot2::scale_y_continuous(
-      breaks = NULL,
-      labels = NULL,
-      # The row indexes are currently in ascending order
-      # but the intention is to plot row 1 on top
-      # this transform of the y axis accomplishes that
-      transform = scales::transform_reverse()
-    ) +
-    ggplot2::scale_x_continuous(
-      limits = c(reg_start, reg_stop)
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(
-        "+" = "lightcoral",
-        "-" = "skyblue",
-        "." = "lightgray"
-      )
-    ) +
-    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank(),
-      plot.title = ggplot2::element_text(hjust = 0.5)
-    )
+  gtf_plot <- .get_gtf_plot(
+    plot_title = plot_title,
+    TXT_SIZE = TXT_SIZE,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    exons = exons,
+    exon_poly_data = exon_poly_data,
+    exon_labels = exon_labels,
+    transcript_poly_data = transcript_poly_data,
+    transcript_labels = transcript_labels
+  )
   
   return(gtf_plot)
 }
@@ -1333,16 +1116,17 @@
   
   #### COMBINE ####
   # Modify the row_index of antisense to start after sense and nonsense to start after antisense
-  max_sense_row <- dplyr::if_else(
-    nrow(sense_df) == 0,
-    0,
-    max(sense_df$row_index)
-  )
-  max_antisense_row <- dplyr::if_else(
-    nrow(antisense_df) == 0,
-    0,
-    max(antisense_df$row_index)
-  )
+  if (nrow(sense_df) == 0) {
+    max_sense_row <- 0
+  } else {
+    max_sense_row <- max(sense_df$row_index)
+  }
+  
+  if (nrow(antisense_df) == 0) {
+    max_antisense_row <- 0
+  } else {
+    max_antisense_row <- max(antisense_df$row_index)
+  }
   
   antisense_df$row_index <- antisense_df$row_index + max_sense_row
   nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
@@ -1441,94 +1225,17 @@
   }
 
   # Generate Plot Object
-  gtf_plot <- ggplot2::ggplot() +
-    
-    # Draw the line that connects exons
-    ggplot2::geom_segment(
-      data = exons %>% dplyr::filter(!is.na(next_start)),
-      ggplot2::aes(
-        x = end,
-        xend = next_start,
-        y = row_index,
-        yend = row_index
-      ),
-      color = "black",
-      linewidth = 0.3
-    ) +
-    
-    # Exons
-    ggplot2::geom_polygon(
-      data = exon_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Exon Labels
-    ggplot2::geom_text(
-      data = exon_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-  
-    # Genes
-    ggplot2::geom_polygon(
-      data = gene_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Gene labels
-    ggplot2::geom_text(
-      data = gene_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Plot layout
-    ggplot2::scale_y_continuous(
-      breaks = NULL,
-      labels = NULL,
-      transform = scales::transform_reverse()
-    ) +
-    ggplot2::scale_x_continuous(
-      limits = c(reg_start, reg_stop)
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(
-        "+" = "lightcoral",
-        "-" = "skyblue",
-        "." = "lightgray"
-      )
-    ) +
-    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank(),
-      plot.title = ggplot2::element_text(hjust = 0.5)
-    )
+  gtf_plot <- .get_gtf_plot(
+    plot_title = plot_title,
+    TXT_SIZE = TXT_SIZE,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    exons = exons,
+    exon_poly_data = exon_poly_data,
+    exon_labels = exon_labels,
+    gene_poly_data = gene_poly_data,
+    gene_labels = gene_labels
+  )
   
   return(gtf_plot)
 }
@@ -1673,16 +1380,17 @@
   
   #### COMBINE ####
   # Modify the row_index of antisense to start after sense and nonsense to start after antisense
-  max_sense_row <- dplyr::if_else(
-    nrow(sense_df) == 0,
-    0,
-    max(sense_df$row_index)
-  )
-  max_antisense_row <- dplyr::if_else(
-    nrow(antisense_df) == 0,
-    0,
-    max(antisense_df$row_index)
-  )
+  if (nrow(sense_df) == 0) {
+    max_sense_row <- 0
+  } else {
+    max_sense_row <- max(sense_df$row_index)
+  }
+  
+  if (nrow(antisense_df) == 0) {
+    max_antisense_row <- 0
+  } else {
+    max_antisense_row <- max(antisense_df$row_index)
+  }
   
   antisense_df$row_index <- antisense_df$row_index + max_sense_row
   nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
@@ -1752,81 +1460,16 @@
   }
   
   # Generate Plot Object
-  gtf_plot <- ggplot2::ggplot() +
-    
-    # Genes
-    ggplot2::geom_polygon(
-      data = gene_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Gene labels
-    ggplot2::geom_text(
-      data = gene_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Transcripts
-    ggplot2::geom_polygon(
-      data = transcript_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Transcript labels
-    ggplot2::geom_text(
-      data = transcript_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Plot layout
-    ggplot2::scale_y_continuous(
-      breaks = NULL,
-      labels = NULL,
-      transform = scales::transform_reverse()
-    ) +
-    ggplot2::scale_x_continuous(
-      limits = c(reg_start, reg_stop)
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(
-        "+" = "lightcoral",
-        "-" = "skyblue",
-        "." = "lightgray"
-      )
-    ) +
-    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank(),
-      plot.title = ggplot2::element_text(hjust = 0.5)
-    )
+  gtf_plot <- .get_gtf_plot(
+    plot_title = plot_title,
+    TXT_SIZE = TXT_SIZE,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    gene_poly_data = gene_poly_data,
+    gene_labels = gene_labels,
+    transcript_poly_data = transcript_poly_data,
+    transcript_labels = transcript_labels
+  )
   
   return(gtf_plot)
 }
@@ -2065,16 +1708,17 @@
   
   #### COMBINE ####
   # Modify the row_index of antisense to start after sense and nonsense to start after antisense
-  max_sense_row <- dplyr::if_else(
-    nrow(sense_df) == 0,
-    0,
-    max(sense_df$row_index)
-  )
-  max_antisense_row <- dplyr::if_else(
-    nrow(antisense_df) == 0,
-    0,
-    max(antisense_df$row_index)
-  )
+  if (nrow(sense_df) == 0) {
+    max_sense_row <- 0
+  } else {
+    max_sense_row <- max(sense_df$row_index)
+  }
+  
+  if (nrow(antisense_df) == 0) {
+    max_antisense_row <- 0
+  } else {
+    max_antisense_row <- max(antisense_df$row_index)
+  }
   
   antisense_df$row_index <- antisense_df$row_index + max_sense_row
   nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
@@ -2193,119 +1837,19 @@
   }
   
   # Generate Plot Object
-  gtf_plot <- ggplot2::ggplot() +
-    
-    # Draw the line that connects exons
-    ggplot2::geom_segment(
-      data = exons %>% dplyr::filter(!is.na(next_start)),
-      ggplot2::aes(
-        x = end,
-        xend = next_start,
-        y = row_index,
-        yend = row_index
-      ),
-      color = "black",
-      linewidth = 0.3
-    ) +
-    
-    # Exons
-    ggplot2::geom_polygon(
-      data = exon_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Exon Labels
-    ggplot2::geom_text(
-      data = exon_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Genes
-    ggplot2::geom_polygon(
-      data = gene_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Gene labels
-    ggplot2::geom_text(
-      data = gene_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Transcripts
-    ggplot2::geom_polygon(
-      data = transcript_poly_data,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        group = polygon_idx,
-        fill = strand
-      ),
-      color = "black"
-    ) +
-    
-    # Transcript labels
-    ggplot2::geom_text(
-      data = transcript_labels,
-      ggplot2::aes(
-        x = x,
-        y = y,
-        label = label
-      ),
-      hjust = 0.5,
-      vjust = 0.5,
-      size = TXT_SIZE
-    ) +
-    
-    # Plot layout
-    ggplot2::scale_y_continuous(
-      breaks = NULL,
-      labels = NULL,
-      transform = scales::transform_reverse()
-    ) +
-    ggplot2::scale_x_continuous(
-      limits = c(reg_start, reg_stop)
-    ) +
-    ggplot2::scale_fill_manual(
-      values = c(
-        "+" = "lightcoral",
-        "-" = "skyblue",
-        "." = "lightgray"
-      )
-    ) +
-    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
-    ggplot2::theme_classic() +
-    ggplot2::theme(
-      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank(),
-      plot.title = ggplot2::element_text(hjust = 0.5)
-    )
+  gtf_plot <- .get_gtf_plot(
+    plot_title = plot_title,
+    TXT_SIZE = TXT_SIZE,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    exons = exons,
+    exon_poly_data = exon_poly_data,
+    exon_labels = exon_labels,
+    gene_poly_data = gene_poly_data,
+    gene_labels = gene_labels,
+    transcript_poly_data = transcript_poly_data,
+    transcript_labels = transcript_labels
+  )
   
   return(gtf_plot)
 }
@@ -2461,3 +2005,140 @@
   
   return(transcript_id)
 })
+
+.get_gtf_plot <- function(
+    plot_title, TXT_SIZE, reg_start, reg_stop,
+    exons = NULL, exon_poly_data = NULL, exon_labels = NULL,
+    gene_poly_data = NULL, gene_labels = NULL,
+    transcript_poly_data = NULL, transcript_labels = NULL
+) {
+  # Build plot in layers depending on what is present
+  gtf_plot <- ggplot2::ggplot()
+  
+  # Exon Layers
+  if (!is.null(exons)) {
+    gtf_plot <- gtf_plot +
+      # Draw the line that connects exons
+      ggplot2::geom_segment(
+        data = exons %>% dplyr::filter(!is.na(next_start)),
+        ggplot2::aes(
+          x = end,
+          xend = next_start,
+          y = row_index,
+          yend = row_index
+        ),
+        color = "black",
+        linewidth = 0.3
+      ) +
+        
+        # Exons
+        ggplot2::geom_polygon(
+          data = exon_poly_data,
+          ggplot2::aes(
+            x = x,
+            y = y,
+            group = polygon_idx,
+            fill = strand
+          ),
+          color = "black"
+        ) +
+        
+        # Exon Labels
+        ggplot2::geom_text(
+          data = exon_labels,
+          ggplot2::aes(
+            x = x,
+            y = y,
+            label = label
+          ),
+          hjust = 0.5,
+          vjust = 0.5,
+          size = TXT_SIZE
+        )
+  }
+  
+  # Gene Layers
+  if (!is.null(gene_poly_data)) {
+    gtf_plot <- gtf_plot +
+      # Genes
+      ggplot2::geom_polygon(
+        data = gene_poly_data,
+        ggplot2::aes(
+          x = x,
+          y = y,
+          group = polygon_idx,
+          fill = strand
+        ),
+        color = "black"
+      ) +
+      
+      # Gene labels
+      ggplot2::geom_text(
+        data = gene_labels,
+        ggplot2::aes(
+          x = x,
+          y = y,
+          label = label
+        ),
+        hjust = 0.5,
+        vjust = 0.5,
+        size = TXT_SIZE
+      )
+  }
+  
+  # Transcript Layers
+  if (!is.null(transcript_poly_data)) {
+    gtf_plot <- gtf_plot +
+      # Transcripts
+      ggplot2::geom_polygon(
+        data = transcript_poly_data,
+        ggplot2::aes(
+          x = x,
+          y = y,
+          group = polygon_idx,
+          fill = strand
+        ),
+        color = "black"
+      ) +
+      
+      # Transcript labels
+      ggplot2::geom_text(
+        data = transcript_labels,
+        ggplot2::aes(
+          x = x,
+          y = y,
+          label = label
+        ),
+        hjust = 0.5,
+        vjust = 0.5,
+        size = TXT_SIZE
+      )
+  }
+  
+  # Plot layout
+  gtf_plot <- gtf_plot +
+    ggplot2::scale_y_continuous(
+      breaks = NULL,
+      labels = NULL,
+      transform = scales::transform_reverse()
+    ) +
+      ggplot2::scale_x_continuous(
+        limits = c(reg_start, reg_stop)
+      ) +
+      ggplot2::scale_fill_manual(
+        values = c(
+          "+" = "lightcoral",
+          "-" = "skyblue",
+          "." = "lightgray"
+        )
+      ) +
+      ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
+      ggplot2::theme_classic() +
+      ggplot2::theme(
+        axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+        axis.title.y = ggplot2::element_blank(),
+        plot.title = ggplot2::element_text(hjust = 0.5)
+      )
+  
+  return(gtf_plot)
+}
