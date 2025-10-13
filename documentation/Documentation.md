@@ -54,7 +54,6 @@ Once you have gathered all of these materials, you are ready to run your
 small RNA module/s of choice. As an example, if you are interested in
 miRNAs, you would run:
 
-    ## Choose your Pokemon
     ## setvars just helps format and check the parameters you provide
     ## Descriptions of the different parameters are provided on the main Github page.
 
@@ -76,6 +75,9 @@ miRNAs, you would run:
 		density_timeout = 3600 # OPTIONAL (default is 3600s), for functions that can run for a long time, move on to next locus after this amount of time 
     )
 
+	## Choose your Pokemon!
+	## The method parameter can be used to choose which small RNA algorithm will be run
+	
     misipi_rna(vars) - Default method is "all"
 
     misipi_rna(vars, method = "siRNA")
