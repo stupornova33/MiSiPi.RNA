@@ -87,7 +87,9 @@ set_vars <- function(roi, bam_file, genome,
     stopifnot("gtf_file must have the same number of columns in each line." = length(unique(gtf_columns_vector)) == 1)
     # waiting to include the number of column check
     number_of_gtf_columns <- gtf_columns_vector[1]
-    stopifnot("gtf_file must have 9 columns and be tab separated." = number_of_gtf_columns == 9)
+    stopifnot("gtf_file must have 9 columns and be tab separated." = number_of_gtf_columns == 9) # TODO make >= instead of ==
+    # TODO Add in check for Leading lines (do this in the wrapper_gtf_function) Maybe this needs to be in here as well to ensure that the 9 columns is met
+    # TODO Add in check for gene_id and transcript_id
   }
   # write_fastas
   stopifnot("Parameter `write_fastas` only accepts TRUE or FALSE." = is.logical(write_fastas))
