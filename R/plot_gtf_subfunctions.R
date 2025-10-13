@@ -8,50 +8,158 @@
   
   roi_length <- reg_stop - reg_start + 1
   
-  # Extract transcript ID from attribute field
-  # Assign all transcripts to gene_id for easy matching
-  for (i in 1:nrow(gtf)) {
-    # Gene and transcript ids should be present in all remaining observations
-    tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-    gene_idx <- grep("gene_id", tmp)
-    gene <- gsub("gene_id ", "", tmp[gene_idx])
-    gtf$gene_id[i] <- gene
+  gtf <- gtf %>%
+    dplyr::mutate(
+      gene_id = .get_gene_id(attribute),
+      transcript_id = .get_transcript_id(attribute)
+    )
+  
+  #### SEPARATE STRANDS ####
+  sense_df <- gtf %>%
+    dplyr::filter(strand == "+")
+  antisense_df <- gtf %>%
+    dplyr::filter(strand == "-")
+  nonsense_df <- gtf %>%
+    dplyr::filter(strand == ".")
+  
+  #### SORT ####
+  # Arrange the data frames for proper plotting
+  arrange_rows <- function(plot_df) {
+    arranged_df <- plot_df %>%
+      dplyr::arrange(transcript_id, start, end)
     
-    transcript_idx <- grep(" transcript_id", tmp)
-    transcript <- tmp[transcript_idx]
-    gtf$transcript_id[i] <- gsub(" transcript_id ", "", transcript)
+    return(arranged_df)
   }
   
+  sense_df <- arrange_rows(sense_df)
+  antisense_df <- arrange_rows(antisense_df)
+  nonsense_df <- arrange_rows(nonsense_df)
   
-  plot_df <- gtf %>%
-    dplyr::mutate(
-      transcript_idx = match(transcript_id, unique(transcript_id)),
-      polygon_idx = dplyr::row_number()
-    ) %>%
-    dplyr::select(-c(score, frame, attribute))
+  #### COUNT ####
+  # Count the number of plot rows for each strand
   
-  # Just in case, put rows in a good order for determining plot layout
-  plot_df <- plot_df %>%
-    #dplyr::arrange(strand, gene_id, transcript_id, start, end)
-    dplyr::arrange(strand, transcript_idx, start, end)
+  num_s_rows <- nrow(
+    sense_df %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_a_rows <- nrow(
+    antisense_df %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_n_rows <- nrow(
+    nonsense_df %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  #### CALCULATE PLOT ROW ORDER ####
   
   # Determine row order for plotting
-  plot_df <- plot_df %>%
+  sense_df <- sense_df %>%
     dplyr::mutate(
-      row_index = match(transcript_id, unique(transcript_id))
-    )
-
-  num_plot_rows <- max(plot_df$row_index)
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
   
-  if (num_plot_rows > 20) {
-    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 20.\n")
+  antisense_df <- antisense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
+  
+  nonsense_df <- nonsense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
+  
+  #### SUBSET ####
+  SUBSET <- FALSE
+  
+  # We can't really plot more than 18-20 rows without things starting to look bad, so we're limiting how many features here
+  # 18 was chosen due to being divisible by 2 and 3 for cases where there are numerous sense, antisense, and nonstranded features present
+  max_plot_rows <- 18
+  num_plot_rows <- sum(num_s_rows, num_a_rows, num_n_rows)
+  
+  if (num_plot_rows > 18) {
+    SUBSET <- TRUE
+    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 18.\n")
     cat(file = logfile, warning_msg, append = TRUE)
-    plot_df <- plot_df %>%
-      dplyr::filter(row_index <= 20)
+    
+    s_ratio <- dplyr::if_else(
+      num_s_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_s_rows / max_plot_rows   # FALSE
+    )
+    
+    a_ratio <- dplyr::if_else(
+      num_a_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_a_rows / max_plot_rows   # FALSE
+    )
+    
+    n_ratio <- dplyr::if_else(
+      num_n_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_n_rows / max_plot_rows   # FALSE
+    )
+    
+    ratio_sum <- sum(s_ratio, a_ratio, n_ratio)
+    
+    s_factor <- s_ratio / ratio_sum
+    a_factor <- a_ratio / ratio_sum
+    n_factor <- n_ratio / ratio_sum
+    
+    # The number of rows contributed by each strands observations should be 18 +- 1 depending on rounding
+    s_rows <- round(max_plot_rows * s_factor)
+    a_rows <- round(max_plot_rows * a_factor)
+    n_rows <- round(max_plot_rows * n_factor)
+    
+    sense_df <- sense_df %>%
+      dplyr::filter(row_index <= s_rows)
+    
+    antisense_df <- antisense_df %>%
+      dplyr::filter(row_index <= a_rows)
+    
+    nonsense_df <- nonsense_df %>%
+      dplyr::filter(row_index <= n_rows)
   }
+  
+  #### COMBINE ####
+  # Modify the row_index of antisense to start after sense and nonsense to start after antisense
+  max_sense_row <- dplyr::if_else(
+    nrow(sense_df) == 0,
+    0,
+    max(sense_df$row_index)
+  )
+  max_antisense_row <- dplyr::if_else(
+    nrow(antisense_df) == 0,
+    0,
+    max(antisense_df$row_index)
+  )
+  
+  antisense_df$row_index <- antisense_df$row_index + max_sense_row
+  nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
+  
+  plot_df <- dplyr::bind_rows(sense_df, antisense_df, nonsense_df)
+  
+  # Add in a unique index for each row to allow for polygon grouping
+  plot_df <- plot_df %>%
+    dplyr::mutate(polygon_idx = dplyr::row_number())
   
   # Add a column to track if a feature's positions were truncated on a pointed end
   # We're not adding the arrow if the feature extends past the region of interest
+  # Also not adding arrows if no strand info is present, but we'll handle that elsewhere
   plot_df <- plot_df %>%
     dplyr::mutate(truncated = dplyr::case_when(
       strand == "+" & end > reg_stop ~ TRUE,
@@ -98,7 +206,22 @@
   # Generate coordinates for exon polygons
   exon_poly_data <- .get_exon_poly_data(exons_normal, exons_pointed, roi_length)
   
-  TXT_SIZE <- 6
+  # Calculating this again in case the data frame was subset
+  num_plot_rows <- max(plot_df$row_index)
+  
+  if (num_plot_rows < 8) {
+    TXT_SIZE <- 6
+  } else if (num_plot_rows < 12) {
+    TXT_SIZE <- 5
+  } else {
+    TXT_SIZE <- 4
+  }
+  
+  if (SUBSET) {
+    plot_title <- "Features filtered to fit on plot"
+  } else {
+    plot_title <- ""
+  }
   
   # Generate Plot Object
   gtf_plot <- ggplot2::ggplot() +
@@ -160,11 +283,12 @@
         "." = "lightgray"
       )
     ) +
-    ggplot2::labs(x = "Genomic coordinate") +
+    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank()
+      axis.title.y = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5)
     )
   
   return(gtf_plot)
@@ -177,59 +301,126 @@
   
   roi_length <- reg_stop - reg_start + 1
   
-  # Extract Gene ID and transcript ID from attribute field
-  for (i in 1:nrow(gtf)) {
-    # Gene and transcript ids should be present in all remaining observations
-    tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-    gene_idx <- grep("gene_id", tmp)
-    gene <- gsub("gene_id ", "", tmp[gene_idx])
-    gtf$gene_id[i] <- gene
+  gtf <- gtf %>%
+    dplyr::mutate(
+      gene_id = .get_gene_id(attribute),
+      transcript_id = .get_transcript_id(attribute)
+    )
+  
+  #### SEPARATE STRANDS ####
+  sense_df <- gtf %>%
+    dplyr::filter(strand == "+")
+  antisense_df <- gtf %>%
+    dplyr::filter(strand == "-")
+  nonsense_df <- gtf %>%
+    dplyr::filter(strand == ".")
+  
+  #### SORT ####
+  # Arrange the data frames for proper plotting
+  arrange_rows <- function(plot_df) {
+    arranged_df <- plot_df %>%
+      dplyr::arrange(start, end)
     
-    transcript_idx <- grep(" transcript_id", tmp)
-    transcript <- tmp[transcript_idx]
-    gtf$transcript_id[i] <- gsub(" transcript_id ", "", transcript)
+    return(arranged_df)
   }
   
-  plot_df <- gtf %>%
-    dplyr::mutate(
-      transcript_idx = match(transcript_id, unique(transcript_id)),
-      polygon_idx = dplyr::row_number()
-    ) %>%
-    dplyr::select(-c(score, frame, attribute))
+  sense_df <- arrange_rows(sense_df)
+  antisense_df <- arrange_rows(antisense_df)
+  nonsense_df <- arrange_rows(nonsense_df)
   
-  # Arrange rows for plotting
-  # Feature precedence: gene > exon
-  plot_df <- plot_df %>%
-    #dplyr::arrange(strand, gene_id, transcript_id, start, end)
-    dplyr::arrange(strand, transcript_idx, start, end)
+  #### COUNT ####
+  # Count the number of plot rows for each strand
   
-  # Determine row order for plotting
-  plot_df <- plot_df %>%
+  num_s_rows <- nrow(sense_df)
+  num_a_rows <- nrow(antisense_df)
+  num_n_rows <- nrow(nonsense_df)
+  
+  #### CALCULATE PLOT ROW ORDER ####
+  # Since we just have transcript features in this data frame
+  #   the plot order is simply the row order
+  sense_df <- sense_df %>%
+    dplyr::mutate(row_index = dplyr::row_number())
+  antisense_df <- antisense_df %>%
+    dplyr::mutate(row_index = dplyr::row_number())
+  nonsense_df <- nonsense_df %>%
     dplyr::mutate(row_index = dplyr::row_number())
   
-  num_plot_rows <- max(plot_df$row_index)
+  #### SUBSET ####
+  SUBSET <- FALSE
   
-  if (num_plot_rows > 20) {
-    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 20.\n")
+  # We can't really plot more than 18-20 rows without things starting to look bad, so we're limiting how many features here
+  # 18 was chosen due to being divisible by 2 and 3 for cases where there are numerous sense, antisense, and nonstranded features present
+  max_plot_rows <- 18
+  num_plot_rows <- sum(num_s_rows, num_a_rows, num_n_rows)
+  
+  if (num_plot_rows > 18) {
+    SUBSET <- TRUE
+    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 18.\n")
     cat(file = logfile, warning_msg, append = TRUE)
-    plot_df <- plot_df %>%
-      dplyr::filter(row_index <= 20)
+    
+    s_ratio <- dplyr::if_else(
+      num_s_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_s_rows / max_plot_rows   # FALSE
+    )
+    
+    a_ratio <- dplyr::if_else(
+      num_a_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_a_rows / max_plot_rows   # FALSE
+    )
+    
+    n_ratio <- dplyr::if_else(
+      num_n_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_n_rows / max_plot_rows   # FALSE
+    )
+    
+    ratio_sum <- sum(s_ratio, a_ratio, n_ratio)
+    
+    s_factor <- s_ratio / ratio_sum
+    a_factor <- a_ratio / ratio_sum
+    n_factor <- n_ratio / ratio_sum
+    
+    # The number of rows contributed by each strands observations should be 18 +- 1 depending on rounding
+    s_rows <- round(max_plot_rows * s_factor)
+    a_rows <- round(max_plot_rows * a_factor)
+    n_rows <- round(max_plot_rows * n_factor)
+    
+    sense_df <- sense_df %>%
+      dplyr::filter(row_index <= s_rows)
+    
+    antisense_df <- antisense_df %>%
+      dplyr::filter(row_index <= a_rows)
+    
+    nonsense_df <- nonsense_df %>%
+      dplyr::filter(row_index <= n_rows)
   }
   
-  # Add a column to track if a feature's positions were truncated on a pointed end
-  # We're not adding the arrow if the feature extends past the region of interest
-  # Also not adding arrows if no strand info is present, but we'll handle that elsewhere
+  #### COMBINE ####
+  # Modify the row_index of antisense to start after sense and nonsense to start after antisense
+  max_sense_row <- dplyr::if_else(
+    nrow(sense_df) == 0,
+    0,
+    max(sense_df$row_index)
+  )
+  max_antisense_row <- dplyr::if_else(
+    nrow(antisense_df) == 0,
+    0,
+    max(antisense_df$row_index)
+  )
+  
+  antisense_df$row_index <- antisense_df$row_index + max_sense_row
+  nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
+  
+  plot_df <- dplyr::bind_rows(sense_df, antisense_df, nonsense_df)
+  
+  # Add in a unique index for each row to allow for polygon grouping
   plot_df <- plot_df %>%
-    dplyr::mutate(truncated = dplyr::case_when(
-      strand == "+" & end > reg_stop ~ TRUE,
-      strand == "-" & start < reg_start ~ TRUE,
-      .default = FALSE
-    ))
+    dplyr::mutate(polygon_idx = dplyr::row_number())
   
   # calculate the x and y coordinates for the genes
   transcripts <- plot_df %>%
-    dplyr::filter(feature == "transcript") %>%
-    dplyr::distinct(transcript_id, strand, .keep_all = TRUE) %>%
     dplyr::mutate(
       start = ifelse(start < reg_start, reg_start, start),
       end = ifelse(end > reg_stop, reg_stop, end),
@@ -247,8 +438,23 @@
   # transcripts -> make polygons with tip
   transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
-  TXT_SIZE <- 6
+  # Calculating this again in case the data frame was subset
+  num_plot_rows <- max(plot_df$row_index)
   
+  if (num_plot_rows < 8) {
+    TXT_SIZE <- 6
+  } else if (num_plot_rows < 12) {
+    TXT_SIZE <- 5
+  } else {
+    TXT_SIZE <- 4
+  }
+  
+  if (SUBSET) {
+    plot_title <- "Features filtered to fit on plot"
+  } else {
+    plot_title <- ""
+  }
+
   # Generate Plot Object
   gtf_plot <- ggplot2::ggplot() +
     
@@ -293,11 +499,12 @@
         "." = "lightgray"
       )
     ) +
-    ggplot2::labs(x = "Genomic coordinate") +
+    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank()
+      axis.title.y = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5)
     )
   
   return(gtf_plot)
@@ -311,49 +518,123 @@
   
   roi_length <- reg_stop - reg_start + 1
   
-  # Extract Gene ID from attribute field
-  for (i in 1:nrow(gtf)) {
-    # Gene ids should be present in all remaining observations
-    tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-    gene_idx <- grep("gene_id", tmp)
-    gene <- gsub("gene_id ", "", tmp[gene_idx])
-    gtf$gene_id[i] <- gene
+  gtf <- gtf %>%
+    dplyr::mutate(
+      gene_id = .get_gene_id(attribute)
+    )
+  
+  #### SEPARATE STRANDS ####
+  sense_df <- gtf %>%
+    dplyr::filter(strand == "+")
+  antisense_df <- gtf %>%
+    dplyr::filter(strand == "-")
+  nonsense_df <- gtf %>%
+    dplyr::filter(strand == ".")
+  
+  #### SORT ####
+  # Arrange the data frames for proper plotting
+  arrange_rows <- function(plot_df) {
+    # Join the transcript ranks back, then build ordering keys and arrange
+    arranged_df <- plot_df %>%
+      dplyr::arrange(start, end)
+    
+    return(arranged_df)
   }
   
-  plot_df <- gtf %>%
-    dplyr::mutate(
-      gene_idx = match(gene_id, unique(gene_id)),
-      polygon_idx = dplyr::row_number()
-    ) %>%
-    dplyr::select(-c(score, frame, attribute))
+  sense_df <- arrange_rows(sense_df)
+  antisense_df <- arrange_rows(antisense_df)
+  nonsense_df <- arrange_rows(nonsense_df)
   
-  # Arrange rows for plotting
-  # Feature precedence: gene > exon
-  plot_df <- plot_df %>%
-    dplyr::arrange(strand, gene_id, start, end)
+  #### COUNT ####
+  # Count the number of plot rows for each strand
   
-  # Determine row order for plotting
-  plot_df <- plot_df %>%
+  num_s_rows <- nrow(sense_df)
+  num_a_rows <- nrow(antisense_df)
+  num_n_rows <- nrow(nonsense_df)
+  
+  #### CALCULATE PLOT ROW ORDER ####
+  # Since we only have genes in this sub-function,
+  #   The plot order is simply the row order
+  sense_df <- sense_df %>%
+    dplyr::mutate(row_index = dplyr::row_number())
+  antisense_df <- antisense_df %>%
+    dplyr::mutate(row_index = dplyr::row_number())
+  nonsense_df <- nonsense_df %>%
     dplyr::mutate(row_index = dplyr::row_number())
   
-  num_plot_rows <- max(plot_df$row_index)
+  #### SUBSET ####
+  SUBSET <- FALSE
   
-  if (num_plot_rows > 20) {
-    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 20.\n")
+  # We can't really plot more than 18-20 rows without things starting to look bad, so we're limiting how many features here
+  # 18 was chosen due to being divisible by 2 and 3 for cases where there are numerous sense, antisense, and nonstranded features present
+  max_plot_rows <- 18
+  num_plot_rows <- sum(num_s_rows, num_a_rows, num_n_rows)
+  
+  if (num_plot_rows > 18) {
+    SUBSET <- TRUE
+    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 18.\n")
     cat(file = logfile, warning_msg, append = TRUE)
-    plot_df <- plot_df %>%
-      dplyr::filter(row_index <= 20)
+    
+    s_ratio <- dplyr::if_else(
+      num_s_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_s_rows / max_plot_rows   # FALSE
+    )
+    
+    a_ratio <- dplyr::if_else(
+      num_a_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_a_rows / max_plot_rows   # FALSE
+    )
+    
+    n_ratio <- dplyr::if_else(
+      num_n_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_n_rows / max_plot_rows   # FALSE
+    )
+    
+    ratio_sum <- sum(s_ratio, a_ratio, n_ratio)
+    
+    s_factor <- s_ratio / ratio_sum
+    a_factor <- a_ratio / ratio_sum
+    n_factor <- n_ratio / ratio_sum
+    
+    # The number of rows contributed by each strands observations should be 18 +- 1 depending on rounding
+    s_rows <- round(max_plot_rows * s_factor)
+    a_rows <- round(max_plot_rows * a_factor)
+    n_rows <- round(max_plot_rows * n_factor)
+    
+    sense_df <- sense_df %>%
+      dplyr::filter(row_index <= s_rows)
+    
+    antisense_df <- antisense_df %>%
+      dplyr::filter(row_index <= a_rows)
+    
+    nonsense_df <- nonsense_df %>%
+      dplyr::filter(row_index <= n_rows)
   }
   
-  # Add a column to track if a feature's positions were truncated on a pointed end
-  # We're not adding the arrow if the feature extends past the region of interest
-  # Also not adding arrows if no strand info is present, but we'll handle that elsewhere
+  #### COMBINE ####
+  # Modify the row_index of antisense to start after sense and nonsense to start after antisense
+  max_sense_row <- dplyr::if_else(
+    nrow(sense_df) == 0,
+    0,
+    max(sense_df$row_index)
+  )
+  max_antisense_row <- dplyr::if_else(
+    nrow(antisense_df) == 0,
+    0,
+    max(antisense_df$row_index)
+  )
+  
+  antisense_df$row_index <- antisense_df$row_index + max_sense_row
+  nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
+  
+  plot_df <- dplyr::bind_rows(sense_df, antisense_df, nonsense_df)
+  
+  # Add in a unique index for each row to allow for polygon grouping
   plot_df <- plot_df %>%
-    dplyr::mutate(truncated = dplyr::case_when(
-      strand == "+" & end > reg_stop ~ TRUE,
-      strand == "-" & start < reg_start ~ TRUE,
-      .default = FALSE
-    ))
+    dplyr::mutate(polygon_idx = dplyr::row_number())
   
   # calculate the x and y coordinates for the genes
   genes <- plot_df %>%
@@ -376,7 +657,22 @@
   # genes -> make polygons with tip
   gene_poly_data <- .get_pointed_poly_data(genes, roi_length)
   
-  TXT_SIZE <- 6
+  # Calculating this again in case the data frame was subset
+  num_plot_rows <- max(plot_df$row_index)
+  
+  if (num_plot_rows < 8) {
+    TXT_SIZE <- 6
+  } else if (num_plot_rows < 12) {
+    TXT_SIZE <- 5
+  } else {
+    TXT_SIZE <- 4
+  }
+  
+  if (SUBSET) {
+    plot_title <- "Features filtered to fit on plot"
+  } else {
+    plot_title <- ""
+  }
   
   # Generate Plot Object
   gtf_plot <- ggplot2::ggplot() +
@@ -422,11 +718,12 @@
         "." = "lightgray"
       )
     ) +
-    ggplot2::labs(x = "Genomic coordinate") +
+    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank()
+      axis.title.y = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5)
     )
   
   return(gtf_plot)
@@ -439,36 +736,117 @@
   
   roi_length <- reg_stop - reg_start + 1
   
-  # if transcript and exon information is both present
-  # Extract transcript ID from attribute field
-  # Assign all transcripts to gene_id for easy matching
-  for (i in 1:nrow(gtf)) {
-    # Gene and transcript ids should be present in all remaining observations
-    tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-    gene_idx <- grep("gene_id", tmp)
-    gene <- gsub("gene_id ", "", tmp[gene_idx])
-    gtf$gene_id[i] <- gene
+  gtf <- gtf %>%
+    dplyr::mutate(
+      gene_id = .get_gene_id(attribute),
+      transcript_id = .get_transcript_id(attribute)
+    )
+  
+  #### SEPARATE STRANDS ####
+  sense_df <- gtf %>%
+    dplyr::filter(strand == "+")
+  antisense_df <- gtf %>%
+    dplyr::filter(strand == "-")
+  nonsense_df <- gtf %>%
+    dplyr::filter(strand == ".")
+  
+  #### SORT ####
+  # Arrange the data frames for proper plotting
+  arrange_rows <- function(plot_df) {
     
-    transcript_idx <- grep(" transcript_id", tmp)
-    transcript <- tmp[transcript_idx]
-    gtf$transcript_id[i] <- gsub(" transcript_id ", "", transcript)
+    # Rank transcripts within each gene by start, end
+    tx_rank <- plot_df %>%
+      dplyr::filter(feature == "transcript") %>%
+      dplyr::arrange(gene_id, start, end) %>%
+      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+      dplyr::select(gene_id, transcript_id, transcript_rank)
+    
+    # Rank exons within each transcript by start, end
+    arranged_df <- plot_df %>%
+      dplyr::group_by(transcript_id) %>%
+      dplyr::arrange(start, end, .by_group = TRUE) %>%
+      dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", cumsum(feature == "exon"), NA_integer_)) %>%
+      dplyr::ungroup()
+    
+    # Join the transcript ranks back, then build ordering keys and arrange
+    arranged_df <- arranged_df %>%
+      dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
+      dplyr::mutate(
+        # within a transcript group: the transcript row, then its exons
+        within_tx = dplyr::case_when(
+          feature == "transcript" ~ 0L,
+          feature == "exon" ~ 1L,
+          TRUE ~ 0L
+        )
+      ) %>%
+      dplyr::arrange(
+        transcript_rank,   # transcripts in (start, end) order; exons inherit their transcript's rank
+        within_tx,         # transcript row before its exons
+        exon_rank          # exons in (start, end) order
+      ) %>%
+      dplyr::select(-within_tx)
+    
+    return(arranged_df)
   }
   
-
-  plot_df <- gtf %>%
-    dplyr::mutate(
-      transcript_idx = match(transcript_id, unique(transcript_id)),
-      polygon_idx = dplyr::row_number()
-    ) %>%
-    dplyr::select(-c(score, frame, attribute))
+  sense_df <- arrange_rows(sense_df)
+  antisense_df <- arrange_rows(antisense_df)
+  nonsense_df <- arrange_rows(nonsense_df)
   
-  # Just in case, put rows in a good order for determining plot layout
-  plot_df <- plot_df %>%
-    #dplyr::arrange(strand, transcript_id, desc(feature), start, end)
-    dplyr::arrange(strand, transcript_idx, desc(feature), start, end)
-
+  #### COUNT ####
+  # Count the number of plot rows for each strand
+  
+  sense_tx_plot_rows <- nrow(
+    sense_df %>%
+      dplyr::filter(feature == "transcript")
+  )
+  
+  # Note this is intended to count groups of exons with the same transcript_id instead of total observations
+  sense_exon_rows <- nrow(
+    sense_df %>%
+      dplyr::filter(feature == "exon") %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_s_rows <- sum(sense_tx_plot_rows, sense_exon_rows)
+  
+  # Antisense rows
+  antisense_tx_plot_rows <- nrow(
+    antisense_df %>%
+      dplyr::filter(feature == "transcript")
+  )
+  
+  # Note this is intended to count groups of exons with the same transcript_id instead of total observations
+  antisense_exon_rows <- nrow(
+    antisense_df %>%
+      dplyr::filter(feature == "exon") %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_a_rows <- sum(antisense_tx_plot_rows, antisense_exon_rows)
+  
+  # Nonsense rows
+  nonsense_tx_plot_rows <- nrow(
+    nonsense_df %>%
+      dplyr::filter(feature == "transcript")
+  )
+  
+  # Note this is intended to count groups of exons with the same transcript_id instead of total observations
+  nonsense_exon_rows <- nrow(
+    nonsense_df %>%
+      dplyr::filter(feature == "exon") %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_n_rows <- sum(nonsense_tx_plot_rows, nonsense_exon_rows)
+  
+  #### CALCULATE PLOT ROW ORDER ####
+  
   # Determine row order for plotting
-  plot_df <- plot_df %>%
+  sense_df <- sense_df %>%
     dplyr::mutate(
       first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
       inc = (feature == "transcript") | first_exon,
@@ -476,24 +854,105 @@
     ) %>%
     dplyr::select(-first_exon, -inc)
   
-  num_plot_rows <- max(plot_df$row_index)
+  antisense_df <- antisense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = (feature == "transcript") | first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
   
-  if (num_plot_rows > 20) {
-    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 20.\n")
+  nonsense_df <- nonsense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = (feature == "transcript") | first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
+  
+  #### SUBSET ####
+  SUBSET <- FALSE
+  
+  # We can't really plot more than 18-20 rows without things starting to look bad, so we're limiting how many features here
+  # 18 was chosen due to being divisible by 2 and 3 for cases where there are numerous sense, antisense, and nonstranded features present
+  max_plot_rows <- 18
+  num_plot_rows <- sum(num_s_rows, num_a_rows, num_n_rows)
+  
+  if (num_plot_rows > 18) {
+    SUBSET <- TRUE
+    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 18.\n")
     cat(file = logfile, warning_msg, append = TRUE)
-    plot_df <- plot_df %>%
-      dplyr::filter(row_index <= 20)
+    
+    s_ratio <- dplyr::if_else(
+      num_s_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_s_rows / max_plot_rows   # FALSE
+    )
+    
+    a_ratio <- dplyr::if_else(
+      num_a_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_a_rows / max_plot_rows   # FALSE
+    )
+    
+    n_ratio <- dplyr::if_else(
+      num_n_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_n_rows / max_plot_rows   # FALSE
+    )
+    
+    ratio_sum <- sum(s_ratio, a_ratio, n_ratio)
+    
+    s_factor <- s_ratio / ratio_sum
+    a_factor <- a_ratio / ratio_sum
+    n_factor <- n_ratio / ratio_sum
+    
+    # The number of rows contributed by each strands observations should be 18 +- 1 depending on rounding
+    s_rows <- round(max_plot_rows * s_factor)
+    a_rows <- round(max_plot_rows * a_factor)
+    n_rows <- round(max_plot_rows * n_factor)
+    
+    sense_df <- sense_df %>%
+      dplyr::filter(row_index <= s_rows)
+    
+    antisense_df <- antisense_df %>%
+      dplyr::filter(row_index <= a_rows)
+    
+    nonsense_df <- nonsense_df %>%
+      dplyr::filter(row_index <= n_rows)
   }
+  
+  #### COMBINE ####
+  # Modify the row_index of antisense to start after sense and nonsense to start after antisense
+  max_sense_row <- dplyr::if_else(
+    nrow(sense_df) == 0,
+    0,
+    max(sense_df$row_index)
+  )
+  max_antisense_row <- dplyr::if_else(
+    nrow(antisense_df) == 0,
+    0,
+    max(antisense_df$row_index)
+  )
+  
+  antisense_df$row_index <- antisense_df$row_index + max_sense_row
+  nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
+  
+  plot_df <- dplyr::bind_rows(sense_df, antisense_df, nonsense_df)
+  
+  # Add in a unique index for each row to allow for polygon grouping
+  plot_df <- plot_df %>%
+    dplyr::mutate(polygon_idx = dplyr::row_number())
   
   # Add a column to track if a feature's positions were truncated on a pointed end
   # We're not adding the arrow if the feature extends past the region of interest
+  # Also not adding arrows if no strand info is present, but we'll handle that elsewhere
   plot_df <- plot_df %>%
     dplyr::mutate(truncated = dplyr::case_when(
       strand == "+" & end > reg_stop ~ TRUE,
       strand == "-" & start < reg_start ~ TRUE,
       .default = FALSE
     ))
-    
   
   # calculate the x and y coordinates for the exons/transcripts/genes
   transcripts <- plot_df %>%
@@ -556,7 +1015,22 @@
   # transcripts -> make polygons with tip like transcripts
   transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
-  TXT_SIZE <- 6
+  # Calculating this again in case the data frame was subset
+  num_plot_rows <- max(plot_df$row_index)
+  
+  if (num_plot_rows < 8) {
+    TXT_SIZE <- 6
+  } else if (num_plot_rows < 12) {
+    TXT_SIZE <- 5
+  } else {
+    TXT_SIZE <- 4
+  }
+  
+  if (SUBSET) {
+    plot_title <- "Features filtered to fit on plot"
+  } else {
+    plot_title <- ""
+  }
   
   # Generate Plot Object
   gtf_plot <- ggplot2::ggplot() +
@@ -643,11 +1117,12 @@
         "." = "lightgray"
       )
     ) +
-    ggplot2::labs(x = "Genomic coordinate") +
+    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank()
+      axis.title.y = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5)
     )
   
   return(gtf_plot)
@@ -660,42 +1135,127 @@
   
   roi_length <- reg_stop - reg_start + 1
 
-  # Extract Gene ID from attribute field
-  # Assign gene_id to gene and exon observations for grouping
-  for (i in 1:nrow(gtf)) {
-    # Gene ids should be present in all remaining observations
-    tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-    gene_idx <- grep("gene_id", tmp)
-    gene <- gsub("gene_id ", "", tmp[gene_idx])
-    gtf$gene_id[i] <- gene
+  gtf <- gtf %>%
+    dplyr::mutate(
+      gene_id = .get_gene_id(attribute),
+      transcript_id = .get_transcript_id(attribute)
+    )
+
+  #### SEPARATE STRANDS ####
+  sense_df <- gtf %>%
+    dplyr::filter(strand == "+")
+  antisense_df <- gtf %>%
+    dplyr::filter(strand == "-")
+  nonsense_df <- gtf %>%
+    dplyr::filter(strand == ".")
+  
+  #### SORT ####
+  # Arrange the data frames for proper plotting
+  arrange_rows <- function(plot_df) {
+    if (nrow(plot_df) == 0) return(plot_df)
     
-    if (gtf$feature[i] == "exon") {
-      transcript_idx <- grep(" transcript_id", tmp)
-      transcript <- tmp[transcript_idx]
-      gtf$transcript_id[i] <- gsub(" transcript_id ", "", transcript) 
-    } else {
-      gtf$transcript_id[i] <- NA
-    }
+    # Rank genes by (start, end) using the gene rows
+    gene_rank <- plot_df %>%
+      dplyr::filter(feature == "gene") %>%
+      dplyr::arrange(start, end) %>%
+      dplyr::mutate(gene_rank = dplyr::row_number()) %>%
+      dplyr::select(gene_id, gene_rank)
     
+    # Infer transcript spans from exons, then rank transcripts within each gene
+    # Use (tx_start = min exon start, tx_end = max exon end) for ordering
+    inferred_tx_rank <- plot_df %>%
+      dplyr::filter(feature == "exon") %>%
+      dplyr::group_by(gene_id, transcript_id) %>%
+      dplyr::summarise(
+        tx_start = min(start, na.rm = TRUE),
+        tx_end = max(end, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      dplyr::arrange(gene_id, tx_start, tx_end) %>%
+      dplyr::group_by(gene_id) %>%
+      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(gene_id, transcript_id, transcript_rank)
+    
+    # Rank exons within each transcript by (start, end)
+    arranged_df <- plot_df %>%
+      dplyr::group_by(transcript_id) %>%
+      dplyr::arrange(start, end, .by_group = TRUE) %>%
+      dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", dplyr::row_number(), NA_integer_)) %>%
+      dplyr::ungroup()
+    
+    # 3) Join ranks and arrange: gene first, then transcripts (via inferred ranks), then exons
+    arranged_df <- arranged_df %>%
+      dplyr::left_join(gene_rank, by = "gene_id") %>%
+      dplyr::left_join(inferred_tx_rank, by = c("gene_id", "transcript_id")) %>%
+      dplyr::mutate(
+        block = dplyr::if_else(feature == "gene", 0L, 1L) # genes before exons
+      ) %>%
+      dplyr::arrange(
+        gene_rank,          # genes ordered by (start, end)
+        block,              # gene row first
+        transcript_rank,    # transcript order inferred from exon spans
+        exon_rank           # exons ordered by (start, end)
+      ) %>%
+      dplyr::select(-block)
+    
+    return(arranged_df)
   }
   
-  plot_df <- gtf %>%
-    dplyr::mutate(
-      gene_idx = match(gene_id, unique(gene_id)),
-      transcript_idx = match(transcript_id, unique(transcript_id)),
-      polygon_idx = dplyr::row_number()
-    ) %>%
-    dplyr::select(-c(score, frame, attribute))
+  sense_df <- arrange_rows(sense_df)
+  antisense_df <- arrange_rows(antisense_df)
+  nonsense_df <- arrange_rows(nonsense_df)
   
+  #### COUNT ####
+  # Count the number of plot rows for each strand
   
-  # Arrange rows for plotting
-  # Feature precedence: gene > exon
-  plot_df <- plot_df %>%
-    #dplyr::arrange(strand, gene_id, desc(feature), transcript_id, start, end)
-    dplyr::arrange(strand, gene_id, desc(feature), transcript_idx, start, end)
+  sense_gene_plot_rows <- nrow(
+    sense_df %>%
+      dplyr::filter(feature == "gene")
+  )
+  
+  # Note this is intended to count groups of exons with the same transcript_id instead of total observations
+  sense_exon_rows <- nrow(
+    sense_df %>%
+      dplyr::filter(feature == "exon") %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_s_rows <- sum(sense_gene_plot_rows, sense_exon_rows)
+  
+  antisense_gene_plot_rows <- nrow(
+    antisense_df %>%
+      dplyr::filter(feature == "gene")
+  )
+  
+  antisense_exon_rows <- nrow(
+    antisense_df %>%
+      dplyr::filter(feature == "exon") %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_a_rows <- sum(antisense_gene_plot_rows, antisense_exon_rows)
+  
+  nonsense_gene_plot_rows <- nrow(
+    nonsense_df %>%
+      dplyr::filter(feature == "gene")
+  )
+  
+  nonsense_exon_rows <- nrow(
+    nonsense_df %>%
+      dplyr::filter(feature == "exon") %>%
+      dplyr::select(transcript_id) %>%
+      dplyr::distinct()
+  )
+  
+  num_n_rows <- sum(nonsense_gene_plot_rows, nonsense_exon_rows)
+  
+  #### CALCULATE PLOT ROW ORDER ####
   
   # Determine row order for plotting
-  plot_df <- plot_df %>%
+  sense_df <- sense_df %>%
     dplyr::mutate(
       first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
       inc = (feature == "gene") | first_exon,
@@ -703,14 +1263,95 @@
     ) %>%
     dplyr::select(-first_exon, -inc)
   
-  num_plot_rows <- max(plot_df$row_index)
+  antisense_df <- antisense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = (feature == "gene") | first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
   
-  if (num_plot_rows > 20) {
-    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 20.\n")
+  nonsense_df <- nonsense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = (feature == "gene") | first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
+  
+  #### SUBSET ####
+  SUBSET <- FALSE
+  
+  # We can't really plot more than 18-20 rows without things starting to look bad, so we're limiting how many features here
+  # 18 was chosen due to being divisible by 2 and 3 for cases where there are numerous sense, antisense, and nonstranded features present
+  max_plot_rows <- 18
+  num_plot_rows <- sum(num_s_rows, num_a_rows, num_n_rows)
+  
+  if (num_plot_rows > 18) {
+    SUBSET <- TRUE
+    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 18.\n")
     cat(file = logfile, warning_msg, append = TRUE)
-    plot_df <- plot_df %>%
-      dplyr::filter(row_index <= 20)
+    
+    s_ratio <- dplyr::if_else(
+      num_s_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_s_rows / max_plot_rows   # FALSE
+    )
+    
+    a_ratio <- dplyr::if_else(
+      num_a_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_a_rows / max_plot_rows   # FALSE
+    )
+    
+    n_ratio <- dplyr::if_else(
+      num_n_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_n_rows / max_plot_rows   # FALSE
+    )
+    
+    ratio_sum <- sum(s_ratio, a_ratio, n_ratio)
+    
+    s_factor <- s_ratio / ratio_sum
+    a_factor <- a_ratio / ratio_sum
+    n_factor <- n_ratio / ratio_sum
+    
+    # The number of rows contributed by each strands observations should be 18 +- 1 depending on rounding
+    s_rows <- round(max_plot_rows * s_factor)
+    a_rows <- round(max_plot_rows * a_factor)
+    n_rows <- round(max_plot_rows * n_factor)
+    
+    sense_df <- sense_df %>%
+      dplyr::filter(row_index <= s_rows)
+    
+    antisense_df <- antisense_df %>%
+      dplyr::filter(row_index <= a_rows)
+    
+    nonsense_df <- nonsense_df %>%
+      dplyr::filter(row_index <= n_rows)
   }
+  
+  #### COMBINE ####
+  # Modify the row_index of antisense to start after sense and nonsense to start after antisense
+  max_sense_row <- dplyr::if_else(
+    nrow(sense_df) == 0,
+    0,
+    max(sense_df$row_index)
+  )
+  max_antisense_row <- dplyr::if_else(
+    nrow(antisense_df) == 0,
+    0,
+    max(antisense_df$row_index)
+  )
+  
+  antisense_df$row_index <- antisense_df$row_index + max_sense_row
+  nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
+  
+  plot_df <- dplyr::bind_rows(sense_df, antisense_df, nonsense_df)
+  
+  # Add in a unique index for each row to allow for polygon grouping
+  plot_df <- plot_df %>%
+    dplyr::mutate(polygon_idx = dplyr::row_number())
   
   # Add a column to track if a feature's positions were truncated on a pointed end
   # We're not adding the arrow if the feature extends past the region of interest
@@ -726,7 +1367,6 @@
   genes <- plot_df %>%
     dplyr::filter(feature == "gene") %>%
     dplyr::distinct(gene_id, strand, .keep_all = TRUE) %>%
-    #dplyr::arrange(gene_id) %>%
     dplyr::mutate(
       start = ifelse(start < reg_start, reg_start, start),
       end = ifelse(end > reg_stop, reg_stop, end),
@@ -783,8 +1423,23 @@
   # genes -> make polygons with tip like transcripts
   gene_poly_data <- .get_pointed_poly_data(genes, roi_length)
   
-  TXT_SIZE <- 6
+  # Calculating this again in case the data frame was subset
+  num_plot_rows <- max(plot_df$row_index)
   
+  if (num_plot_rows < 8) {
+    TXT_SIZE <- 6
+  } else if (num_plot_rows < 12) {
+    TXT_SIZE <- 5
+  } else {
+    TXT_SIZE <- 4
+  }
+  
+  if (SUBSET) {
+    plot_title <- "Features filtered to fit on plot"
+  } else {
+    plot_title <- ""
+  }
+
   # Generate Plot Object
   gtf_plot <- ggplot2::ggplot() +
     
@@ -867,11 +1522,12 @@
         "." = "lightgray"
       )
     ) +
-    ggplot2::labs(x = "Genomic coordinate") +
+    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank()
+      axis.title.y = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5)
     )
   
   return(gtf_plot)
@@ -882,62 +1538,162 @@
   
   roi_length <- reg_stop - reg_start + 1
   
-  # Extract Gene ID and Transcript Id from attribute field
-  # Assign gene_id to all observations
-  # Assign transcript_id to transcripts and exons for grouping
-  for (i in 1:nrow(gtf)) {
-    # Gene ids should be present in all remaining observations
-    tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-    gene_idx <- grep("gene_id", tmp)
-    gene <- gsub("gene_id ", "", tmp[gene_idx])
-    gtf$gene_id[i] <- gene
+  gtf <- gtf %>%
+    dplyr::mutate(
+      gene_id = .get_gene_id(attribute),
+      transcript_id = .get_transcript_id(attribute)
+    )
+  
+  # SEPARATE STRANDS ####
+  sense_df <- gtf %>%
+    dplyr::filter(strand == "+")
+  antisense_df <- gtf %>%
+    dplyr::filter(strand == "-")
+  nonsense_df <- gtf %>%
+    dplyr::filter(strand == ".")
+  
+  #### SORT ####
+  # Arrange the data frames for proper plotting
+  arrange_rows <- function(plot_df) {
     
-    if (gtf$feature[i] == "exon" | gtf$feature[i] == "transcript") {
-      transcript_idx <- grep(" transcript_id", tmp)
-      transcript <- tmp[transcript_idx]
-      gtf$transcript_id[i] <- gsub(" transcript_id ", "", transcript) 
-    } else {
-      gtf$transcript_id[i] <- NA
-    }
+    # Rank genes by their start and end positions
+    gene_rank <- plot_df %>%
+      dplyr::filter(feature == "gene") %>%
+      dplyr::arrange(start, end) %>%
+      dplyr::mutate(gene_rank = dplyr::row_number()) %>%
+      dplyr::select(gene_id, gene_rank)
+    
+    # Rank transcripts within each gene by start, end
+    tx_rank <- plot_df %>%
+      dplyr::filter(feature == "transcript") %>%
+      dplyr::arrange(gene_id, start, end) %>%
+      dplyr::group_by(gene_id) %>%
+      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(gene_id, transcript_id, transcript_rank)
+    
+    # Join the transcript ranks back, then build ordering keys and arrange
+    arranged_df <- plot_df %>%
+      dplyr::left_join(gene_rank, by = c("gene_id")) %>%
+      dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
+      dplyr::mutate(
+        # gene first, then everything else
+        block = dplyr::if_else(feature == "gene", 0L, 1L)
+      ) %>%
+      dplyr::arrange(
+        gene_rank,         
+        block,            # genes ordered by (start, end)
+        transcript_rank   # transcripts in (start, end) order
+      ) %>%
+      dplyr::select(-block)
+    
+    return(arranged_df)
   }
   
-  plot_df <- gtf %>%
-    dplyr::mutate(
-      gene_idx = match(gene_id, unique(gene_id)),
-      transcript_idx = match(transcript_id, unique(transcript_id)),
-      polygon_idx = dplyr::row_number()
-    ) %>%
-    dplyr::select(-c(score, frame, attribute))
+  sense_df <- arrange_rows(sense_df)
+  antisense_df <- arrange_rows(antisense_df)
+  nonsense_df <- arrange_rows(nonsense_df)
   
-  # Arrange rows for plotting
-  # Feature precedence: gene > transcript
-  plot_df <- plot_df %>%
-    dplyr::arrange(strand, transcript_idx)
+  #### COUNT ####
+  # Count the number of plot rows for each strand
+  
+  num_s_rows <- nrow(sense_df)
+  num_a_rows <- nrow(antisense_df)
+  num_n_rows <- nrow(nonsense_df)
+  
+  #### CALCULATE PLOT ROW ORDER ####
   
   # Determine row order for plotting
-  plot_df <- plot_df %>%
+  # In this particular case with no exons present, the row order is already established
+  # So just mutate in a row_index based on row_number
+  sense_df <- sense_df %>%
+    dplyr::mutate(row_index = dplyr::row_number())
+  antisense_df <- antisense_df %>%
+    dplyr::mutate(row_index = dplyr::row_number())
+  nonsense_df <- nonsense_df %>%
     dplyr::mutate(row_index = dplyr::row_number())
   
-  num_plot_rows <- max(plot_df$row_index)
+  #### SUBSET ####
+  SUBSET <- FALSE
   
-  if (num_plot_rows > 20) {
-    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 20.\n")
+  # We can't really plot more than 18-20 rows without things starting to look bad, so we're limiting how many features here
+  # 18 was chosen due to being divisible by 2 and 3 for cases where there are numerous sense, antisense, and nonstranded features present
+  max_plot_rows <- 18
+  num_plot_rows <- sum(num_s_rows, num_a_rows, num_n_rows)
+  
+  if (num_plot_rows > 18) {
+    SUBSET <- TRUE
+    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 18.\n")
     cat(file = logfile, warning_msg, append = TRUE)
-    plot_df <- plot_df %>%
-      dplyr::filter(row_index <= 20)
+
+    # The purpose of this command is to set a max value of 1 on an data frame that has the max_plot_rows number of rows or more
+    # Any data frame that has less will be a ratio of rows:max_plot_rows
+    # This will let us determine how many rows each stranded data frame should contribute
+    # This is agnostic to how many rows a data frame has if it is equal to or over the max_plot_rows value
+    #   So in a case where sense_df has 4000 plottable rows, antisense_df has 18 plottable rows, and nonsense_df has 0 plottable rows,
+    #   Both sense and antisense would contribute 9 rows.
+    s_ratio <- dplyr::if_else(
+      num_s_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_s_rows / max_plot_rows   # FALSE
+    )
+    
+    a_ratio <- dplyr::if_else(
+      num_a_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_a_rows / max_plot_rows   # FALSE
+    )
+    
+    n_ratio <- dplyr::if_else(
+      num_n_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_n_rows / max_plot_rows   # FALSE
+    )
+    
+    ratio_sum <- sum(s_ratio, a_ratio, n_ratio)
+    
+    s_factor <- s_ratio / ratio_sum
+    a_factor <- a_ratio / ratio_sum
+    n_factor <- n_ratio / ratio_sum
+    
+    # The number of rows contributed by each strands observations should be 18 +- 1 depending on rounding
+    s_rows <- round(max_plot_rows * s_factor)
+    a_rows <- round(max_plot_rows * a_factor)
+    n_rows <- round(max_plot_rows * n_factor)
+    
+    sense_df <- sense_df %>%
+      dplyr::filter(row_index <= s_rows)
+    
+    antisense_df <- antisense_df %>%
+      dplyr::filter(row_index <= a_rows)
+    
+    nonsense_df <- nonsense_df %>%
+      dplyr::filter(row_index <= n_rows)
   }
   
-  # Add a column to track if a feature's positions were truncated on a pointed end
-  # We're not adding the arrow if the feature extends past the region of interest
-  # Also not adding arrows if no strand info is present, but we'll handle that elsewhere
-  plot_df <- plot_df %>%
-    dplyr::mutate(truncated = dplyr::case_when(
-      strand == "+" & end > reg_stop ~ TRUE,
-      strand == "-" & start < reg_start ~ TRUE,
-      .default = FALSE
-    ))
+  #### COMBINE ####
+  # Modify the row_index of antisense to start after sense and nonsense to start after antisense
+  max_sense_row <- dplyr::if_else(
+    nrow(sense_df) == 0,
+    0,
+    max(sense_df$row_index)
+  )
+  max_antisense_row <- dplyr::if_else(
+    nrow(antisense_df) == 0,
+    0,
+    max(antisense_df$row_index)
+  )
   
-  # calculate the x and y coordinates for the exons/transcripts/genes
+  antisense_df$row_index <- antisense_df$row_index + max_sense_row
+  nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
+  
+  plot_df <- dplyr::bind_rows(sense_df, antisense_df, nonsense_df)
+  
+  # Add in a unique index for each row to allow for polygon grouping
+  plot_df <- plot_df %>%
+    dplyr::mutate(polygon_idx = dplyr::row_number())
+    
+  # calculate the x and y coordinates for the transcripts/genes
   genes <- plot_df %>%
     dplyr::filter(feature == "gene") %>%
     dplyr::distinct(gene_id, strand, .keep_all = TRUE) %>%
@@ -978,7 +1734,22 @@
   # transcripts -> make polygons with tip like transcripts
   transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
-  TXT_SIZE <- 6
+  # Calculating this again in case the data frame was subset
+  num_plot_rows <- max(plot_df$row_index)
+  
+  if (num_plot_rows < 8) {
+    TXT_SIZE <- 6
+  } else if (num_plot_rows < 12) {
+    TXT_SIZE <- 5
+  } else {
+    TXT_SIZE <- 4
+  }
+  
+  if (SUBSET) {
+    plot_title <- "Features filtered to fit on plot"
+  } else {
+    plot_title <- ""
+  }
   
   # Generate Plot Object
   gtf_plot <- ggplot2::ggplot() +
@@ -1049,11 +1820,12 @@
         "." = "lightgray"
       )
     ) +
-    ggplot2::labs(x = "Genomic coordinate") +
+    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank()
+      axis.title.y = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5)
     )
   
   return(gtf_plot)
@@ -1066,46 +1838,131 @@
   
   roi_length <- reg_stop - reg_start + 1
   
-  # Extract Gene ID and Transcript Id from attribute field
-  # Assign gene_id to all observations
-  # Assign transcript_id to transcripts and exons for grouping
-  for (i in 1:nrow(gtf)) {
-    # Gene ids should be present in all remaining observations
-    tmp <- unlist(strsplit(gtf$attribute[i], ";"))
-    gene_idx <- grep("gene_id", tmp)
-    gene <- gsub("gene_id ", "", tmp[gene_idx])
-    gtf$gene_id[i] <- gene
+  gtf <- gtf %>%
+    dplyr::mutate(
+      gene_id = .get_gene_id(attribute),
+      transcript_id = .get_transcript_id(attribute)
+    )
+
+  #### SEPARATE STRANDS ####
+  sense_df <- gtf %>%
+    dplyr::filter(strand == "+")
+  antisense_df <- gtf %>%
+    dplyr::filter(strand == "-")
+  nonsense_df <- gtf %>%
+    dplyr::filter(strand == ".")
+  
+  #### SORT ####
+  # Arrange the data frames for proper plotting
+  arrange_rows <- function(plot_df) {
     
-    if (gtf$feature[i] == "exon" | gtf$feature[i] == "transcript") {
-      transcript_idx <- grep(" transcript_id", tmp)
-      transcript <- tmp[transcript_idx]
-      gtf$transcript_id[i] <- gsub(" transcript_id ", "", transcript) 
-    } else {
-      gtf$transcript_id[i] <- NA
-    }
+    # Rank genes by their start and end positions
+    gene_rank <- plot_df %>%
+      dplyr::filter(feature == "gene") %>%
+      dplyr::arrange(start, end) %>%
+      dplyr::mutate(gene_rank = dplyr::row_number()) %>%
+      dplyr::select(gene_id, gene_rank)
+    
+    # Rank transcripts within each gene by start, end
+    tx_rank <- plot_df %>%
+      dplyr::filter(feature == "transcript") %>%
+      dplyr::arrange(gene_id, start, end) %>%
+      dplyr::group_by(gene_id) %>%
+      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+      dplyr::ungroup() %>%
+      dplyr::select(gene_id, transcript_id, transcript_rank)
+    
+    # Rank exons within each transcript by start, end
+    arranged_df <- plot_df %>%
+      dplyr::group_by(transcript_id) %>%
+      dplyr::arrange(start, end, .by_group = TRUE) %>%
+      dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", cumsum(feature == "exon"), NA_integer_)) %>%
+      dplyr::ungroup()
+    
+    # Join the transcript ranks back, then build ordering keys and arrange
+    arranged_df <- arranged_df %>%
+      dplyr::left_join(gene_rank, by = c("gene_id")) %>%
+      dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
+      dplyr::mutate(
+        # gene first, then everything else
+        block = dplyr::if_else(feature == "gene", 0L, 1L),
+        # within a transcript group: the transcript row, then its exons
+        within_tx = dplyr::case_when(
+          feature == "transcript" ~ 0L,
+          feature == "exon" ~ 1L,
+          TRUE ~ 0L # gene rows (ignored by transcript_rank)
+        )
+      ) %>%
+      dplyr::arrange(
+        gene_rank,         
+        block,             # genes ordered by (start, end)
+        transcript_rank,   # transcripts in (start, end) order; exons inherit their transcript's rank
+        within_tx,         # transcript row before its exons
+        exon_rank,         # exons in (start, end) order
+        start,             # final tiebreakers - probably not needed
+        end
+      ) %>%
+      dplyr::select(-block, -within_tx)
+    
+    return(arranged_df)
   }
   
-  plot_df <- gtf %>%
-    dplyr::mutate(
-      gene_idx = match(gene_id, unique(gene_id)),
-      transcript_idx = match(transcript_id, unique(transcript_id)),
-      polygon_idx = dplyr::row_number()
-    ) %>%
-    dplyr::select(-c(score, frame, attribute))
-    
-  # Modify "gene" features to "xgene" for temporary sorting
-  plot_df$feature[plot_df$feature == "gene"] <- "xgene"
-    
-  # Arrange rows for plotting
-  # Feature precedence: gene > transcript > exon
-  plot_df <- plot_df %>%
-    dplyr::arrange(strand, transcript_idx, desc(feature), start, end)
+  sense_df <- arrange_rows(sense_df)
+  antisense_df <- arrange_rows(antisense_df)
+  nonsense_df <- arrange_rows(nonsense_df)
   
-  # Change xgene back to gene
-  plot_df$feature[plot_df$feature == "xgene"] <- "gene"
+  #### COUNT ####
+  # Count the number of plot rows for each strand
+  
+  sense_gene_tx_plot_rows <- nrow(sense_df %>%
+    dplyr::filter(feature == "gene" | feature == "transcript"))
+    
+  # sense_tx_plot_rows <- nrow(sense_df %>%
+  #   dplyr::filter(feature == "transcript"))
+  
+  # Note this is intended to count groups of exons with the same transcript_id instead of total observations
+  sense_exon_rows <- nrow(sense_df %>%
+    dplyr::filter(feature == "exon") %>%
+    dplyr::select(transcript_id) %>%
+    dplyr::distinct()
+  )
+  
+  num_s_rows <- sum(sense_gene_tx_plot_rows, sense_exon_rows)
+  
+  # Antisense rows
+  antisense_gene_tx_plot_rows <- nrow(
+    antisense_df %>%
+      dplyr::filter(feature == "gene" | feature == "transcript"))
+  
+  # Note this is intended to count groups of exons with the same transcript_id instead of total observations
+  antisense_exon_rows <- nrow(
+    antisense_df %>%
+    dplyr::filter(feature == "exon") %>%
+    dplyr::select(transcript_id) %>%
+    dplyr::distinct()
+  )
+  
+  num_a_rows <- sum(antisense_gene_tx_plot_rows, antisense_exon_rows)
+  
+  # Nonsense rows
+  nonsense_gene_tx_plot_rows <- nrow(
+    nonsense_df %>%
+    dplyr::filter(feature == "gene" | feature == "transcript"))
+  
+  # Note this is intended to count groups of exons with the same transcript_id instead of total observations
+  nonsense_exon_rows <- nrow(
+    nonsense_df %>%
+    dplyr::filter(feature == "exon") %>%
+    dplyr::select(transcript_id) %>%
+    dplyr::distinct()
+  )
+  
+  num_n_rows <- sum(nonsense_gene_tx_plot_rows, nonsense_exon_rows)
+  
+  #### CALCULATE PLOT ROW ORDER ####
   
   # Determine row order for plotting
-  plot_df <- plot_df %>%
+  sense_df <- sense_df %>%
     dplyr::mutate(
       first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
       inc = (feature == "gene") | (feature == "transcript") | first_exon,
@@ -1113,15 +1970,121 @@
     ) %>%
     dplyr::select(-first_exon, -inc)
   
-  num_plot_rows <- max(plot_df$row_index)
+  antisense_df <- antisense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = (feature == "gene") | (feature == "transcript") | first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
   
-  if (num_plot_rows > 20) {
-    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 20.\n")
+  nonsense_df <- nonsense_df %>%
+    dplyr::mutate(
+      first_exon = feature == "exon" & !duplicated(ifelse(feature == "exon", transcript_id, NA)),
+      inc = (feature == "gene") | (feature == "transcript") | first_exon,
+      row_index = cumsum(inc)
+    ) %>%
+    dplyr::select(-first_exon, -inc)
+  
+  #### SUBSET ####
+  SUBSET <- FALSE
+  
+  # We can't really plot more than 18-20 rows without things starting to look bad, so we're limiting how many features here
+  # 18 was chosen due to being divisible by 2 and 3 for cases where there are numerous sense, antisense, and nonstranded features present
+  max_plot_rows <- 18
+  num_plot_rows <- sum(num_s_rows, num_a_rows, num_n_rows)
+  
+  if (num_plot_rows > 18) {
+    SUBSET <- TRUE
+    warning_msg <- glue::glue("Warning: This region contains more features than are plottable [{num_plot_rows}]. Selecting first 18.\n")
     cat(file = logfile, warning_msg, append = TRUE)
-    plot_df <- plot_df %>%
-      dplyr::filter(row_index <= 20)
+    # Subset the data frames to only include up to 18 plotable rows combined
+    # Need to make sure each strand get some features if present
+    # Need to make sure that all 3 features are still present after subsetting
+    # Need to indicate on the plot that this is a subsetted plot
+    # Figuring how many rows each data frame should get is annoying
+    # There has to be a better way to do this
+    
+    # Case 1 - Only Sense rows
+    
+    # Case 2 - Only Sense and Antisense rows
+    
+    # Case 3 - Only Sense and Nonsense rows
+    
+    # Case 4 - Sense, Antisense, and Nonsense rows
+    
+    # Case 5 - Only Antisense rows
+    
+    # Case 6 - Only Antisense and Nonsense rows
+    
+    # Case 7 - Only Nonsense rows
+    
+    s_ratio <- dplyr::if_else(
+      num_s_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_s_rows / max_plot_rows   # FALSE
+    )
+    
+    a_ratio <- dplyr::if_else(
+      num_a_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_a_rows / max_plot_rows   # FALSE
+    )
+    
+    n_ratio <- dplyr::if_else(
+      num_n_rows >= max_plot_rows,
+      1,                           # TRUE
+      num_n_rows / max_plot_rows   # FALSE
+    )
+    
+    ratio_sum <- sum(s_ratio, a_ratio, n_ratio)
+    
+    s_factor <- s_ratio / ratio_sum
+    a_factor <- a_ratio / ratio_sum
+    n_factor <- n_ratio / ratio_sum
+    
+    # The number of rows contributed by each strands observations should be 18 +- 1 depending on rounding
+    s_rows <- round(max_plot_rows * s_factor)
+    a_rows <- round(max_plot_rows * a_factor)
+    n_rows <- round(max_plot_rows * n_factor)
+    
+    # There is a slight possibility that not all the features that are expected in this subfunction will remain after subsetting
+    # TODO we need to add a check for that here, and either warn and return empty or...or I don't know. Randomize the subsetting until we get what we want?? That seems terrible.
+    # This seems even more likely for strands with a very small ratio/factor and will be getting very few rows represented.
+    # We might want to change this to include all rows from very small data frames. Bleh
+    
+    sense_df <- sense_df %>%
+      dplyr::filter(row_index <= s_rows)
+    
+    antisense_df <- antisense_df %>%
+      dplyr::filter(row_index <= a_rows)
+    
+    nonsense_df <- nonsense_df %>%
+      dplyr::filter(row_index <= n_rows)
   }
-
+  
+  #### COMBINE ####
+  # Modify the row_index of antisense to start after sense and nonsense to start after antisense
+  max_sense_row <- dplyr::if_else(
+    nrow(sense_df) == 0,
+    0,
+    max(sense_df$row_index)
+  )
+  max_antisense_row <- dplyr::if_else(
+    nrow(antisense_df) == 0,
+    0,
+    max(antisense_df$row_index)
+  )
+  
+  antisense_df$row_index <- antisense_df$row_index + max_sense_row
+  nonsense_df$row_index <- nonsense_df$row_index + max_sense_row + max_antisense_row
+  
+  plot_df <- dplyr::bind_rows(sense_df, antisense_df, nonsense_df)
+  
+  # Add in a unique index for each row to allow for polygon grouping
+  plot_df <- plot_df %>%
+    dplyr::mutate(polygon_idx = dplyr::row_number())
+  
   # Add a column to track if a feature's positions were truncated on a pointed end
   # We're not adding the arrow if the feature extends past the region of interest
   # Also not adding arrows if no strand info is present, but we'll handle that elsewhere
@@ -1155,7 +2118,7 @@
     dplyr::filter(feature == "exon") %>%
     dplyr::group_by(transcript_id) %>%
     dplyr::mutate(
-      exon_idx= dplyr::row_number(),
+      exon_idx = dplyr::row_number(),
       n_exons = dplyr::n(),
       pointed = dplyr::case_when(
         strand == "+" & exon_idx == n_exons & !truncated ~ TRUE,   # last exon for +
@@ -1212,7 +2175,22 @@
   # transcripts -> make polygons with tip like transcripts
   transcript_poly_data <- .get_pointed_poly_data(transcripts, roi_length)
   
-  TXT_SIZE <- 6
+  # Calculating this again in case the data frame was subset
+  num_plot_rows <- max(plot_df$row_index)
+  
+  if (num_plot_rows < 8) {
+    TXT_SIZE <- 6
+  } else if (num_plot_rows < 12) {
+    TXT_SIZE <- 5
+  } else {
+    TXT_SIZE <- 4
+  }
+  
+  if (SUBSET) {
+    plot_title <- "Features filtered to fit on plot"
+  } else {
+    plot_title <- ""
+  }
   
   # Generate Plot Object
   gtf_plot <- ggplot2::ggplot() +
@@ -1321,11 +2299,12 @@
         "." = "lightgray"
       )
     ) +
-    ggplot2::labs(x = "Genomic coordinate") +
+    ggplot2::labs(x = "Genomic coordinate", title = plot_title) +
     ggplot2::theme_classic() +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
-      axis.title.y = ggplot2::element_blank()
+      axis.title.y = ggplot2::element_blank(),
+      plot.title = ggplot2::element_text(hjust = 0.5)
     )
   
   return(gtf_plot)
@@ -1343,7 +2322,6 @@
     strand = character(0),
     gene_id = character(0),
     transcript_id = character(0),
-    transcript_idx = integer(0),
     row_index = integer(0),
     truncated = logical(0),
     exon_idx = integer(0),
@@ -1447,3 +2425,39 @@
   
   return(unpointed_poly_data)
 }
+
+.get_gene_id <- Vectorize(function(x) {
+  tmp <- unlist(strsplit(x, ";"))
+  
+  # Locate gene_id in the attributes column
+  gene_idx <- grep("gene_id", tmp)
+  gene_field <- tmp[gene_idx]
+  
+  # Strip out the text gene_id
+  gene_id <- gsub("gene_id ", "", gene_field)
+  
+  # In case gene_id wasn't the first attribute, strip another space
+  gene_id <- gsub(" ", "", gene_id)
+  
+  return(gene_id)
+})
+
+.get_transcript_id <- Vectorize(function(x) {
+  tmp <- unlist(strsplit(x, ";"))
+  
+  # Locate transcript_id in the attributes column
+  transcript_idx <- grep(" transcript_id", tmp)
+  transcript_field <- tmp[transcript_idx]
+  
+  # Strip out the text transcript_id
+  transcript_id <- gsub(" transcript_id ", "", transcript_field)
+  # In case transcript_id wasn't the first attribute, strip another space
+  # transcript_id <- gsub(" ", "", transcript_id)
+  
+  # If no actual transcript_id exists, set to NA
+  if (transcript_id == "") {
+    transcript_id <- NA
+  }
+  
+  return(transcript_id)
+})
