@@ -2044,6 +2044,12 @@
   
   # Locate transcript_id in the attributes column
   transcript_idx <- grep(" transcript_id", tmp)
+  
+  # If transcript_id isn't in attributes column, set to NA
+  if (identical(transcript_idx, integer(0))) {
+    return(NA)
+  }
+  
   transcript_field <- tmp[transcript_idx]
   
   # Strip out the text transcript_id
@@ -2052,6 +2058,7 @@
   # transcript_id <- gsub(" ", "", transcript_id)
   
   # If no actual transcript_id exists, set to NA
+  # This would occur when the attribute name "transcript_id" is present but no ID follows it
   if (transcript_id == "") {
     transcript_id <- NA
   }
