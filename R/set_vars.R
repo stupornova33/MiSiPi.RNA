@@ -83,14 +83,20 @@ set_vars <- function(roi, bam_file, genome,
   if (annotate_region == TRUE) {
     stopifnot("Parameter `gtf_file` must be provided when `annotate_region` is TRUE." = !missing(gtf_file))
     stopifnot("Parameter `gtf_file` must be a valid filepath to a 9 column gtf file." = file.exists(gtf_file))
-    gtf_columns_vector <- utils::count.fields(gtf_file, sep = "\t", quote = "")
-    stopifnot("gtf_file must have the same number of columns in each line." = length(unique(gtf_columns_vector)) == 1)
-    # waiting to include the number of column check
-    number_of_gtf_columns <- gtf_columns_vector[1]
-    stopifnot("gtf_file must have 9 columns and be tab separated." = number_of_gtf_columns == 9) # TODO make >= instead of ==
-    # TODO Add in check for Leading lines (do this in the wrapper_gtf_function) Maybe this needs to be in here as well to ensure that the 9 columns is met
-    # TODO Add in check for gene_id and transcript_id
+    
+    gtf <- .validate_gtf(gtf_file)
+    
+    if (gtf$is_valid == FALSE) {
+      msg <- paste("Invalid GTF file:", gtf$msg)
+      cli::cli_alert_warning(msg)
+      cli::cli_alert_danger("Stopping")
+      return()
+    }
+    gtf_df <- gtf$gtf
+  } else {
+    gtf_df <- NULL
   }
+
   # write_fastas
   stopifnot("Parameter `write_fastas` only accepts TRUE or FALSE." = is.logical(write_fastas))
   # out_type
@@ -249,7 +255,7 @@ set_vars <- function(roi, bam_file, genome,
     si_pal = si_pal,
     annotate_region = annotate_region,
     weight_reads = weight_reads,
-    gtf_file = gtf_file,
+    gtf_df = gtf_df,
     write_fastas = write_fastas,
     out_type = out_type,
     use_bed_names = use_bed_names,

@@ -1,6 +1,6 @@
 # takes a gtf file
 # outputs a plot
-# @param gtf_file a string path leading to the gtf file
+# @param gtf_df A data frame of gtf observations for exons, genes, and transcripts
 # @param chrom_name a string
 # @param reg_start an integer
 # @param reg_stop an integer
@@ -9,24 +9,15 @@
 # @return plot
 
 # Wrapper function for gtf sub functions called based on combination of features present
-.plot_gtf <- function(gtf_file, chrom_name, reg_start, reg_stop, logfile) {
-  # Load GTF
-  gtf <- read.csv(gtf_file, header = FALSE, sep = "\t", fill = TRUE, quote="")
-  colnames(gtf)[1:9] <- c("seqname","source","feature","start","end","score","strand","frame","attribute")
-  
+.plot_gtf <- function(gtf_df, chrom_name, reg_start, reg_stop, logfile) {
   # Filter for region
-  gtf <- gtf %>% 
-    # filter features that 
-    dplyr::filter(seqname == chrom_name, start >= reg_start & start <= reg_stop | end >= reg_start & end <= reg_stop)  %>%
-    dplyr::filter(feature != "start_codon" & feature != "CDS" & feature != "stop_codon")
+  gtf <- gtf_df %>% 
+    dplyr::filter(seqname == chrom_name, start >= reg_start & start <= reg_stop | end >= reg_start & end <= reg_stop)
   
   if (nrow(gtf) == 0) {
     message("No features found in region.")
     return(NULL)
   }
-  
-  # Remove quotation marks
-  gtf$attribute <- gsub("\"", "", gtf$attribute)
   
   exons_present <- any(gtf$feature == "exon")
   transcripts_present <- any(gtf$feature == "transcript")
@@ -2022,49 +2013,6 @@
   
   return(unpointed_poly_data)
 }
-
-.get_gene_id <- Vectorize(function(x) {
-  tmp <- unlist(strsplit(x, ";"))
-  
-  # Locate gene_id in the attributes column
-  gene_idx <- grep("gene_id", tmp)
-  gene_field <- tmp[gene_idx]
-  
-  # Strip out the text gene_id
-  gene_id <- gsub("gene_id ", "", gene_field)
-  
-  # In case gene_id wasn't the first attribute, strip another space
-  gene_id <- gsub(" ", "", gene_id)
-  
-  return(gene_id)
-})
-
-.get_transcript_id <- Vectorize(function(x) {
-  tmp <- unlist(strsplit(x, ";"))
-  
-  # Locate transcript_id in the attributes column
-  transcript_idx <- grep(" transcript_id", tmp)
-  
-  # If transcript_id isn't in attributes column, set to NA
-  if (identical(transcript_idx, integer(0))) {
-    return(NA)
-  }
-  
-  transcript_field <- tmp[transcript_idx]
-  
-  # Strip out the text transcript_id
-  transcript_id <- gsub(" transcript_id ", "", transcript_field)
-  # In case transcript_id wasn't the first attribute, strip another space
-  # transcript_id <- gsub(" ", "", transcript_id)
-  
-  # If no actual transcript_id exists, set to NA
-  # This would occur when the attribute name "transcript_id" is present but no ID follows it
-  if (transcript_id == "") {
-    transcript_id <- NA
-  }
-  
-  return(transcript_id)
-})
 
 .get_gtf_plot <- function(
     plot_title, TXT_SIZE, reg_start, reg_stop,

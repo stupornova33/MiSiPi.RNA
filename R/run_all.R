@@ -52,7 +52,6 @@ run_all <- function(vars, output_dir) {
       vars$path_to_RNAplot,
       vars$annotate_region,
       vars$weight_reads,
-      vars$gtf_file,
       vars$write_fastas,
       vars$out_type,
       output_dir,
@@ -60,7 +59,8 @@ run_all <- function(vars, output_dir) {
       idx_vec,
       total_iterations,
       vars$iteration_output,
-      vars$density_timeout
+      vars$density_timeout,
+      MoreArgs = list(vars$gtf_df)
     )
   )
   
