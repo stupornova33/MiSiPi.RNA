@@ -68,16 +68,27 @@
   
   #### SORT ####
   # Arrange the data frames for proper plotting
-  arrange_rows <- function(plot_df) {
-    arranged_df <- plot_df %>%
-      dplyr::arrange(transcript_id, start, end)
-    
-    return(arranged_df)
-  }
   
-  sense_df <- arrange_rows(sense_df)
-  antisense_df <- arrange_rows(antisense_df)
-  nonsense_df <- arrange_rows(nonsense_df)
+  sense_df <- .arrange_rows(
+    sense_df,
+    exons_present = "exon" %in% sense_df$feature,
+    genes_present = "gene" %in% sense_df$feature,
+    transcripts_present = "transcript" %in% sense_df$feature
+  )
+  
+  antisense_df <- .arrange_rows(
+    antisense_df,
+    exons_present = "exon" %in% antisense_df$feature,
+    genes_present = "gene" %in% antisense_df$feature,
+    transcripts_present = "transcript" %in% antisense_df$feature
+  )
+  
+  nonsense_df <- .arrange_rows(
+    nonsense_df,
+    exons_present = "exon" %in% nonsense_df$feature,
+    genes_present = "gene" %in% nonsense_df$feature,
+    transcripts_present = "transcript" %in% nonsense_df$feature
+  )
   
   #### COUNT ####
   # Count the number of plot rows for each strand
@@ -304,17 +315,27 @@
     dplyr::filter(strand == ".")
   
   #### SORT ####
-  # Arrange the data frames for proper plotting
-  arrange_rows <- function(plot_df) {
-    arranged_df <- plot_df %>%
-      dplyr::arrange(start, end)
-    
-    return(arranged_df)
-  }
   
-  sense_df <- arrange_rows(sense_df)
-  antisense_df <- arrange_rows(antisense_df)
-  nonsense_df <- arrange_rows(nonsense_df)
+  sense_df <- .arrange_rows(
+    sense_df,
+    exons_present = "exon" %in% sense_df$feature,
+    genes_present = "gene" %in% sense_df$feature,
+    transcripts_present = "transcript" %in% sense_df$feature
+  )
+  
+  antisense_df <- .arrange_rows(
+    antisense_df,
+    exons_present = "exon" %in% antisense_df$feature,
+    genes_present = "gene" %in% antisense_df$feature,
+    transcripts_present = "transcript" %in% antisense_df$feature
+  )
+  
+  nonsense_df <- .arrange_rows(
+    nonsense_df,
+    exons_present = "exon" %in% nonsense_df$feature,
+    genes_present = "gene" %in% nonsense_df$feature,
+    transcripts_present = "transcript" %in% nonsense_df$feature
+  )
   
   #### COUNT ####
   # Count the number of plot rows for each strand
@@ -457,7 +478,6 @@
   return(gtf_plot)
 }
 
-
 # Plots the coverage over an interval
 # @param df a dataframe
 # @return a histogram plot
@@ -479,18 +499,27 @@
     dplyr::filter(strand == ".")
   
   #### SORT ####
-  # Arrange the data frames for proper plotting
-  arrange_rows <- function(plot_df) {
-    # Join the transcript ranks back, then build ordering keys and arrange
-    arranged_df <- plot_df %>%
-      dplyr::arrange(start, end)
-    
-    return(arranged_df)
-  }
   
-  sense_df <- arrange_rows(sense_df)
-  antisense_df <- arrange_rows(antisense_df)
-  nonsense_df <- arrange_rows(nonsense_df)
+  sense_df <- .arrange_rows(
+    sense_df,
+    exons_present = "exon" %in% sense_df$feature,
+    genes_present = "gene" %in% sense_df$feature,
+    transcripts_present = "transcript" %in% sense_df$feature
+  )
+  
+  antisense_df <- .arrange_rows(
+    antisense_df,
+    exons_present = "exon" %in% antisense_df$feature,
+    genes_present = "gene" %in% antisense_df$feature,
+    transcripts_present = "transcript" %in% antisense_df$feature
+  )
+  
+  nonsense_df <- .arrange_rows(
+    nonsense_df,
+    exons_present = "exon" %in% nonsense_df$feature,
+    genes_present = "gene" %in% nonsense_df$feature,
+    transcripts_present = "transcript" %in% nonsense_df$feature
+  )
   
   #### COUNT ####
   # Count the number of plot rows for each strand
@@ -657,47 +686,27 @@
     dplyr::filter(strand == ".")
   
   #### SORT ####
-  # Arrange the data frames for proper plotting
-  arrange_rows <- function(plot_df) {
-    
-    # Rank transcripts within each gene by start, end
-    tx_rank <- plot_df %>%
-      dplyr::filter(feature == "transcript") %>%
-      dplyr::arrange(gene_id, start, end) %>%
-      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
-      dplyr::select(gene_id, transcript_id, transcript_rank)
-    
-    # Rank exons within each transcript by start, end
-    arranged_df <- plot_df %>%
-      dplyr::group_by(transcript_id) %>%
-      dplyr::arrange(start, end, .by_group = TRUE) %>%
-      dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", cumsum(feature == "exon"), NA_integer_)) %>%
-      dplyr::ungroup()
-    
-    # Join the transcript ranks back, then build ordering keys and arrange
-    arranged_df <- arranged_df %>%
-      dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
-      dplyr::mutate(
-        # within a transcript group: the transcript row, then its exons
-        within_tx = dplyr::case_when(
-          feature == "transcript" ~ 0L,
-          feature == "exon" ~ 1L,
-          TRUE ~ 0L
-        )
-      ) %>%
-      dplyr::arrange(
-        transcript_rank,   # transcripts in (start, end) order; exons inherit their transcript's rank
-        within_tx,         # transcript row before its exons
-        exon_rank          # exons in (start, end) order
-      ) %>%
-      dplyr::select(-within_tx)
-    
-    return(arranged_df)
-  }
   
-  sense_df <- arrange_rows(sense_df)
-  antisense_df <- arrange_rows(antisense_df)
-  nonsense_df <- arrange_rows(nonsense_df)
+  sense_df <- .arrange_rows(
+    sense_df,
+    exons_present = "exon" %in% sense_df$feature,
+    genes_present = "gene" %in% sense_df$feature,
+    transcripts_present = "transcript" %in% sense_df$feature
+  )
+  
+  antisense_df <- .arrange_rows(
+    antisense_df,
+    exons_present = "exon" %in% antisense_df$feature,
+    genes_present = "gene" %in% antisense_df$feature,
+    transcripts_present = "transcript" %in% antisense_df$feature
+  )
+  
+  nonsense_df <- .arrange_rows(
+    nonsense_df,
+    exons_present = "exon" %in% nonsense_df$feature,
+    genes_present = "gene" %in% nonsense_df$feature,
+    transcripts_present = "transcript" %in% nonsense_df$feature
+  )
   
   #### COUNT ####
   # Count the number of plot rows for each strand
@@ -977,61 +986,27 @@
     dplyr::filter(strand == ".")
   
   #### SORT ####
-  # Arrange the data frames for proper plotting
-  arrange_rows <- function(plot_df) {
-    if (nrow(plot_df) == 0) return(plot_df)
-    
-    # Rank genes by (start, end) using the gene rows
-    gene_rank <- plot_df %>%
-      dplyr::filter(feature == "gene") %>%
-      dplyr::arrange(start, end) %>%
-      dplyr::mutate(gene_rank = dplyr::row_number()) %>%
-      dplyr::select(gene_id, gene_rank)
-    
-    # Infer transcript spans from exons, then rank transcripts within each gene
-    # Use (tx_start = min exon start, tx_end = max exon end) for ordering
-    inferred_tx_rank <- plot_df %>%
-      dplyr::filter(feature == "exon") %>%
-      dplyr::group_by(gene_id, transcript_id) %>%
-      dplyr::summarise(
-        tx_start = min(start, na.rm = TRUE),
-        tx_end = max(end, na.rm = TRUE),
-        .groups = "drop"
-      ) %>%
-      dplyr::arrange(gene_id, tx_start, tx_end) %>%
-      dplyr::group_by(gene_id) %>%
-      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(gene_id, transcript_id, transcript_rank)
-    
-    # Rank exons within each transcript by (start, end)
-    arranged_df <- plot_df %>%
-      dplyr::group_by(transcript_id) %>%
-      dplyr::arrange(start, end, .by_group = TRUE) %>%
-      dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", dplyr::row_number(), NA_integer_)) %>%
-      dplyr::ungroup()
-    
-    # 3) Join ranks and arrange: gene first, then transcripts (via inferred ranks), then exons
-    arranged_df <- arranged_df %>%
-      dplyr::left_join(gene_rank, by = "gene_id") %>%
-      dplyr::left_join(inferred_tx_rank, by = c("gene_id", "transcript_id")) %>%
-      dplyr::mutate(
-        block = dplyr::if_else(feature == "gene", 0L, 1L) # genes before exons
-      ) %>%
-      dplyr::arrange(
-        gene_rank,          # genes ordered by (start, end)
-        block,              # gene row first
-        transcript_rank,    # transcript order inferred from exon spans
-        exon_rank           # exons ordered by (start, end)
-      ) %>%
-      dplyr::select(-block)
-    
-    return(arranged_df)
-  }
   
-  sense_df <- arrange_rows(sense_df)
-  antisense_df <- arrange_rows(antisense_df)
-  nonsense_df <- arrange_rows(nonsense_df)
+  sense_df <- .arrange_rows(
+    sense_df,
+    exons_present = "exon" %in% sense_df$feature,
+    genes_present = "gene" %in% sense_df$feature,
+    transcripts_present = "transcript" %in% sense_df$feature
+  )
+  
+  antisense_df <- .arrange_rows(
+    antisense_df,
+    exons_present = "exon" %in% antisense_df$feature,
+    genes_present = "gene" %in% antisense_df$feature,
+    transcripts_present = "transcript" %in% antisense_df$feature
+  )
+  
+  nonsense_df <- .arrange_rows(
+    nonsense_df,
+    exons_present = "exon" %in% nonsense_df$feature,
+    genes_present = "gene" %in% nonsense_df$feature,
+    transcripts_present = "transcript" %in% nonsense_df$feature
+  )
   
   #### COUNT ####
   # Count the number of plot rows for each strand
@@ -1304,46 +1279,27 @@
     dplyr::filter(strand == ".")
   
   #### SORT ####
-  # Arrange the data frames for proper plotting
-  arrange_rows <- function(plot_df) {
-    
-    # Rank genes by their start and end positions
-    gene_rank <- plot_df %>%
-      dplyr::filter(feature == "gene") %>%
-      dplyr::arrange(start, end) %>%
-      dplyr::mutate(gene_rank = dplyr::row_number()) %>%
-      dplyr::select(gene_id, gene_rank)
-    
-    # Rank transcripts within each gene by start, end
-    tx_rank <- plot_df %>%
-      dplyr::filter(feature == "transcript") %>%
-      dplyr::arrange(gene_id, start, end) %>%
-      dplyr::group_by(gene_id) %>%
-      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(gene_id, transcript_id, transcript_rank)
-    
-    # Join the transcript ranks back, then build ordering keys and arrange
-    arranged_df <- plot_df %>%
-      dplyr::left_join(gene_rank, by = c("gene_id")) %>%
-      dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
-      dplyr::mutate(
-        # gene first, then everything else
-        block = dplyr::if_else(feature == "gene", 0L, 1L)
-      ) %>%
-      dplyr::arrange(
-        gene_rank,         
-        block,            # genes ordered by (start, end)
-        transcript_rank   # transcripts in (start, end) order
-      ) %>%
-      dplyr::select(-block)
-    
-    return(arranged_df)
-  }
   
-  sense_df <- arrange_rows(sense_df)
-  antisense_df <- arrange_rows(antisense_df)
-  nonsense_df <- arrange_rows(nonsense_df)
+  sense_df <- .arrange_rows(
+    sense_df,
+    exons_present = "exon" %in% sense_df$feature,
+    genes_present = "gene" %in% sense_df$feature,
+    transcripts_present = "transcript" %in% sense_df$feature
+  )
+  
+  antisense_df <- .arrange_rows(
+    antisense_df,
+    exons_present = "exon" %in% antisense_df$feature,
+    genes_present = "gene" %in% antisense_df$feature,
+    transcripts_present = "transcript" %in% antisense_df$feature
+  )
+  
+  nonsense_df <- .arrange_rows(
+    nonsense_df,
+    exons_present = "exon" %in% nonsense_df$feature,
+    genes_present = "gene" %in% nonsense_df$feature,
+    transcripts_present = "transcript" %in% nonsense_df$feature
+  )
   
   #### COUNT ####
   # Count the number of plot rows for each strand
@@ -1540,63 +1496,27 @@
     dplyr::filter(strand == ".")
   
   #### SORT ####
-  # Arrange the data frames for proper plotting
-  arrange_rows <- function(plot_df) {
-    
-    # Rank genes by their start and end positions
-    gene_rank <- plot_df %>%
-      dplyr::filter(feature == "gene") %>%
-      dplyr::arrange(start, end) %>%
-      dplyr::mutate(gene_rank = dplyr::row_number()) %>%
-      dplyr::select(gene_id, gene_rank)
-    
-    # Rank transcripts within each gene by start, end
-    tx_rank <- plot_df %>%
-      dplyr::filter(feature == "transcript") %>%
-      dplyr::arrange(gene_id, start, end) %>%
-      dplyr::group_by(gene_id) %>%
-      dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
-      dplyr::ungroup() %>%
-      dplyr::select(gene_id, transcript_id, transcript_rank)
-    
-    # Rank exons within each transcript by start, end
-    arranged_df <- plot_df %>%
-      dplyr::group_by(transcript_id) %>%
-      dplyr::arrange(start, end, .by_group = TRUE) %>%
-      dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", cumsum(feature == "exon"), NA_integer_)) %>%
-      dplyr::ungroup()
-    
-    # Join the transcript ranks back, then build ordering keys and arrange
-    arranged_df <- arranged_df %>%
-      dplyr::left_join(gene_rank, by = c("gene_id")) %>%
-      dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
-      dplyr::mutate(
-        # gene first, then everything else
-        block = dplyr::if_else(feature == "gene", 0L, 1L),
-        # within a transcript group: the transcript row, then its exons
-        within_tx = dplyr::case_when(
-          feature == "transcript" ~ 0L,
-          feature == "exon" ~ 1L,
-          TRUE ~ 0L # gene rows (ignored by transcript_rank)
-        )
-      ) %>%
-      dplyr::arrange(
-        gene_rank,         
-        block,             # genes ordered by (start, end)
-        transcript_rank,   # transcripts in (start, end) order; exons inherit their transcript's rank
-        within_tx,         # transcript row before its exons
-        exon_rank,         # exons in (start, end) order
-        start,             # final tiebreakers - probably not needed
-        end
-      ) %>%
-      dplyr::select(-block, -within_tx)
-    
-    return(arranged_df)
-  }
   
-  sense_df <- arrange_rows(sense_df)
-  antisense_df <- arrange_rows(antisense_df)
-  nonsense_df <- arrange_rows(nonsense_df)
+  sense_df <- .arrange_rows(
+    sense_df,
+    exons_present = "exon" %in% sense_df$feature,
+    genes_present = "gene" %in% sense_df$feature,
+    transcripts_present = "transcript" %in% sense_df$feature
+  )
+  
+  antisense_df <- .arrange_rows(
+    antisense_df,
+    exons_present = "exon" %in% antisense_df$feature,
+    genes_present = "gene" %in% antisense_df$feature,
+    transcripts_present = "transcript" %in% antisense_df$feature
+  )
+  
+  nonsense_df <- .arrange_rows(
+    nonsense_df,
+    exons_present = "exon" %in% nonsense_df$feature,
+    genes_present = "gene" %in% nonsense_df$feature,
+    transcripts_present = "transcript" %in% nonsense_df$feature
+  )
   
   #### COUNT ####
   # Count the number of plot rows for each strand
@@ -2149,4 +2069,221 @@
       )
   
   return(gtf_plot)
+}
+
+.arrange_rows <- function(plot_df, exons_present, genes_present, transcripts_present) {
+
+  if (nrow(plot_df) == 0) return(plot_df)
+  
+  if (exons_present & !genes_present & !transcripts_present) {
+    arranged_df <- .arrange_exons(plot_df)
+  } else if (!exons_present & genes_present & !transcripts_present) {
+    arranged_df <- .arrange_genes(plot_df)
+  } else if (!exons_present & !genes_present & transcripts_present) {
+    arranged_df <- .arrange_transcripts(plot_df)
+  } else if (exons_present & genes_present & !transcripts_present) {
+    arranged_df <- .arrange_exons_genes(plot_df)
+  } else if (exons_present & !genes_present & transcripts_present) {
+    arranged_df <- .arrange_exons_transcripts(plot_df)
+  } else if (exons_present & genes_present & transcripts_present) {
+    arranged_df <- .arrange_exons_genes_transcripts(plot_df)
+  } else if (!exons_present & genes_present & transcripts_present) {
+    arranged_df <- .arrange_genes_transcripts(plot_df)
+  }
+  
+  return(arranged_df)
+}
+
+.arrange_exons <- function(plot_df) {
+  arranged_df <- plot_df %>%
+    dplyr::arrange(transcript_id, start, end)
+  
+  return(arranged_df)
+}
+
+.arrange_genes <- function(plot_df) {
+  arranged_df <- plot_df %>%
+    dplyr::arrange(start, end)
+  
+  return(arranged_df)
+}
+
+.arrange_transcripts <- function(plot_df) {
+  arranged_df <- plot_df %>%
+    dplyr::arrange(start, end)
+  
+  return(arranged_df)
+}
+
+.arrange_exons_genes <- function(plot_df) {
+  
+  # Rank genes by (start, end) using the gene rows
+  gene_rank <- plot_df %>%
+    dplyr::filter(feature == "gene") %>%
+    dplyr::arrange(start, end) %>%
+    dplyr::mutate(gene_rank = dplyr::row_number()) %>%
+    dplyr::select(gene_id, gene_rank)
+  
+  # Infer transcript spans from exons, then rank transcripts within each gene
+  # Use (tx_start = min exon start, tx_end = max exon end) for ordering
+  inferred_tx_rank <- plot_df %>%
+    dplyr::filter(feature == "exon") %>%
+    dplyr::group_by(gene_id, transcript_id) %>%
+    dplyr::summarise(
+      tx_start = min(start, na.rm = TRUE),
+      tx_end = max(end, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    dplyr::arrange(gene_id, tx_start, tx_end) %>%
+    dplyr::group_by(gene_id) %>%
+    dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(gene_id, transcript_id, transcript_rank)
+  
+  # Rank exons within each transcript by (start, end)
+  arranged_df <- plot_df %>%
+    dplyr::group_by(transcript_id) %>%
+    dplyr::arrange(start, end, .by_group = TRUE) %>%
+    dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", dplyr::row_number(), NA_integer_)) %>%
+    dplyr::ungroup()
+  
+  # 3) Join ranks and arrange: gene first, then transcripts (via inferred ranks), then exons
+  arranged_df <- arranged_df %>%
+    dplyr::left_join(gene_rank, by = "gene_id") %>%
+    dplyr::left_join(inferred_tx_rank, by = c("gene_id", "transcript_id")) %>%
+    dplyr::mutate(
+      block = dplyr::if_else(feature == "gene", 0L, 1L) # genes before exons
+    ) %>%
+    dplyr::arrange(
+      gene_rank,          # genes ordered by (start, end)
+      block,              # gene row first
+      transcript_rank,    # transcript order inferred from exon spans
+      exon_rank           # exons ordered by (start, end)
+    ) %>%
+    dplyr::select(-block)
+  
+  return(arranged_df)
+}
+
+.arrange_exons_transcripts <- function(plot_df) {
+  # Rank transcripts within each gene by start, end
+  tx_rank <- plot_df %>%
+    dplyr::filter(feature == "transcript") %>%
+    dplyr::arrange(gene_id, start, end) %>%
+    dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+    dplyr::select(gene_id, transcript_id, transcript_rank)
+  
+  # Rank exons within each transcript by start, end
+  arranged_df <- plot_df %>%
+    dplyr::group_by(transcript_id) %>%
+    dplyr::arrange(start, end, .by_group = TRUE) %>%
+    dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", cumsum(feature == "exon"), NA_integer_)) %>%
+    dplyr::ungroup()
+  
+  # Join the transcript ranks back, then build ordering keys and arrange
+  arranged_df <- arranged_df %>%
+    dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
+    dplyr::mutate(
+      # within a transcript group: the transcript row, then its exons
+      within_tx = dplyr::case_when(
+        feature == "transcript" ~ 0L,
+        feature == "exon" ~ 1L,
+        TRUE ~ 0L
+      )
+    ) %>%
+    dplyr::arrange(
+      transcript_rank,   # transcripts in (start, end) order; exons inherit their transcript's rank
+      within_tx,         # transcript row before its exons
+      exon_rank          # exons in (start, end) order
+    ) %>%
+    dplyr::select(-within_tx)
+  
+  return(arranged_df)
+}
+
+.arrange_exons_genes_transcripts <- function(plot_df) {
+  # Rank genes by their start and end positions
+  gene_rank <- plot_df %>%
+    dplyr::filter(feature == "gene") %>%
+    dplyr::arrange(start, end) %>%
+    dplyr::mutate(gene_rank = dplyr::row_number()) %>%
+    dplyr::select(gene_id, gene_rank)
+  
+  # Rank transcripts within each gene by start, end
+  tx_rank <- plot_df %>%
+    dplyr::filter(feature == "transcript") %>%
+    dplyr::arrange(gene_id, start, end) %>%
+    dplyr::group_by(gene_id) %>%
+    dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(gene_id, transcript_id, transcript_rank)
+  
+  # Rank exons within each transcript by start, end
+  arranged_df <- plot_df %>%
+    dplyr::group_by(transcript_id) %>%
+    dplyr::arrange(start, end, .by_group = TRUE) %>%
+    dplyr::mutate(exon_rank = dplyr::if_else(feature == "exon", cumsum(feature == "exon"), NA_integer_)) %>%
+    dplyr::ungroup()
+  
+  # Join the transcript ranks back, then build ordering keys and arrange
+  arranged_df <- arranged_df %>%
+    dplyr::left_join(gene_rank, by = c("gene_id")) %>%
+    dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
+    dplyr::mutate(
+      # gene first, then everything else
+      block = dplyr::if_else(feature == "gene", 0L, 1L),
+      # within a transcript group: the transcript row, then its exons
+      within_tx = dplyr::case_when(
+        feature == "transcript" ~ 0L,
+        feature == "exon" ~ 1L,
+        TRUE ~ 0L # gene rows (ignored by transcript_rank)
+      )
+    ) %>%
+    dplyr::arrange(
+      gene_rank,         
+      block,             # genes ordered by (start, end)
+      transcript_rank,   # transcripts in (start, end) order; exons inherit their transcript's rank
+      within_tx,         # transcript row before its exons
+      exon_rank,         # exons in (start, end) order
+      start,             # final tiebreakers - probably not needed
+      end
+    ) %>%
+    dplyr::select(-block, -within_tx)
+  
+  return(arranged_df)
+}
+
+.arrange_genes_transcripts <- function(plot_df) {
+  # Rank genes by their start and end positions
+  gene_rank <- plot_df %>%
+    dplyr::filter(feature == "gene") %>%
+    dplyr::arrange(start, end) %>%
+    dplyr::mutate(gene_rank = dplyr::row_number()) %>%
+    dplyr::select(gene_id, gene_rank)
+  
+  # Rank transcripts within each gene by start, end
+  tx_rank <- plot_df %>%
+    dplyr::filter(feature == "transcript") %>%
+    dplyr::arrange(gene_id, start, end) %>%
+    dplyr::group_by(gene_id) %>%
+    dplyr::mutate(transcript_rank = dplyr::row_number()) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(gene_id, transcript_id, transcript_rank)
+  
+  # Join the transcript ranks back, then build ordering keys and arrange
+  arranged_df <- plot_df %>%
+    dplyr::left_join(gene_rank, by = c("gene_id")) %>%
+    dplyr::left_join(tx_rank, by = c("gene_id", "transcript_id")) %>%
+    dplyr::mutate(
+      # gene first, then everything else
+      block = dplyr::if_else(feature == "gene", 0L, 1L)
+    ) %>%
+    dplyr::arrange(
+      gene_rank,         
+      block,            # genes ordered by (start, end)
+      transcript_rank   # transcripts in (start, end) order
+    ) %>%
+    dplyr::select(-block)
+  
+  return(arranged_df)
 }
