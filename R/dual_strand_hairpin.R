@@ -254,6 +254,8 @@ plot_dsh <- function(dsh_plus, dsh_minus, dicer_overhangs, wkdir) {
     } else {
       arc_plot <- plot_helix(helix_file)
     }
+    # Remove helix.txt to prevent it from being reused in future iterations
+    file.remove(helix_file)
   }
   
   #### Hairpin Phasing Probability Plot ####
