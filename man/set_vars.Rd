@@ -17,7 +17,9 @@ set_vars(
   write_fastas = FALSE,
   annotate_region = FALSE,
   gtf_file = FALSE,
-  out_type = c("pdf", "png", "PDF", "PNG")
+  out_type = c("pdf", "png", "PDF", "PNG"),
+  use_bed_names = FALSE,
+  density_timeout = 3600
 )
 }
 \arguments{
@@ -31,21 +33,42 @@ set_vars(
 
 \item{path_to_RNAplot}{The full path to the RNAplot binary executable.}
 
-\item{plot_output}{Determines whether the program will output plots as PDFs. Expected input is TRUE or FALSE.}
+\item{plot_output}{Determines whether the program will output plots as PDFs.
+Expected input is TRUE or FALSE.}
 
-\item{pi_pal}{The color palette to use for the piRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
+\item{pi_pal}{The color palette to use for the piRNA heatmap plot.
+Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
 
-\item{si_pal}{The color palette to use for the siRNA heatmap plot. Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
+\item{si_pal}{The color palette to use for the siRNA heatmap plot.
+Valid options are "RdYlBl", "BlYel", "yelOrRed", "MagYel", and "Greens".}
 
-\item{weight_reads}{Determines whether read counts will be weighted. Valid options are "Top", "locus_norm", or "None". See MiSiPi documentation for descriptions of the weighting methods.}
+\item{weight_reads}{Determines whether read counts will be weighted.
+Valid options are "Top", "locus_norm", or "None".
+See MiSiPi documentation for descriptions of the weighting methods.}
 
-\item{write_fastas}{TRUE or FALSE. Optional. If TRUE, read pairs from functions will be written to file.}
+\item{write_fastas}{TRUE or FALSE. Optional.
+If TRUE, read pairs from functions will be written to file.}
 
-\item{annotate_region}{Determines whether the program will plot genomic features of interest found in the GTF annotation file. If TRUE, a GTF file must be provided as the "gtf_file" argument.}
+\item{annotate_region}{Determines whether the program will plot genomic
+features of interest found in the GTF annotation file.
+If TRUE, a GTF file must be provided as the "gtf_file" argument.}
 
-\item{gtf_file}{a string corresponding to the path of genome annotation in 9-column GTF format. Default is FALSE unless annotate_regions == TRUE.}
+\item{gtf_file}{a string corresponding to the path of genome
+annotation in 9-column GTF format.
+Default is FALSE unless annotate_regions == TRUE.}
 
-\item{out_type}{The type of file for plots. Options are "png" or "pdf". Default is PDF.}
+\item{out_type}{The type of file for plots.
+Options are "png" or "pdf". Default is PDF.}
+
+\item{use_bed_names}{a boolean indicating if the name column in
+the bed file should be used for results.
+If TRUE, bed line names will be used unless column 4 is not present in the bed file.
+In that case, this parameter will toggle to FALSE.
+If FALSE, results will be named using a region string in the format: chr-start_stop}
+
+\item{density_timeout}{an integer defining how long (in seconds) read_densityBySize is allowed to
+run before being interrupted. By default this is set to 3600 seconds - 1hr. If you
+you want to eliminate the timeout, set it to Inf}
 }
 \value{
 a list

@@ -52,11 +52,12 @@
   ))
 }
 
-.inform_iteration <- function(i, i_max, chrom_name, strand = NULL) {
-  if (is.null(strand)) {
-    msg <- glue::glue("{i} out of {i_max} | {chrom_name}")
-  } else {
-    msg <- glue::glue("{i} out of {i_max} | {chrom_name} | {strand} strand")
-  }
+# Prints run information to the console
+# i          - Current iteration
+# i_max      - Total Iterations
+# identifier - Either a bed file locus name or a region string in format chr:start-stop
+.inform_iteration <- function(i, i_max, identifier) {
+  msg <- glue::glue("{i} out of {i_max} | {identifier}")
+
   cli::cli_inform(msg)
 }

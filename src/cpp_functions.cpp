@@ -659,19 +659,19 @@ int overlap_counts(std::vector<int> f_start, int X_SIZE,
 // @param rdt_start A vector of ints
 // @param rdt_end A vector of ints
 // @param rwidth An integer
-// @return result A matrix representing the overlaps present at each width of reads from 15-32
+// @return result A matrix representing the overlaps present at each width of reads from 18-32
 // [[Rcpp::export]]
 NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
 
-   int m_size = 18;
+   int m_size = 15;
    NumericMatrix result(m_size);
    //to avoid warnings about signed int to unsigned int conversion
    int f_size = int(fdt_start.size());
    int r_size = int(rdt_start.size());
 
-   for(int i = 15; i <= 32; i++) {
-      for(int j = 15; j <= 32; j++) {
+   for(int i = 18; i <= 32; i++) {
+      for(int j = 18; j <= 32; j++) {
         //the python script only checks reads which overlap by a "proper" amount
          int p_overlap = proper_overlap(i,j);
          int current_count = 0;
@@ -746,7 +746,7 @@ NumericMatrix get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 
 
          }
-         result(i - 15,j - 15) = current_count;
+         result(i - 18,j - 18) = current_count;
       }
 
    }
@@ -1111,19 +1111,19 @@ DataFrame make_miRNA_count_table(std::vector<int> fdt_start, std::vector<int> fd
 // @param rdt_start A vector of ints
 // @param rdt_end A vector of ints
 // @param rwidth An integer
-// @return result A matrix representing the overlaps present at each width of reads from 15-32
+// @return result A matrix representing the overlaps present at each width of reads from 18-32
 // [[Rcpp::export]]
 NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth){
 
-  int m_size = 18;
+  int m_size = 15;
   NumericMatrix result(m_size);
   //to avoid warnings about signed int to unsigned int conversion
   int f_size = int(fdt_start.size());
   int r_size = int(rdt_start.size());
 
-  for(int i = 15; i <= 32; i++) {
-    for(int j = 15; j <= 32; j++) {
+  for(int i = 18; i <= 32; i++) {
+    for(int j = 18; j <= 32; j++) {
       int p_overlap = 10;
       int current_count = 0;
 
@@ -1193,7 +1193,7 @@ NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
         current_count = c1 + c2;
 
       }
-      result(i - 15,j - 15) = current_count;
+      result(i - 18,j - 18) = current_count;
     }
 
   }
@@ -1212,20 +1212,20 @@ NumericMatrix get_pi_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_e
 // @param rdt_end A vector of ints
 // @param rwidth An integer
 // @param check_pi A bool, if TRUE (1), the function will look for piRNA overlaps, if FALSE (0) it will check for siRNA overlaps
-// @return result A matrix representing the overlaps present at each width of reads from 15-32
+// @return result A matrix representing the overlaps present at each width of reads from 18-32
 // [[Rcpp::export]]
 NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                                   std::vector<int> rdt_end, std::vector<int> rdt_start, std::vector<int> rwidth,
                                   bool check_pi) {
- int M_SIZE = 17;
+ int M_SIZE = 15;
  NumericMatrix result(M_SIZE);
 
  //to avoid warnings about signed int to unsigned int conversion
  int f_size = int(fdt_start.size());
  int r_size = int(rdt_start.size());
 
- for (int i = 16; i <= 32; i++) {
-   for (int j = 16; j <= 32; j++) {
+ for (int i = 18; i <= 32; i++) {
+   for (int j = 18; j <= 32; j++) {
 
      int p_overlap;
 
@@ -1309,7 +1309,7 @@ NumericMatrix get_overlap_counts(std::vector<int> fdt_start, std::vector<int> fd
        int fstart_size2 = fstart_res2.size();
        current_count += map_and_count(fstart_res2, fstart_size2, rend_res2, p_overlap);
      }
-     result(i - 16,j - 16) = current_count;
+     result(i - 18,j - 18) = current_count;
    }
  }
  return(result);
@@ -1529,20 +1529,20 @@ DataFrame rep_seq_reads(std::vector<int> rep_count, std::vector<std::string> rna
 // @param rdt_start A vector of ints
 // @param rdt_end A vector of ints
 // @param rwidth An integer
-// @return result A matrix representing the overlaps present at each width of reads from 15-32
+// @return result A matrix representing the overlaps present at each width of reads from 18-32
 // [[Rcpp::export]]
 NumericMatrix new_get_si_overlaps(std::vector<int> fdt_start, std::vector<int> fdt_end, std::vector<int> fwidth,
                               std::vector<int> rdt_start, std::vector<int> rdt_end, std::vector<int> rwidth){
 
-  int M_SIZE = 18;
+  int M_SIZE = 15;
   NumericMatrix result(M_SIZE);
 
   //to avoid warnings about signed int to unsigned int conversion
   int f_size = int(fdt_start.size());
   int r_size = int(rdt_start.size());
 
-  for (int i = 15; i <= 32; i++) {
-    for (int j = 15; j <= 32; j++) {
+  for (int i = 18; i <= 32; i++) {
+    for (int j = 18; j <= 32; j++) {
 
       int p_overlap = proper_overlap(i,j);
       double current_count = 0;     //changed to correct integer overflow
@@ -1677,7 +1677,7 @@ NumericMatrix new_get_si_overlaps(std::vector<int> fdt_start, std::vector<int> f
 
 
       }
-      result(i - 15,j - 15) = current_count;
+      result(i - 18,j - 18) = current_count;
     }
 
   }

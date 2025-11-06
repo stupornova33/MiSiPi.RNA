@@ -11,6 +11,13 @@
 
   max_results <- as.matrix(unlist(unname(which(pi_res[[1]] == max(pi_res[[1]]), arr.ind = TRUE))))
 
+  # This offset will be used to make the matrix indicies human readable
+    # Matrix of size 15 with indicies of 1-15 when offset would indicate
+    # Read widths of 18-32
+    # Minimum read width is 18, so 18 - 1 is the offset
+    MINIMUM_READ_WIDTH <- 18
+    MATRIX_INDEX_OFFSET <- MINIMUM_READ_WIDTH - 1
+
   if (nrow(max_results) == 0) {
     highest_pi_count <- 0
     highest_pi_row <- NA
@@ -26,8 +33,8 @@
     highest_pi_col <- mean(max_results[, 2])
   }
 
-  highest_pi_row <- highest_pi_row + 15
-  highest_pi_col <- highest_pi_col + 15
+  highest_pi_row <- highest_pi_row + MATRIX_INDEX_OFFSET
+  highest_pi_col <- highest_pi_col + MATRIX_INDEX_OFFSET
 
   if (is.na(highest_pi_row) && is.na(highest_pi_col)) {
     highest_pi_count <- -33

@@ -1,6 +1,6 @@
 Package: MiSiPi.RNA
 Title: Characterization of Small RNA Pathways
-Version: 1.1.3
+Version: 1.1.6
 Authors@R: c(
     person("Taiya", "Jarva", email = "t.m.jarva13@gmail.com", role = c("aut", "cre")),
     person("Chris", "Baugh", email = "chris.baugh@gmail.com", role = "ctb"))
@@ -26,10 +26,10 @@ Imports:
     lubridate,
     magrittr,
     pheatmap,
+    R.utils,
     R4RNA,
     Rcpp,
     reshape2,
-    RRNA,
     Rsamtools,
     S4Vectors,
     stringi,

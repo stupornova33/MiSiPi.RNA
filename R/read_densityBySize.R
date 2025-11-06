@@ -1,3 +1,65 @@
+# Wrapper function to handle timeout errors of .read_densityBySize
+
+.read_density_by_size <- function(chrom_name, reg_start, reg_stop, input_file, wkdir, logfile, timeout = 3600) {
+  
+  # This function will be called in the finally block to cleanup any remains of the timed out function
+  cleanup_bams <- function() {
+    bam_path <- file.path(wkdir, "tmp_bam")
+    
+    # No cleanup needed if directory doesn't exist
+    if (!dir.exists(bam_path)) return()
+    
+    # Gather and close bam files in case they are still open
+    bam_files <- list.files(path = bam_path, pattern = "\\.bam$")
+    
+    # Need to establish new file connection handles for remaining files, so they can be closed if still open
+    for (bam_file in bam_files) {
+      bam_con <- .open_bam(bam_file, logfile)
+      .close_bam(bam_file)
+    }
+    
+    # Add index files to list and delete files and directory
+    bam_files <- append(bam_files, list.files(path = bam_path, pattern = "\\.bai$"))
+    
+    unlink(file.path(bam_path, bam_files), force = TRUE)
+    fs::dir_delete(bam_path)
+  }
+  
+  
+  # Set a default result in case read_densityBySize times out and fails to return anything
+  density_data <- NULL
+  
+  tryCatch(
+    density_data <- R.utils::withTimeout(
+      .read_densityBySize(chrom_name, reg_start, reg_stop, input_file, wkdir, logfile),
+      timeout = timeout
+    ),
+    # Log the errors and move on
+    error = function(e) {
+      error_msg <- paste("ERROR: Timeout of", timeout, "seconds was exceeded by .read_density_by_size. Timeout can be increased in set_vars.\nSetting null plot for read density and continuing.")
+      cat(file = logfile, error_msg)
+    },
+    # Some temporary bam files might still exist that need to be removed in the finally block
+    finally = cleanup_bams()
+  )
+  
+  # Will either be NULL or a data frame
+  # Plot density_data
+  if (is.null(density_data)) {
+    density_plot <- null_plot("Read Density Plot", "Timeout exceeded during processing")
+  } else {
+    if ((reg_stop - reg_start) > 7000) {
+      density_plot <- .plot_large_density(density_data, reg_start, reg_stop)
+    } else {
+      density_plot <- .plot_density(density_data, reg_start, reg_stop)
+    }
+  }
+  
+  density_data <- NULL
+  
+  return(density_plot)
+}
+
 # function to filter reads by size and plot pileup density
 # @param chrom_name a string
 # @param reg_start a string
@@ -9,16 +71,18 @@
 
 .read_densityBySize <- function(chrom_name, reg_start, reg_stop, input_file, wkdir, logfile) {
   pos <- width <- rname <- NULL
-
+  
   filter_bamfile <- function(input_file, size1, size2, strand) {
     seqnames <- NULL
     which <- GenomicRanges::GRanges(
       seqnames = chrom_name,
       IRanges::IRanges(reg_start, reg_stop)
     )
+    
+    # Consider finding an alternative to FilterRules
+    # FilterRules loads all reads into memory before filtering
     filters <- S4Vectors::FilterRules(list(MinWidth = function(x) {
-      (BiocGenerics::width(x$seq) >= size1 &
-        BiocGenerics::width(x$seq) <= size2)
+      (x$qwidth >= size1 & x$qwidth <= size2)
     }))
 
     if (strand == "+") {
@@ -31,7 +95,7 @@
         filter = filters,
         param = Rsamtools::ScanBamParam(
           flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
-          what = c("rname", "pos", "qwidth", "seq"),
+          what = c("pos", "qwidth"),
           which = which
         )
       )
@@ -45,7 +109,7 @@
         filter = filters,
         param = Rsamtools::ScanBamParam(
           flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
-          what = c("rname", "pos", "qwidth", "seq"),
+          what = c("pos", "qwidth"),
           which = which
         )
       )
@@ -63,32 +127,22 @@
   filtered_pos_20_22_bam <- filter_bamfile(input_file, 20, 22, "+")
   filtered_pos_23_25_bam <- filter_bamfile(input_file, 23, 25, "+")
   filtered_pos_26_32_bam <- filter_bamfile(input_file, 26, 32, "+")
-  # filtered_pos_all_bam <- filter_bamfile(input_file, 18, 32, "+")
 
   filtered_neg_18_19_bam <- filter_bamfile(input_file, 18, 19, "-")
   filtered_neg_20_22_bam <- filter_bamfile(input_file, 20, 22, "-")
   filtered_neg_23_25_bam <- filter_bamfile(input_file, 23, 25, "-")
   filtered_neg_26_32_bam <- filter_bamfile(input_file, 26, 32, "-")
-  # filtered_neg_all_bam <- filter_bamfile(input_file, 18, 32, "-")
 
 
   make_bam_pileup <- function(bam, strand) {
     seqnames <- pos <- count <- NULL
 
     which <- GenomicRanges::GRanges(seqnames = chrom_name, IRanges::IRanges(reg_start, reg_stop))
-    if (strand == "-") {
-      bam_scan <- Rsamtools::ScanBamParam(
-        flag = Rsamtools::scanBamFlag(isMinusStrand = TRUE),
-        what = c("rname", "pos", "qwidth"),
-        which = which
-      )
-    } else {
-      bam_scan <- Rsamtools::ScanBamParam(
-        flag = Rsamtools::scanBamFlag(isMinusStrand = FALSE),
-        what = c("rname", "pos", "qwidth"),
-        which = which
-      )
-    }
+    bam_scan <- Rsamtools::ScanBamParam(
+      flag = Rsamtools::scanBamFlag(isMinusStrand = strand == "-"),
+      what = c("pos"),
+      which = which
+    )
 
     params <- Rsamtools::PileupParam(
       max_depth = 4000,
@@ -196,7 +250,6 @@
   pos_counts <- dplyr::bind_rows(pos_18_19_res, pos_20_22_res, pos_23_25_res, pos_26_32_res)
   neg_counts <- dplyr::bind_rows(neg_18_19_res, neg_20_22_res, neg_23_25_res, neg_26_32_res)
 
-  # df <- data.frame(position = pos_counts$pos, pos_count = pos_counts$count, neg_count = neg_counts$size) #%>% dplyr::select(-c(pos_count.pos, neg_counts.pos))
   pos_18_19_res <- neg_18_19_res <- pos_20_22_res <- neg_20_22_res <- NULL
   pos_23_25_res <- neg_23_25_res <- pos_26_32_res <- neg_26_32_res <- NULL
 

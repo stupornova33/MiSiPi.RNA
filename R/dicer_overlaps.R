@@ -2,11 +2,10 @@
 #
 # dicer_dt - Data Frame
 # helix_df - Data Frame
-# chrom_name - Character
 # original_start - Integer
 # return - Data Frame
 
-.dicer_overlaps <- function(dicer_dt, helix_df, chrom_name, original_start) {
+.dicer_overlaps <- function(dicer_dt, helix_df, original_start) {
   bin <- j <- X.End <- X.Start <- Y.Start <- Y.End <- paired_pos <- start <- width <- NULL
 
   if (nrow(helix_df) == 0) {

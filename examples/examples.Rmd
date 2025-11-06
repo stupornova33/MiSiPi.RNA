@@ -1,0 +1,86 @@
+---
+title: "Example MiSiPi.RNA Runs"
+author: "Taiya Jarva"
+date: "2025-08-29"
+output: html_document
+---
+
+
+## Run only miRNAs
+```{r, echo = TRUE, eval = TRUE}
+library(MiSiPi.RNA)
+
+roi <- system.file("extdata", "dmel_mir-bantam.bed", package = "MiSiPi.RNA")
+bam_file <- system.file("extdata", "dmel_bantam.bam", package = "MiSiPi.RNA")
+genome <- system.file("extdata", "dmel_chr3L.fasta", package = "MiSiPi.RNA")
+annot <- system.file("extdata", "dmel_example.gtf", package = "MiSiPi.RNA")
+path_to_RNAfold = "" # Include your path to RNAfold and RNAplot here
+path_to_RNAplot = ""
+
+vars <- set_vars(
+  roi = roi,
+  bam_file = bam_file,
+  genome = genome,
+  path_to_RNAfold = path_to_RNAfold,
+  path_to_RNAplot = path_to_RNAplot,  
+  pi_pal = "BlYel",
+  si_pal = "RdYlBl",
+  annotate_region = TRUE,
+  gtf_file = annot,
+  out_type = "png")
+
+misipi_rna(vars, method = "miRNA")
+
+```
+
+## Run only siRNA
+```{r, echo = TRUE, eval = TRUE}
+library(MiSiPi.RNA)
+
+roi <- system.file("extdata", "dmel_hpCR32207.bed", package = "MiSiPi.RNA")
+bam_file <- system.file("extdata", "dmel_hpCR32207.bam", package = "MiSiPi.RNA")
+genome <- system.file("extdata", "dmel_chr3L.fasta", package = "MiSiPi.RNA")
+path_to_RNAfold = "" # Include your path to RNAfold and RNAplot here
+path_to_RNAplot = ""
+
+vars <- set_vars(
+  roi = roi,
+  bam_file = bam_file,
+  genome = genome,
+  path_to_RNAfold = path_to_RNAfold,
+  path_to_RNAplot = path_to_RNAplot,
+  pi_pal = "BlYel",
+  si_pal = "RdYlBl",
+  annotate_region = FALSE,
+  out_type = "png")
+
+misipi_rna(vars, method = "siRNA")
+
+```
+
+
+## Run only piRNAs
+```{r, echo = TRUE, eval = TRUE}
+library(MiSiPi.RNA)
+
+roi <- system.file("extdata", "dmel_flamenco_part.bed", package = "MiSiPi.RNA")
+bam_file <- system.file("extdata", "dmel_flamenco_part.bam", package = "MiSiPi.RNA")
+genome <- system.file("extdata", "dmel_chr3L.fasta", package = "MiSiPi.RNA")
+path_to_RNAfold = "" # Include your path to RNAfold and RNAplot here
+path_to_RNAplot = ""
+
+vars <-set_vars(
+  roi = roi,
+  bam_file = bam_file,
+  genome = genome,
+  path_to_RNAfold = path_to_RNAfold,
+  path_to_RNAplot = path_to_RNAplot,
+  pi_pal = "BlYel",
+  si_pal = "RdYlBl",
+  annotate_region = FALSE,
+  out_type = "png")
+
+misipi_rna(vars, method = "piRNA")
+
+```
+
