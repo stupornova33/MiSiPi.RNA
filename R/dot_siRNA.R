@@ -16,7 +16,6 @@
 # @param weight_reads Determines whether read counts will be weighted and with which method.
 #   Valid options are "weight_by_prop", "locus_norm", or a user-defined value. Default is none.
 #   See MiSiPi documentation for descriptions of the weighting methods.
-# @param gtf_file a string
 # @param write_fastas a bool, Determines whether siRNA pairs will be written to a fasta file.
 #   TRUE or FALSE expected. Default: FALSE
 # @param out_type The type of file to write the plots to. Options are "png" or "pdf".
@@ -26,14 +25,15 @@
 # @param i_total
 # @param iteration_input
 # @param density_timeout A timeout in seconds defining how long read_densityBySize is allowed to run
+# @param gtf_df A data frame containing gtf observations for exons, genes, and transcripts
 # @return results
 
 .siRNA <- function(chrom_name, reg_start, reg_stop, prefix,
                    genome_file, bam_file, bed_file, logfile, wkdir, pal, plot_output,
-                   path_to_RNAfold, annotate_region, weight_reads, gtf_file,
+                   path_to_RNAfold, annotate_region, weight_reads,
                    write_fastas, out_type, method = c("self", "all"),
                    current_iteration = NULL, i_total = NULL, iteration_input = NULL,
-                   density_timeout) {
+                   density_timeout, gtf_df) {
   width <- pos <- phased_num <- NULL
   
   # current iteration, i_total, and iteration_input will be null if called from run_all
@@ -188,7 +188,7 @@
     }
     
     if (annotate_region) {
-      gtf_plot <- .plot_gtf(gtf_file, chrom_name, reg_start, reg_stop, logfile)
+      gtf_plot <- .plot_gtf(gtf_df, chrom_name, reg_start, reg_stop, logfile)
 
       if (is.null(gtf_plot)) {
         gtf_plot <- null_plot("Annotation Plot", "No features in region")

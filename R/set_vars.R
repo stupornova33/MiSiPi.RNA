@@ -83,14 +83,20 @@ set_vars <- function(roi, bam_file, genome,
   if (annotate_region == TRUE) {
     stopifnot("Parameter `gtf_file` must be provided when `annotate_region` is TRUE." = !missing(gtf_file))
     stopifnot("Parameter `gtf_file` must be a valid filepath to a 9 column gtf file." = file.exists(gtf_file))
-    gtf_columns_vector <- utils::count.fields(gtf_file, sep = "\t", quote = "")
-    stopifnot("gtf_file must have the same number of columns in each line." = length(unique(gtf_columns_vector)) == 1)
-    # waiting to include the number of column check
-    number_of_gtf_columns <- gtf_columns_vector[1]
-    stopifnot("gtf_file must have 9 columns and be tab separated." = number_of_gtf_columns == 9) # TODO make >= instead of ==
-    # TODO Add in check for Leading lines (do this in the wrapper_gtf_function) Maybe this needs to be in here as well to ensure that the 9 columns is met
-    # TODO Add in check for gene_id and transcript_id
+    
+    gtf <- .validate_gtf(gtf_file)
+    
+    if (gtf$is_valid == FALSE) {
+      msg <- paste("Invalid GTF file:", gtf$msg)
+      cli::cli_alert_warning(msg)
+      cli::cli_alert_danger("Stopping")
+      return()
+    }
+    gtf_df <- gtf$gtf
+  } else {
+    gtf_df <- NULL
   }
+
   # write_fastas
   stopifnot("Parameter `write_fastas` only accepts TRUE or FALSE." = is.logical(write_fastas))
   # out_type
@@ -187,27 +193,56 @@ set_vars <- function(roi, bam_file, genome,
   res_list <- vector()
   na_idx <- vector()
   
-  for (i in 1:nrow(bed_lines)) {
-    res <- which(chr_name == bed_lines$V1[i])
-    if (identical(res, integer(0))) {
-      na_idx <- append(na_idx, i)
-    } else {
-      res_list <- append(res_list, res)
-    }
-  }
-
-  stopifnot("There are no matching chromosomes between bed file and bam file." = length(res_list) > 0)
+  inv_idx <- which(.get_inverted_bed_coords(bed_lines$V2, bed_lines$V3))
+  neg_idx <- which(.get_negative_bed_coords(bed_lines$V2, bed_lines$V3))
+  na_idx <- which(.get_missing_bed_chr(bed_lines$V1, chr_name))
   
-  if (length(na_idx) > 0) {
-    # remove any lines of bed file where chromosome was not in genome and print error to file.
-    bed_lines <- bed_lines[-c(na_idx), ]
+  num_inv <- length(inv_idx)
+  num_neg <- length(neg_idx)
+  num_na <- length(na_idx)
+  
+  remove_idx <- unique(c(inv_idx, neg_idx, na_idx))
+  
+  # Warn and prune in any bed lines failed validation
+  if (sum(num_na, num_inv, num_neg) > 0) {
+    # Remove invalid lines
+    bed_lines <- bed_lines[-remove_idx,]
     
-    warning_message <- paste("Chromosome at lines", na_idx, "were not found in the genome.\n")
-    cli::cli_warn(warning_message)
+    warn_msg1 <- NULL
+    warn_msg2 <- NULL
+    warn_msg3 <- NULL
+    
+    if (num_na > 0) {
+      idx_str <- paste(na_idx, collapse = ", ")
+      idx_str <- glue::glue("[{idx_str}]")
+      
+      warn_msg1 <- paste("Problem with bed file lines:", idx_str, "- chromosomes not found in bam file")
+    }
+    
+    if (num_inv > 0) {
+      idx_str <- paste(inv_idx, collapse = ", ")
+      idx_str <- glue::glue("[{idx_str}]")
+      
+      warn_msg2 <- paste("Problem with bed file lines:", idx_str, "- stop position is less than start position")
+    }
+    
+    if (num_neg > 0) {
+      idx_str <- paste(neg_idx, collapse = ", ")
+      idx_str <- glue::glue("[{idx_str}]")
+      
+      warn_msg3 <- paste("Problem with bed file lines:", idx_str, "- negative coordinates detected")
+    }
+    
+    cli::cli_warn(c(
+      "!" = warn_msg1,
+      "!" = warn_msg2,
+      "!" = warn_msg3,
+      "i" = "Invalid lines will not be run"
+    ))
   }
   
-  res_list <- na_idx <- NULL
-
+  stopifnot("After pruning invalid bed file lines, no lines are remaining." = nrow(bed_lines) > 0)
+  
   # Convert the bed file coordinates to 1 based for compatibility with Rsamtools
   # Bed files use zero-based half open coordinates, so only the start position needs to be incremented
   # Coordinates will be reverted back to the original bed file coordinates when writing output
@@ -249,7 +284,7 @@ set_vars <- function(roi, bam_file, genome,
     si_pal = si_pal,
     annotate_region = annotate_region,
     weight_reads = weight_reads,
-    gtf_file = gtf_file,
+    gtf_df = gtf_df,
     write_fastas = write_fastas,
     out_type = out_type,
     use_bed_names = use_bed_names,

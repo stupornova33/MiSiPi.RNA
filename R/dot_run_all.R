@@ -14,7 +14,6 @@
 # @param path_to_RNAplot a string
 # @param annotate_region a bool, TRUE or FALSE
 # @param weight_reads a bool, TRUE or FALSE
-# @param gtf_file a string
 # @param write_fastas a bool, TRUE or FALSE. Default is FALSE
 # @param out_type Specifies whether file types for plots are png or pdf. Default is pdf.
 # @param output_dir The current output directory
@@ -23,6 +22,7 @@
 # @param i_total
 # @param iteration_input
 # @param density_timeout A timeout in seconds defining how long read_densityBySize is allowed to run
+# @param gtf_df A data frame containing gtf observations for exons, genes, and transcripts
 # @return results
 
 .run_all <- function(chrom_name, reg_start, reg_stop,
@@ -31,10 +31,10 @@
                      si_pal, pi_pal, plot_output,
                      path_to_RNAfold, path_to_RNAplot,
                      annotate_region, weight_reads,
-                     gtf_file, write_fastas, out_type,
+                     write_fastas, out_type,
                      output_dir, use_bed_names,
                      current_iteration, i_total, iteration_input,
-                     density_timeout) {
+                     density_timeout, gtf_df) {
   width <- pos <- start <- end <- NULL
 
   .inform_iteration(current_iteration, i_total, iteration_input)
@@ -251,14 +251,27 @@
 
   si_dir <- file.path(output_dir, "siRNA")
   si_log <- file.path(si_dir, "siRNA_log.txt")
-
+  
   si_res <- .siRNA(
-    chrom_name, reg_start, reg_stop, prefix,
-    genome_file, bam_file, roi,
-    si_log, si_dir, si_pal,
-    plot_output, path_to_RNAfold,
-    annotate_region, weight_reads, gtf_file,
-    write_fastas, out_type, calling_method, density_timeout = density_timeout
+    chrom_name = chrom_name,
+    reg_start = reg_start,
+    reg_stop = reg_stop,
+    prefix = prefix,
+    genome_file = genome_file,
+    bam_file = bam_file,
+    bed_file = roi,
+    logfile = si_log,
+    wkdir = si_dir,
+    pal = si_pal,
+    plot_output = plot_output,
+    path_to_RNAfold = path_to_RNAfold,
+    annotate_region = annotate_region,
+    weight_reads = weight_reads,
+    write_fastas = write_fastas,
+    out_type = out_type,
+    method = calling_method,
+    density_timeout = density_timeout,
+    gtf_df = gtf_df
   )
   
   max_si_heat <- .get_max_si_heat(si_res$heat)

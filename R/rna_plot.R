@@ -43,18 +43,60 @@
 
   # example arguments
   # a <- '--pre="1 15 8 RED omark" test.txt'
-
-  pos1 <- pos_df$r1_start - 1
-  pos2 <- pos_df$r1_end - 1
-  pos3 <- pos_df$r2_start - 1
-  pos4 <- pos_df$r2_end - 1
-
-  final_arg <- paste0(
-    "--infile=", wkdir, "/converted.txt ",
-    '--pre="',
-    pos1, " ", pos2, " ", 8, " ", colors[1], " ", "omark ",
-    pos3, " ", pos4, " ", 9, " ", colors[2], " ", 'omark"'
-  )
+ 
+  # In some cases, one of the arms of the most abundant pairs starts or ends outside the locus range
+  # In this case, only the arm that is fully inside the region will be colored
+  
+  if (!is.na(pos_df$r1_start)) {
+    pos1 <- pos_df$r1_start
+  } else {
+    pos1 <- NA
+  }
+  
+  if (!is.na(pos_df$r1_end)) {
+    pos2 <- pos_df$r1_end
+  } else {
+    pos2 <- NA
+  }
+  
+  if (!is.na(pos_df$r2_start)) {
+    pos3 <- pos_df$r2_start
+  } else {
+    pos3 <- NA
+  }
+  
+  if (!is.na(pos_df$r2_end)) {
+    pos4 <- pos_df$r2_end
+  } else {
+    pos4 <- NA
+  }
+  
+  if (!is.na(pos1) & !is.na(pos2) & !is.na(pos3) & !is.na(pos4)) {
+    # Color both arms
+    final_arg <- paste0(
+      "--infile=", wkdir, "/converted.txt ",
+      '--pre="',
+      pos1, " ", pos2, " ", 8, " ", colors[1], " ", "omark ",
+      pos3, " ", pos4, " ", 9, " ", colors[2], " ", 'omark"'
+    )
+  } else if ((is.na(pos1) | is.na(pos2)) & (is.na(pos3) | is.na(pos4))) {
+    # Color nothing
+    final_arg <- paste0("--infile=", wkdir, "/converted.txt")
+  } else if (is.na(pos1) | is.na(pos2)) {
+    # Color second arm
+    final_arg <- paste0(
+      "--infile=", wkdir, "/converted.txt ",
+      '--pre="',
+      pos3, " ", pos4, " ", 9, " ", colors[2], " ", 'omark"'
+    )
+  } else if (is.na(pos3) | is.na(pos4)) {
+    # Color first arm
+    final_arg <- paste0(
+      "--infile=", wkdir, "/converted.txt ",
+      '--pre="',
+      pos1, " ", pos2, " ", 8, " ", colors[1], " ", "omark "
+    )
+  }
 
   if (syscheck == "Windows") {
     system2(
