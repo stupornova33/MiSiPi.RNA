@@ -85,8 +85,7 @@ vars <- set_vars(
     density_timeout = 3600
 )
 
-# run all methods
-misipi_rna(vars)
+
 
 # run only for siRNAs
 misipi_rna(vars, method = "siRNA")
@@ -97,14 +96,46 @@ misipi_rna(vars, method = "siRNA")
 The ```method``` parameter determines if your files will be processed for MicroRNA (```"miRNA"```), Piwi-interacting RNA (```"piRNA"```), Small interferring RNA (```"siRNA"```). By default, misipi_rna runs all three methods and combines the output plots. 
 
 ## Running with "all" method:
+```
+# run all methods
+misipi_rna(vars)
+```
 In addition to processing files for miRNA, piRNA, and siRNA, the ```"all"``` method outputs a table with metrics and statistics which can be used for summarization or machine learning. See the [documentation](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html) for more details regarding values in table.
 
+## Example Data Provided with MiSiPi.RNA
+See examples/examples.Rmd for more.
+
+```
+library(MiSiPi.RNA)
+
+roi <- system.file("extdata", "dmel_mir-bantam.bed", package = "MiSiPi.RNA")
+bam_file <- system.file("extdata", "dmel_bantam.bam", package = "MiSiPi.RNA")
+genome <- system.file("extdata", "dmel_chr3L.fasta", package = "MiSiPi.RNA")
+annot <- system.file("extdata", "dmel_example.gtf", package = "MiSiPi.RNA")
+path_to_RNAfold = "" # Replace with your path to RNAfold and RNAplot here
+path_to_RNAplot = ""
+
+vars <- set_vars(
+  roi = roi,
+  bam_file = bam_file,
+  genome = genome,
+  path_to_RNAfold = path_to_RNAfold,
+  path_to_RNAplot = path_to_RNAplot,  
+  pi_pal = "BlYel",
+  si_pal = "RdYlBl",
+  annotate_region = TRUE,
+  gtf_file = annot,
+  out_type = "png")
+
+misipi_rna(vars, method = "miRNA")
+
+```
 ## To convert .ps/.eps files to .png 
 
 ```
 eps2png(path_to_magick_exe, file_dir)
 ```
-where path_to_magick_exe is the full path to the binary executable and file_dir is the folder containing the .ps files. This will also be the output folder.
+where path_to_magick_exe is the full path to the binary executable and file_dir is the folder containing the files to convert. This will also be the output folder.
 
 ## Use built-in machine learning model to characterize loci:
 See full [documentation](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html) for more details. 
