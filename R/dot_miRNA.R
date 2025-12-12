@@ -29,6 +29,7 @@
   
   pos <- count <- count.x <- count.y <- end <- r1_end <- r1_start <- dist <- r2_end <- r2_start <- lstop <- lstart <- r1_seq <- loop_seq <- r2_seq <- start <- whole_seq <- width <- NULL
   
+  method <- match.arg(method)
   # do not run locus if length is > 300 - not a miRNA. Also avoids issue where user provides coordinates of miRNA cluster.
   if (reg_stop - reg_start > 300) {
     cat(file = logfile, "length of region is greater than 300. \n", append = TRUE)
@@ -49,7 +50,7 @@
   READ_OVERFLOW_LIMIT <- 5
   
   r2_dt <- .get_filtered_bam_df(bam_obj, chrom_name, reg_start, reg_stop, strand, 18, 32, TRUE)
-  
+
   .close_bam(bam_obj)
   
   r2_dt <- r2_dt %>%
@@ -58,6 +59,14 @@
       end <= reg_stop + READ_OVERFLOW_LIMIT) %>%
     dplyr::group_by_all() %>%
     dplyr::summarize(count = dplyr::n())
+  
+  if (method == "self") {
+    size_dist <- r2_dt %>%
+      dplyr::group_by(width) %>%
+      dplyr::summarise(count = sum(count))
+    .output_readsize_dist(size_dist, prefix, wkdir, strand = strand, "miRNA")
+    size_dist <- NULL
+  }
   
   if (nrow(r2_dt) == 0) {
     return(.null_mi_res(prefix, strand, wkdir))

@@ -58,7 +58,8 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
-      use_bed_names = use_bed_names
+      use_bed_names = use_bed_names,
+      method = "self"
     )
     
     #cli::cli_inform("Starting minus strand")
@@ -78,7 +79,8 @@ miRNA <- function(vars, output_dir) {
       write_fastas = write_fastas,
       weight_reads = weight_reads,
       out_type = out_type,
-      use_bed_names = use_bed_names
+      use_bed_names = use_bed_names,
+      method = "self"
     )
     
     .compare_miRNA_strands(output_dir)
