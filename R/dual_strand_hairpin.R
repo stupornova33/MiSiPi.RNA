@@ -296,8 +296,8 @@ plot_helix <- function(helix_file) {
     arc_plot <- gridGraphics::echoGrob(plot_arc)
     
   } else { # Linux / Unix based
-    grDevices::dev.control("enable")
     plot_arc()
+    grDevices::dev.control("enable")
     arc_plot <- grDevices::recordPlot()
   }
   
