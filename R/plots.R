@@ -894,6 +894,8 @@ plot_piRNA <- function(read_distribution_plot, density_plot, overlap_probability
 # Arrange the plots from .run_all() and write the combined plot to a file
 plot_combined_plots <- function(p, out_type, prefix, output_dir, plot_details) {
   
+  print("FUNCTION: plot_combined_plots")
+  
   plot_title <- cowplot::ggdraw() +
     cowplot::draw_label(
       plot_details$title,
