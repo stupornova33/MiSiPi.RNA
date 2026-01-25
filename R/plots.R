@@ -429,7 +429,7 @@
 # plots the arc diagram
 # @param filePath a string
 # @return an arc plot
-
+# DEPRECATED
 .plot_helix <- function(filePath) {
   R4RNA::plotHelix(helix = R4RNA::readHelix(filePath), line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE)
   grDevices::dev.control("enable")
@@ -893,8 +893,6 @@ plot_piRNA <- function(read_distribution_plot, density_plot, overlap_probability
 
 # Arrange the plots from .run_all() and write the combined plot to a file
 plot_combined_plots <- function(p, out_type, prefix, output_dir, plot_details) {
-  
-  print("FUNCTION: plot_combined_plots")
   
   plot_title <- cowplot::ggdraw() +
     cowplot::draw_label(
