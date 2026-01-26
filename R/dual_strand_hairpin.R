@@ -298,7 +298,7 @@ plot_helix <- function(helix_file) {
   } else { # Linux / Unix based
     #plot_arc()
     #plot(1:10, type = "n")
-    arc_plot <- grDevices::recordPlot()
+    arc_plot <- plot_helix(helix_data)
     grDevices::dev.control("enable")
     R4RNA::plotHelix(helix = helix_data,
     line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE) 
