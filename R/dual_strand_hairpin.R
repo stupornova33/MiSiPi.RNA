@@ -278,16 +278,16 @@ plot_helix <- function(helix_file) {
   # Read in Helix data
   helix_data <- R4RNA::readHelix(helix_file)
   
-  plot_arc <- function() {
-    R4RNA::plotHelix(
-      helix = helix_data,
-      line = TRUE,
-      arrow = FALSE,
-      lwd = 2.25,
-      scale = FALSE
-    )
-    title(main = "RNAfold Arc", line = -3, font.main = 1)
-  }
+  #plot_arc <- function() {
+  #  R4RNA::plotHelix(
+  #    helix = helix_data,
+  #    line = TRUE,
+  #    arrow = FALSE,
+  #    lwd = 2.25,
+  #    scale = FALSE
+  #  )
+  #  title(main = "RNAfold Arc", line = -3, font.main = 1)
+  #}
   
   # Plot generation specific to user operating system
   platform <- Sys.info()["sysname"]
@@ -296,9 +296,17 @@ plot_helix <- function(helix_file) {
     arc_plot <- gridGraphics::echoGrob(plot_arc)
     
   } else { # Linux / Unix based
+    grDevices::pdf(NULL)
+    on.exit(if(!is.null(grDevices::dev.list())) grDevices::dev.off())
     grDevices::dev.control("enable")
-    plot_arc()
+    
+    R4RNA::plotHelix(
+      helix = helix_data,
+      line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE
+    )
+    title(main = "RNAfold Arc", line = -3, font.main = 1)
     arc_plot <- grDevices::recordPlot()
+  
   }
   
   return(arc_plot)
