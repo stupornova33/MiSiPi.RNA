@@ -297,7 +297,7 @@ plot_helix <- function(helix_file) {
     
   } else { # Linux / Unix based
     grDevices::pdf(NULL)
-    on.exit(if(!is.null(grDevices::dev.lis())) grDevices::dev.off())
+    on.exit(if(!is.null(grDevices::dev.list())) grDevices::dev.off())
     grDevices::dev.control("enable")
     
     R4RNA::plotHelix(
