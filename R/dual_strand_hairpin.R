@@ -297,20 +297,16 @@ plot_helix <- function(helix_file) {
     
   } else { # Linux / Unix based
     grDevices::pdf(NULL)
+    on.exit(if(!is.null(grDevices::dev.lis())) grDevices::dev.off())
     grDevices::dev.control("enable")
     
-    arc_plot <- R4RNA::plotHelix(
+    R4RNA::plotHelix(
       helix = helix_data,
       line = TRUE, arrow = FALSE, lwd = 2.25, scale = FALSE
     )
     title(main = "RNAfold Arc", line = -3, font.main = 1)
-    
-    print(arc_plot)
     arc_plot <- grDevices::recordPlot()
-   
-    
-    replayPlot(arc_plot)   # works
-    grDevices::dev.off()
+  
   }
   
   return(arc_plot)
