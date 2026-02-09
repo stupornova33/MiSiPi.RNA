@@ -278,16 +278,16 @@ plot_helix <- function(helix_file) {
   # Read in Helix data
   helix_data <- R4RNA::readHelix(helix_file)
   
-  #plot_arc <- function() {
-  #  R4RNA::plotHelix(
-  #    helix = helix_data,
-  #    line = TRUE,
-  #    arrow = FALSE,
-  #    lwd = 2.25,
-  #    scale = FALSE
-  #  )
-  #  title(main = "RNAfold Arc", line = -3, font.main = 1)
-  #}
+  plot_arc <- function() {
+   R4RNA::plotHelix(
+     helix = helix_data,
+     line = TRUE,
+     arrow = FALSE,
+     lwd = 2.25,
+     scale = FALSE
+   )
+   title(main = "RNAfold Arc", line = -3, font.main = 1)
+  }
   
   # Plot generation specific to user operating system
   platform <- Sys.info()["sysname"]

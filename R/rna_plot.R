@@ -71,32 +71,32 @@
     pos4 <- NA
   }
   
-  if (!is.na(pos1) & !is.na(pos2) & !is.na(pos3) & !is.na(pos4)) {
-    # Color both arms
-    final_arg <- paste0(
-      "--infile=", wkdir, "/converted.txt ",
-      '--pre="',
-      pos1, " ", pos2, " ", 8, " ", colors[1], " ", "omark ",
-      pos3, " ", pos4, " ", 9, " ", colors[2], " ", 'omark"'
-    )
-  } else if ((is.na(pos1) | is.na(pos2)) & (is.na(pos3) | is.na(pos4))) {
-    # Color nothing
-    final_arg <- paste0("--infile=", wkdir, "/converted.txt")
-  } else if (is.na(pos1) | is.na(pos2)) {
-    # Color second arm
-    final_arg <- paste0(
-      "--infile=", wkdir, "/converted.txt ",
-      '--pre="',
-      pos3, " ", pos4, " ", 9, " ", colors[2], " ", 'omark"'
-    )
-  } else if (is.na(pos3) | is.na(pos4)) {
-    # Color first arm
-    final_arg <- paste0(
-      "--infile=", wkdir, "/converted.txt ",
-      '--pre="',
-      pos1, " ", pos2, " ", 8, " ", colors[1], " ", "omark "
-    )
+  # Example for Linux/Darwin:
+  # fold <- system(paste(path_to_RNAplot, pre_args, file.path(wkdir, "test.txt"), sep = " "), intern = TRUE)
+  anno_list <- c()
+
+  # first arm (r1)
+  if (!is.na(pos_df$r1_start) && pos_df$r1_start > 0) {
+    anno_list <- c(anno_list, paste(pos_df$r1_start, pos_df$r1_end, "8 RED omark"))
   }
+
+  # Only append if r2 is NOT NA and NOT 0
+  if (!is.na(pos_df$r2_start) && pos_df$r2_start > 0) {
+    anno_list <- c(anno_list, paste(pos_df$r2_start, pos_df$r2_end, "9 GREEN omark"))
+  }
+  
+  # Construct the final system argument
+  if (length(anno_list) > 0) {
+    # Collapse the valid commands into a single space-separated string
+    pre_args <- paste0("--pre=\"", paste(anno_list, collapse = " "), "\"")
+  } else {
+    pre_args <- ""
+  }
+
+  final_arg <- paste0(
+    "--infile=", wkdir, "/converted.txt ",
+    pre_args
+  )
 
   if (syscheck == "Windows") {
     system2(
