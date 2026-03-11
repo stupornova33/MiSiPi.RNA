@@ -100,7 +100,7 @@ The ```method``` parameter determines if your files will be processed for MicroR
 # run all methods
 misipi_rna(vars)
 ```
-In addition to processing files for miRNA, piRNA, and siRNA, the ```"all"``` method outputs a table with metrics and statistics which can be used for summarization or machine learning. See the [documentation](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html) for more details regarding values in table.
+In addition to processing files for miRNA, piRNA, and siRNA, the ```"all"``` method outputs a table with metrics and statistics which can be used for summarization or machine learning. See the [documentation](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.md) for more details regarding values in table.
 
 ## Example Data Provided with MiSiPi.RNA
 See examples/examples.Rmd for more.
