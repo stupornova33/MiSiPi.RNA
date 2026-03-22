@@ -146,7 +146,7 @@
 
     params <- Rsamtools::PileupParam(
       max_depth = 4000,
-      min_base_quality = 20,
+      min_base_quality = 0,
       min_mapq = 0,
       min_nucleotide_depth = 1,
       distinguish_strands = TRUE,
@@ -183,7 +183,7 @@
 
   ## 23-25nt
   pos_23_25_pileup <- make_bam_pileup(filtered_pos_23_25_bam, "+")
-  neg_23_25_pileup <- make_bam_pileup(filtered_neg_23_25_bam, "_")
+  neg_23_25_pileup <- make_bam_pileup(filtered_neg_23_25_bam, "-")
 
   ## 26-32
   pos_26_32_pileup <- make_bam_pileup(filtered_pos_26_32_bam, "+")
