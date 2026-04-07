@@ -147,7 +147,7 @@ The ```path_to_table``` parameter is the path to the directory that was created 
 
 
 ## To make a plot summary and sortable table of results:
-This function makes one html per class. Use "type =" to choose which class. 
+This function generates one html file based on the chosen class type. Use "type =" to choose one of the following classes: miRNA, piRNA, or siRNA.
 
 ```
 make_html_summary(path_to_tables = "full/path/to/run_all/", type = "miRNA", ml_plots = FALSE)
