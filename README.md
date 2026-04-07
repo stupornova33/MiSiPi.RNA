@@ -147,9 +147,10 @@ The ```path_to_table``` parameter is the path to the directory that was created 
 
 
 ## To make a plot summary and sortable table of results:
+This function generates one html file based on the chosen class type. Use "type =" to choose one of the following classes: miRNA, piRNA, or siRNA.
 
 ```
-make_html_summary(path_to_tables = "full/path/to/run_all/", type = c("siRNA", "piRNA" or "miRNA"), ml_plots = FALSE)
+make_html_summary(path_to_tables = "full/path/to/run_all/", type = "miRNA", ml_plots = FALSE)
 ```
 The ```path_to_tables``` parameter is the path to the directory that was created when ```misipi_rna()``` was run with the default method. It will be called "run_all/".
 
