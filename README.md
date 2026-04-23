@@ -141,9 +141,9 @@ where path_to_magick_exe is the full path to the binary executable and file_dir 
 See full [documentation](https://github.com/stupornova33/MiSiPi.RNA/blob/main/documentation/Documentation.html) for more details. 
 
 ```
-ml_probability(path_to_table = "full/path/to/run_all/", table = "table_ml.txt")
+ml_probability(path_to_tables = "full/path/to/run_all/", table = "table_ml.txt")
 ```
-The ```path_to_table``` parameter is the path to the directory that was created when ```misipi_rna()``` was run with the default method. It will be called "run_all/".
+The ```path_to_tables``` parameter is the path to the directory that was created when ```misipi_rna()``` was run with the default method. It will be called "run_all/".
 
 
 ## To make a plot summary and sortable table of results:
