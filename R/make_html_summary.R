@@ -11,6 +11,41 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE, struct_plo
   # Process the input data tables and make summary plots
   # need to make an option for pdf or png files
   # All summary files get the ML table and read size distribution plot
+  
+  # Validate path_to_tables parameter
+  if (missing(path_to_tables) || is.null(path_to_tables) || is.na(path_to_tables)) {
+    stop("The 'path_to_tables' parameter is required and cannot be NULL or NA.\n",
+         "Make sure you are using the correct parameter name: 'path_to_tables' (with an 's' at the end).\n",
+         "Example: make_html_summary(path_to_tables = 'path/to/output', type = 'siRNA')")
+  }
+  
+  # Validate type parameter
+  if (length(type) > 1) {
+    stop("The 'type' parameter must be a single value, not a vector.\n",
+         "Please provide only ONE of: 'miRNA', 'siRNA', or 'piRNA'.\n",
+         "You provided: ", paste(type, collapse = ", "), "\n",
+         "To generate summaries for multiple types, call this function separately for each type.")
+  }
+  
+  # Check if type is a valid option
+  valid_types <- c("miRNA", "mirna", "siRNA", "sirna", "piRNA", "pirna")
+  if (!type %in% valid_types) {
+    stop("Invalid 'type' parameter.\n",
+         "You provided: '", type, "'\n",
+         "Valid options are: 'miRNA', 'siRNA', or 'piRNA' (case-insensitive)")
+  }
+  
+  # Validate ml_plots and struct_plots parameters
+  if (!is.logical(ml_plots) || is.na(ml_plots)) {
+    stop("The 'ml_plots' parameter must be TRUE or FALSE.\n",
+         "You provided: ", ml_plots)
+  }
+  
+  if (!is.logical(struct_plots) || is.na(struct_plots)) {
+    stop("The 'struct_plots' parameter must be TRUE or FALSE.\n",
+         "You provided: ", struct_plots)
+  }
+  
   if (!dir.exists(file.path(path_to_tables, "summary_inputs"))) {
     dir.create(file.path(path_to_tables, "summary_inputs"))
   }
@@ -73,7 +108,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE, struct_plo
     nplots <- append(nplots, paste0(input_dir, "ml_prob_heatmap.png"))
   }
   ################################################################# siRNA ###################################################################
-  if (type == "siRNA" || type == "sirna") {
+  if (type %in% c("siRNA", "sirna")) {
     dicerz <- read.table(file.path(path_to_tables, "siRNA/", "siRNA_dicerz.txt"), header = TRUE)
     dicerz[is.na(dicerz)] <- -33
     dicerz <- dicerz %>% dplyr::select(-c(locus))
@@ -168,7 +203,7 @@ make_html_summary <- function(path_to_tables, type, ml_plots = FALSE, struct_plo
     
     
     ############################################################### miRNA ##################################################################
-  } else if (type == "miRNA" || type == "mirna") {
+  } else if (type %in% c("miRNA", "mirna")) {
     #plus_mirna_dicerz <- read.table(file.path(path_to_tables, "miRNA", "miRNA_plus_dicerz.txt"), header = TRUE) %>% dplyr::select(-c(original_locus, most_abundant_locus, strand,	count_avg))
     dicerz <- read.table(file.path(path_to_tables, "miRNA", "miRNA_dicerz.txt"), header = T) %>% dplyr::select(-c(original_locus, most_abundant_locus, strand))
     colnames(dicerz) <- c(seq(-4, 4, by = 1))

@@ -1,14 +1,14 @@
 #' ml_probability
-#' @param path_to_table A string specifying the full path to the folder which contains the _ml table. This directory will be the location of the probability plots.
+#' @param path_to_tables A string specifying the full path to the folder which contains the _ml table. This directory will be the location of the probability plots.
 #' @param table A string specifying the full path to the _ml table produced by misipi_rna
 #' @param library_size An integer specifying the number of mapped reads from the BAM file that was used to create the table. This is used for RPM-mapped count normalization.
 #' @return nothing
 #' @export
 
-ml_probability <- function(path_to_table, table, library_size) {
-  wkdir <- setwd(path_to_table)
+ml_probability <- function(path_to_tables, table, library_size) {
+  wkdir <- setwd(path_to_tables)
 
-  ml_table <- read.table(paste0(path_to_table, table), header = TRUE)
+  ml_table <- read.table(paste0(path_to_tables, table), header = TRUE)
   
   ml_table <- ml_table %>% dplyr::distinct()
   names <- ml_table$locus
@@ -45,7 +45,7 @@ ml_probability <- function(path_to_table, table, library_size) {
 
   all_df <- round(all_df, digits = 2)
 
-  ml_file <- file.path(path_to_table, "ml_probability.txt")
+  ml_file <- file.path(path_to_tables, "ml_probability.txt")
   out_tab <- all_df
   out_tab$locus <- names
 
@@ -74,5 +74,5 @@ ml_probability <- function(path_to_table, table, library_size) {
     dev.off()
   }
 
-  print(paste0("ML probability plots have been made and table has been written to ", path_to_table, "."))
+  print(paste0("ML probability plots have been made and table has been written to ", path_to_tables, "."))
 }
